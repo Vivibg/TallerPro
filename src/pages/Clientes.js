@@ -9,7 +9,7 @@ function Clientes() {
   const [busqueda, setBusqueda] = useState('');
 
   useEffect(() => {
-    fetch('http://localhost:4000/api/clientes')
+    fetch(`${process.env.REACT_APP_API_URL}/clientes`))
       .then(res => res.json())
       .then(data => Array.isArray(data) ? setClientes(data) : setClientes([]))
       .catch(() => setClientes([]));
@@ -36,7 +36,7 @@ function Clientes() {
 
   const handleSubmit = (e) => {
     e.preventDefault();
-    fetch('http://localhost:4000/api/clientes', {
+    fetch(`${process.env.REACT_APP_API_URL}/clientes`), {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(form)
@@ -109,3 +109,4 @@ function Clientes() {
 }
 
 export default Clientes;
+
