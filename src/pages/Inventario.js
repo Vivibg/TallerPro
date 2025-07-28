@@ -13,7 +13,7 @@ const Inventario = () => {
   const [form, setForm] = useState({ producto: '', categoria: '', stock: '', minimo: '', precio: '', estado: 'ok' });
 
   const fetchInsumos = () => {
-    fetch('http://localhost:4000/api/inventario')
+    fetch(`${process.env.REACT_APP_API_URL}/inventario`)
       .then(res => res.json())
       .then(data => Array.isArray(data) ? setInsumos(data) : setInsumos([]))
       .catch(() => setInsumos([]));
