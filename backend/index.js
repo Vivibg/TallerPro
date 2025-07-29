@@ -7,7 +7,10 @@ import inventarioRouter from './inventario.js';
 import historialRouter from './historial.js';
 
 const app = express();
-app.use(cors());
+app.use(cors({
+  origin: 'https://tallerpro-git-master-vivian-branas-projects.vercel.app', // Cambia por tu dominio real de Vercel
+  credentials: true
+}));
 app.use(express.json());
 
 // CRUD Reservas
