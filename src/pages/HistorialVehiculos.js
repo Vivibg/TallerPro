@@ -1,24 +1,10 @@
-import React, { useState } from 'react';
-import { Box, Typography, TextField, Paper, Grid, Button, List, ListItem, ListItemText, Dialog, DialogTitle, DialogContent, DialogActions } from '@mui/material';
-
-import { useEffect } from 'react';
-
+import React, { useState, useEffect } from 'react';
+import { Box, Typography, TextField, Paper, Grid, Button, Dialog, DialogTitle, DialogContent, DialogActions } from '@mui/material';
 
 function HistorialVehiculos() {
   const [historiales, setHistoriales] = useState([]);
   const [busqueda, setBusqueda] = useState('');
-
-  useEffect(() => {
-    fetch(`${process.env.REACT_APP_API_URL}/api/historial`)
-      .then(res => res.json())
-      .then(data => Array.isArray(data) ? setHistoriales(data) : setHistoriales([]))
-      .catch(() => setHistoriales([]));
-  }, []);
-
   const [open, setOpen] = useState(false);
-  const handleOpen = () => setOpen(true);
-  const handleClose = () => setOpen(false);
-
   const [form, setForm] = useState({
     vehiculo: '',
     placas: '',
@@ -28,16 +14,56 @@ function HistorialVehiculos() {
     taller: ''
   });
 
+  // Cargar historial al montar el componente
+  useEffect(() => {
+    fetch(`${process.env.REACT_APP_API_URL}/api/historial`)
+      .then(res => res.json())
+      .then(data => Array.isArray(data) ? setHistoriales(data) : setHistoriales([]))
+      .catch(() => setHistoriales([]));
+  }, []);
+
+  // Abrir/cerrar modal
+  const handleOpen = () => setOpen(true);
+  const handleClose = () => setOpen(false);
+
+  // Manejar cambios en el formulario
   const handleChange = (e) => {
     setForm({ ...form, [e.target.name]: e.target.value });
   };
 
+  // Agregar nuevo historial
   const handleSubmit = (e) => {
     e.preventDefault();
-    // Aquí va la lógica para guardar el nuevo historial
-    handleClose();
+    fetch(`${process.env.REACT_APP_API_URL}/api/historial`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(form)
+    })
+      .then(res => res.json())
+      .then(data => {
+        setHistoriales([...historiales, data]);
+        handleClose();
+        setForm({
+          vehiculo: '',
+          placas: '',
+          cliente: '',
+          fecha: '',
+          servicio: '',
+          taller: ''
+        });
+      })
+      .catch(() => handleClose());
   };
 
+  // Eliminar historial
+  const handleDelete = (id) => {
+    fetch(`${process.env.REACT_APP_API_URL}/api/historial/${id}`, {
+      method: 'DELETE'
+    })
+      .then(() => setHistoriales(historiales.filter(h => h.id !== id)));
+  };
+
+  // Filtrar resultados por búsqueda
   const resultados = historiales.filter(h =>
     h.vehiculo?.toLowerCase().includes(busqueda.toLowerCase()) ||
     h.placas?.toLowerCase().includes(busqueda.toLowerCase())
