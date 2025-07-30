@@ -9,7 +9,7 @@ function HistorialVehiculos() {
   const [busqueda, setBusqueda] = useState('');
 
   useEffect(() => {
-    fetch(`${process.env.REACT_APP_API_URL}/historial`)
+    fetch(`${process.env.REACT_APP_API_URL}/api/historial`)
       .then(res => res.json())
       .then(data => Array.isArray(data) ? setHistoriales(data) : setHistoriales([]))
       .catch(() => setHistoriales([]));
