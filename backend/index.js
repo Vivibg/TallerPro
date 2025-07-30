@@ -8,7 +8,7 @@ import historialRouter from './historial.js';
 
 const app = express();
 app.use(cors({
-  origin: 'https://tallerpro-git-master-vivian-branas-projects.vercel.app', // Cambia por tu dominio real de Vercel
+  origin: 'https://tallerpro-git-master-vivian-branas-projects.vercel.app',
   credentials: true
 }));
 app.use(express.json());
