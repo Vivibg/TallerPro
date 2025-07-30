@@ -1,10 +1,11 @@
 import mysql from 'mysql2/promise';
 
 export const pool = mysql.createPool({
-  host: 'localhost',
-  user: 'root', // Cambia si tu usuario es diferente
-  password: 'R34ch11983!!', // Cambia por tu contraseña de MySQL
-  database: 'tallerpro',
+  host: process.env.DB_HOST,
+  user: process.env.DB_USER,
+  password: process.env.DB_PASS,
+  database: process.env.DB_NAME,
+  port: process.env.DB_PORT, // ¡Agrega esto!
   waitForConnections: true,
   connectionLimit: 10,
   queueLimit: 0
