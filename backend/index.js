@@ -9,7 +9,9 @@ import reservasRouter from './reservas.js';
 
 const app = express();
 app.use(cors({
-  origin: 'https://tallerpro-git-master-vivian-branas-projects.vercel.app',
+  origin: 'https://tallerpro-vivian-branas-projects.vercel.app',
+  app.use(cors({
+  origin: allowedOrigins,
   credentials: true
 }));
 app.use(express.json());
