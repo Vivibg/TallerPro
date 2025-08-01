@@ -53,19 +53,20 @@ function Reservas() {
       <Typography variant="h4" fontWeight={700} mb={3}>Sistema de Reservas</Typography>
       <Grid container spacing={2}>
         <Grid item xs={12} md={8}>
-          <Paper elevation={2} sx={{ p: 3, mb: 2 }}>
-            <LocalizationProvider dateAdapter={AdapterDateFns}>
-              <DatePicker
-                label="Selecciona una fecha"
-                value={selectedDate}
-                onChange={date => setSelectedDate(date)}
-                views={['year', 'month', 'day']}
-                openTo="day"
-                renderInput={(params) => <TextField {...params} fullWidth />}
-              />
-            </LocalizationProvider>
-          </Paper>
-        </Grid>
+  <Paper elevation={2} sx={{ p: 3, mb: 2 }}>
+    {/* Aquí estaba el calendario simulado */}
+    <LocalizationProvider dateAdapter={AdapterDateFns}>
+      <DatePicker
+        label="Selecciona una fecha"
+        value={selectedDate}
+        onChange={date => setSelectedDate(date)}
+        views={['year', 'month', 'day']}
+        openTo="day"
+        renderInput={(params) => <TextField {...params} fullWidth />}
+      />
+    </LocalizationProvider>
+  </Paper>
+</Grid>
         <Grid item xs={12} md={4}>
           <Paper elevation={2} sx={{ p: 3 }}>
             <Typography variant="h6" fontWeight={600} mb={2}>Citas de Hoy</Typography>
