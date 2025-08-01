@@ -25,7 +25,7 @@ function Reservas() {
   const fechaActual = `2024-01-${dia.toString().padStart(2, '0')}`;
 
   React.useEffect(() => {
-    fetch('http://localhost:4000/api/reservas')
+    fetch(`${process.env.REACT_APP_API_URL}/api/reservas')
       .then(res => res.json())
       .then(data => setCitasHoy(data.filter(c => c.fecha === fechaActual)))
       .catch(() => setCitasHoy([]));
@@ -38,7 +38,7 @@ function Reservas() {
 
   const handleSubmit = async e => {
     e.preventDefault();
-    await fetch('http://localhost:4000/api/reservas', {
+    await fetch(`${process.env.REACT_APP_API_URL}/api/reservas', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ ...form, fecha: fechaActual })
@@ -46,14 +46,14 @@ function Reservas() {
     setForm({ cliente: '', servicio: '', vehiculo: '', hora: '' });
     setOpen(false);
     // Refrescar citas
-    fetch('http://localhost:4000/api/reservas')
+    fetch(`${process.env.REACT_APP_API_URL}/api/reservas')
       .then(res => res.json())
       .then(data => setCitasHoy(data.filter(c => c.fecha === fechaActual)))
       .catch(() => setCitasHoy([]));
   };
 
   const handleDelete = async id => {
-    await fetch(`http://localhost:4000/api/reservas/${id}`, { method: 'DELETE' });
+    await fetch(`${process.env.REACT_APP_API_URL}/api/reservas/${id}`, { method: 'DELETE' });
     fetch('http://localhost:4000/api/reservas')
       .then(res => res.json())
       .then(data => setCitasHoy(data.filter(c => c.fecha === fechaActual)))
