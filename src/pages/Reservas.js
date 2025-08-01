@@ -62,7 +62,6 @@ function Reservas() {
         onChange={date => setSelectedDate(date)}
         views={['year', 'month', 'day']}
         openTo="day"
-        openTo="month"
         renderInput={(params) => <TextField {...params} fullWidth />}
       />
     </LocalizationProvider>
