@@ -5,6 +5,7 @@ import clientesRouter from './clientes.js';
 import reparacionesRouter from './reparaciones.js';
 import inventarioRouter from './inventario.js';
 import historialRouter from './historial.js';
+import reservasRouter from './reservas.js';
 
 const app = express();
 app.use(cors({
