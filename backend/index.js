@@ -7,9 +7,10 @@ import inventarioRouter from './inventario.js';
 import historialRouter from './historial.js';
 import reservasRouter from './reservas.js';
 
-const app = express();
-app.use(cors({
-  origin: 'https://tallerpro-vivian-branas-projects.vercel.app',
+const cors = require('cors');
+
+const allowedOrigins = [
+  'https://tallerpro-vivian-branas-projects.vercel.app',
  app.use(cors({
   origin: function(origin, callback){
     // Permitir requests sin origin (como Postman) o si está en la lista
