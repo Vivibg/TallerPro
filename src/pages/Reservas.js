@@ -1,8 +1,5 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Box, Typography, Paper, Grid, Button, List, ListItem, ListItemText, Dialog, DialogTitle, DialogContent, DialogActions, TextField } from '@mui/material';
-
-import { useEffect } from 'react';
-
 
 function Reservas() {
   // Simulación de mes y día seleccionados
@@ -24,12 +21,12 @@ function Reservas() {
   const [citasHoy, setCitasHoy] = useState([]);
   const fechaActual = `2024-01-${dia.toString().padStart(2, '0')}`;
 
-  React.useEffect(() => {
-    fetch(`${process.env.REACT_APP_API_URL}/api/reservas')
+  useEffect(() => {
+    fetch(`${process.env.REACT_APP_API_URL}/api/reservas`)
       .then(res => res.json())
       .then(data => setCitasHoy(data.filter(c => c.fecha === fechaActual)))
       .catch(() => setCitasHoy([]));
-  }, [dia]);
+  }, [dia, fechaActual]);
 
   const handleOpen = () => setOpen(true);
   const handleClose = () => setOpen(false);
@@ -38,7 +35,7 @@ function Reservas() {
 
   const handleSubmit = async e => {
     e.preventDefault();
-    await fetch(`${process.env.REACT_APP_API_URL}/api/reservas', {
+    await fetch(`${process.env.REACT_APP_API_URL}/api/reservas`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ ...form, fecha: fechaActual })
@@ -46,7 +43,7 @@ function Reservas() {
     setForm({ cliente: '', servicio: '', vehiculo: '', hora: '' });
     setOpen(false);
     // Refrescar citas
-    fetch(`${process.env.REACT_APP_API_URL}/api/reservas')
+    fetch(`${process.env.REACT_APP_API_URL}/api/reservas`)
       .then(res => res.json())
       .then(data => setCitasHoy(data.filter(c => c.fecha === fechaActual)))
       .catch(() => setCitasHoy([]));
@@ -54,7 +51,7 @@ function Reservas() {
 
   const handleDelete = async id => {
     await fetch(`${process.env.REACT_APP_API_URL}/api/reservas/${id}`, { method: 'DELETE' });
-    fetch('http://localhost:4000/api/reservas')
+    fetch(`${process.env.REACT_APP_API_URL}/api/reservas`)
       .then(res => res.json())
       .then(data => setCitasHoy(data.filter(c => c.fecha === fechaActual)))
       .catch(() => setCitasHoy([]));
