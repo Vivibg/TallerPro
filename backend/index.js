@@ -10,9 +10,15 @@ import reservasRouter from './reservas.js';
 const app = express();
 app.use(cors({
   origin: 'https://tallerpro-vivian-branas-projects.vercel.app',
-  app.use(cors({
-  origin: allowedOrigins,
-  credentials: true
+ app.use(cors({
+  origin: function(origin, callback){
+    // Permitir requests sin origin (como Postman) o si está en la lista
+    if(!origin || allowedOrigins.indexOf(origin) !== -1){
+      callback(null, true);
+    }else{
+      callback(new Error('Not allowed by CORS'));
+    }
+  }
 }));
 app.use(express.json());
 
