@@ -59,9 +59,9 @@ function Reservas() {
                 label="Selecciona una fecha"
                 value={selectedDate}
                 onChange={date => setSelectedDate(date)}
-                views={['year', 'month', 'day']} // <-- Esto permite elegir año, mes y día
+                views={['year', 'month', 'day']} // Permite seleccionar año, mes y día
+                openTo="day" // Puedes poner "year" para abrir primero el selector de año
                 renderInput={(params) => <TextField {...params} fullWidth />}
-                openTo="day" // Puedes cambiar a "year" para que abra primero el selector de año
               />
             </LocalizationProvider>
           </Paper>
