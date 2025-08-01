@@ -8,7 +8,7 @@ import historialRouter from './historial.js';
 import reservasRouter from './reservas.js';
 
 const allowedOrigins = [
-  'https://taller-d29vyh9u2-vivian-branas-projects.vercel.app',
+  'https://tallerpro-vivian-branas-projects.vercel.app',
  app.use(cors({
   origin: function(origin, callback){
     // Permitir requests sin origin (como Postman) o si está en la lista
