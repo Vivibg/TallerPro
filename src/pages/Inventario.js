@@ -12,8 +12,11 @@ const Inventario = () => {
   const [open, setOpen] = useState(false);
   const [form, setForm] = useState({ producto: '', categoria: '', stock: '', minimo: '', precio: '', estado: 'ok' });
 
+  // Usar variable de entorno para la URL base
+  const API_URL = process.env.REACT_APP_API_URL || 'http://localhost:4000/api';
+
   const fetchInsumos = () => {
-    fetch(`${process.env.REACT_APP_API_URL}/inventario`)
+    fetch(`${API_URL}/inventario`)
       .then(res => res.json())
       .then(data => Array.isArray(data) ? setInsumos(data) : setInsumos([]))
       .catch(() => setInsumos([]));
@@ -21,6 +24,7 @@ const Inventario = () => {
 
   useEffect(() => {
     fetchInsumos();
+    // eslint-disable-next-line
   }, []);
 
   const handleOpen = () => setOpen(true);
@@ -29,7 +33,7 @@ const Inventario = () => {
 
   const handleSubmit = async e => {
     e.preventDefault();
-    await fetch('http://localhost:4000/api/inventario', {
+    await fetch(`${API_URL}/inventario`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(form)
@@ -40,7 +44,7 @@ const Inventario = () => {
   };
 
   const handleDelete = async id => {
-    await fetch(`http://localhost:4000/api/inventario/${id}`, { method: 'DELETE' });
+    await fetch(`${API_URL}/inventario/${id}`, { method: 'DELETE' });
     fetchInsumos();
   };
 
