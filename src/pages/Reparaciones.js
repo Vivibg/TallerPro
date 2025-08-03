@@ -1,22 +1,49 @@
 import React, { useState, useEffect } from 'react';
-import { Box, Typography, Paper, Button, Table, TableBody, TableCell, TableContainer, TableHead, TableRow, Select, MenuItem, TextField, Chip, Stack, Dialog, DialogTitle, DialogContent, DialogActions } from '@mui/material';
+import {
+  Box,
+  Typography,
+  Paper,
+  Button,
+  Table,
+  TableBody,
+  TableCell,
+  TableContainer,
+  TableHead,
+  TableRow,
+  Select,
+  MenuItem,
+  TextField,
+  Chip,
+  Stack,
+  Dialog,
+  DialogTitle,
+  DialogContent,
+  DialogActions
+} from '@mui/material';
 
 const ESTADOS = [
   { value: 'all', label: 'Todos los estados' },
+  { value: 'pending', label: 'Pendiente' },
   { value: 'progress', label: 'En progreso' },
   { value: 'done', label: 'Completado' },
 ];
 
-
 function Reparaciones() {
   const [DATA, setDATA] = useState([]);
   const [open, setOpen] = useState(false);
-  const [form, setForm] = useState({ cliente: '', vehiculo: '', problema: '', estado: 'pending', costo: '', fecha: '' });
+  const [form, setForm] = useState({
+    cliente: '',
+    vehiculo: '',
+    problema: '',
+    estado: 'pending',
+    costo: '',
+    fecha: ''
+  });
   const [estado, setEstado] = useState('all');
   const [busqueda, setBusqueda] = useState('');
 
   const fetchReparaciones = () => {
-    fetch(`${process.env.REACT_APP_API_URL}/api/reparaciones')
+    fetch(`${process.env.REACT_APP_API_URL}/api/reparaciones`)
       .then(res => res.json())
       .then(data => Array.isArray(data) ? setDATA(data) : setDATA([]))
       .catch(() => setDATA([]));
@@ -32,12 +59,19 @@ function Reparaciones() {
 
   const handleSubmit = async e => {
     e.preventDefault();
-    await fetch(`${process.env.REACT_APP_API_URL}/api/reparaciones', {
+    await fetch(`${process.env.REACT_APP_API_URL}/api/reparaciones`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(form)
     });
-    setForm({ cliente: '', vehiculo: '', problema: '', estado: 'pending', costo: '', fecha: '' });
+    setForm({
+      cliente: '',
+      vehiculo: '',
+      problema: '',
+      estado: 'pending',
+      costo: '',
+      fecha: ''
+    });
     setOpen(false);
     fetchReparaciones();
   };
@@ -75,18 +109,6 @@ function Reparaciones() {
             onChange={e => setBusqueda(e.target.value)}
             sx={{ minWidth: 200 }}
           />
-          <TextField
-            select
-            size="small"
-            value={estado}
-            onChange={e => setEstado(e.target.value)}
-            SelectProps={{ native: true }}
-          >
-            <option value="all">Todos</option>
-            {ESTADOS.map((e) => (
-              <option value={e.value} key={e.value}>{e.label}</option>
-            ))}
-          </TextField>
           <Button variant="contained" color="primary" sx={{ ml: 'auto' }} onClick={handleOpen}>
             + Nueva Reparación
           </Button>
@@ -98,7 +120,14 @@ function Reparaciones() {
               <TextField label="Cliente" name="cliente" value={form.cliente} onChange={handleChange} required />
               <TextField label="Vehículo" name="vehiculo" value={form.vehiculo} onChange={handleChange} required />
               <TextField label="Problema" name="problema" value={form.problema} onChange={handleChange} />
-              <TextField label="Estado" name="estado" value={form.estado} onChange={handleChange} select SelectProps={{ native: true }}>
+              <TextField
+                label="Estado"
+                name="estado"
+                value={form.estado}
+                onChange={handleChange}
+                select
+                SelectProps={{ native: true }}
+              >
                 <option value="pending">Pendiente</option>
                 <option value="progress">En Proceso</option>
                 <option value="done">Completado</option>
@@ -134,10 +163,13 @@ function Reparaciones() {
                 <TableCell>{row.vehiculo}</TableCell>
                 <TableCell>{row.problema}</TableCell>
                 <TableCell>
+                  {row.estado === 'pending' && <Chip label="Pendiente" color="default" size="small" />}
                   {row.estado === 'progress' && <Chip label="En progreso" color="warning" size="small" />}
                   {row.estado === 'done' && <Chip label="Completado" color="success" size="small" />}
                 </TableCell>
-                <TableCell>${row.costo.toLocaleString()}</TableCell>
+                <TableCell>
+                  ${Number(row.costo).toLocaleString()}
+                </TableCell>
                 <TableCell>
                   <Button variant="contained" size="small" sx={{ mr: 1 }}>Ver</Button>
                   <Button variant="outlined" size="small" color="error" onClick={() => handleDelete(row.id)}>Eliminar</Button>
