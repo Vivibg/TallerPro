@@ -11,11 +11,12 @@ const app = express();
 
 const allowedOrigins = [
   'https://tallerpro-vivian-branas-projects.vercel.app'
-  // 'http://localhost:3000', // Descomenta si usas React localmente
+  // Puedes agregar 'http://localhost:3000' si quieres probar localmente con React
 ];
 
 app.use(cors({
   origin: function(origin, callback){
+    // Permitir requests sin origin (como Postman) o si está en la lista
     if(!origin || allowedOrigins.indexOf(origin) !== -1){
       callback(null, true);
     }else{
@@ -23,6 +24,7 @@ app.use(cors({
     }
   }
 }));
+
 app.use(express.json());
 
 app.use('/api/reparaciones', reparacionesRouter);
