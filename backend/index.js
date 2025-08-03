@@ -11,6 +11,7 @@ const app = express(); // ¡Esto es esencial!
 
 const allowedOrigins = [
   'https://tallerpro-vivian-branas-projects.vercel.app'
+  'https://tallerpro.onrender.com'
 ];
 
 app.use(cors({
