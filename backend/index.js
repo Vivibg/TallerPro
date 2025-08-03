@@ -7,16 +7,15 @@ import inventarioRouter from './inventario.js';
 import historialRouter from './historial.js';
 import reservasRouter from './reservas.js';
 
-const app = express(); // ¡Esto es esencial!
+const app = express();
 
 const allowedOrigins = [
   'https://tallerpro-vivian-branas-projects.vercel.app'
-  'https://tallerpro.onrender.com'
+  // 'http://localhost:3000', // Descomenta si usas React localmente
 ];
 
 app.use(cors({
   origin: function(origin, callback){
-    // Permitir requests sin origin (como Postman) o si está en la lista
     if(!origin || allowedOrigins.indexOf(origin) !== -1){
       callback(null, true);
     }else{
@@ -25,11 +24,6 @@ app.use(cors({
   }
 }));
 app.use(express.json());
-
-// Si usas reservasRouter, elimina las rutas manuales para evitar conflicto
-// app.get('/api/reservas', ...)
-// app.post('/api/reservas', ...)
-// app.delete('/api/reservas/:id', ...)
 
 app.use('/api/reparaciones', reparacionesRouter);
 app.use('/api/inventario', inventarioRouter);
