@@ -2,20 +2,15 @@ import React, { useState, useEffect } from 'react';
 import { Box, Typography, Paper, Grid, Table, TableBody, TableCell, TableContainer, TableHead, TableRow, Button, Chip, Dialog, DialogTitle, DialogContent, DialogActions, TextField } from '@mui/material';
 
 const Inventario = () => {
-  const resumen = [
-    { label: 'Total de Productos', value: 156, color: '#2258e6' },
-    { label: 'Valor del Inventario', value: '$89,450', color: '#3bb54a' },
-    { label: 'Productos Críticos', value: 8, color: '#ff4d4f' },
-  ];
-
   const [insumos, setInsumos] = useState([]);
   const [open, setOpen] = useState(false);
   const [form, setForm] = useState({ producto: '', categoria: '', stock: '', minimo: '', precio: '', estado: 'ok' });
+  const [editForm, setEditForm] = useState(null);
 
   const API_URL = process.env.REACT_APP_API_URL || 'http://localhost:4000';
 
   const fetchInsumos = () => {
-    fetch(`${process.env.REACT_APP_API_URL}/api/inventario`)
+    fetch(`${API_URL}/api/inventario`)
       .then(res => res.json())
       .then(data => Array.isArray(data) ? setInsumos(data) : setInsumos([]))
       .catch(() => setInsumos([]));
@@ -26,6 +21,18 @@ const Inventario = () => {
     // eslint-disable-next-line
   }, []);
 
+  // Cálculo de totales reales
+  const totalProductos = insumos.length;
+  const valorInventario = insumos.reduce((acc, curr) => acc + Number(curr.precio || 0), 0);
+  const productosCriticos = insumos.filter(i => i.estado === 'bajo').length;
+
+  const resumen = [
+    { label: 'Total de Productos', value: totalProductos, color: '#2258e6' },
+    { label: 'Valor del Inventario', value: `$${valorInventario.toLocaleString()}`, color: '#3bb54a' },
+    { label: 'Productos Críticos', value: productosCriticos, color: '#ff4d4f' },
+  ];
+
+  // Crear producto
   const handleOpen = () => setOpen(true);
   const handleClose = () => setOpen(false);
   const handleChange = e => setForm({ ...form, [e.target.name]: e.target.value });
@@ -42,6 +49,23 @@ const Inventario = () => {
     fetchInsumos();
   };
 
+  // Editar producto
+  const handleEditOpen = (insumo) => setEditForm(insumo);
+  const handleEditClose = () => setEditForm(null);
+  const handleEditChange = e => setEditForm({ ...editForm, [e.target.name]: e.target.value });
+
+  const handleEditSubmit = async e => {
+    e.preventDefault();
+    await fetch(`${API_URL}/api/inventario/${editForm.id}`, {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(editForm)
+    });
+    setEditForm(null);
+    fetchInsumos();
+  };
+
+  // Eliminar producto
   const handleDelete = async id => {
     await fetch(`${API_URL}/api/inventario/${id}`, { method: 'DELETE' });
     fetchInsumos();
@@ -64,6 +88,7 @@ const Inventario = () => {
         <Button variant="contained" color="primary" sx={{ ml: 2 }} onClick={handleOpen}>
           + Nuevo Producto
         </Button>
+        {/* Dialog para crear */}
         <Dialog open={open} onClose={handleClose}>
           <DialogTitle>Nuevo Producto</DialogTitle>
           <form onSubmit={handleSubmit}>
@@ -81,6 +106,27 @@ const Inventario = () => {
             <DialogActions>
               <Button onClick={handleClose}>Cancelar</Button>
               <Button type="submit" variant="contained">Guardar</Button>
+            </DialogActions>
+          </form>
+        </Dialog>
+        {/* Dialog para editar */}
+        <Dialog open={!!editForm} onClose={handleEditClose}>
+          <DialogTitle>Editar Producto</DialogTitle>
+          <form onSubmit={handleEditSubmit}>
+            <DialogContent sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
+              <TextField label="Producto" name="producto" value={editForm?.producto || ''} onChange={handleEditChange} required />
+              <TextField label="Categoría" name="categoria" value={editForm?.categoria || ''} onChange={handleEditChange} />
+              <TextField label="Stock" name="stock" value={editForm?.stock || ''} onChange={handleEditChange} type="number" />
+              <TextField label="Mínimo" name="minimo" value={editForm?.minimo || ''} onChange={handleEditChange} type="number" />
+              <TextField label="Precio" name="precio" value={editForm?.precio || ''} onChange={handleEditChange} type="number" />
+              <TextField label="Estado" name="estado" value={editForm?.estado || 'ok'} onChange={handleEditChange} select SelectProps={{ native: true }}>
+                <option value="ok">OK</option>
+                <option value="bajo">Bajo</option>
+              </TextField>
+            </DialogContent>
+            <DialogActions>
+              <Button onClick={handleEditClose}>Cancelar</Button>
+              <Button type="submit" variant="contained">Guardar Cambios</Button>
             </DialogActions>
           </form>
         </Dialog>
@@ -110,7 +156,7 @@ const Inventario = () => {
                     {insumo.estado === 'ok' && <Chip label="Disponible" color="success" size="small" />}
                   </TableCell>
                   <TableCell>
-                    <Button variant="contained" size="small" sx={{ mr: 1 }}>Editar</Button>
+                    <Button variant="contained" size="small" sx={{ mr: 1 }} onClick={() => handleEditOpen(insumo)}>Editar</Button>
                     <Button variant="outlined" size="small" color="error" onClick={() => handleDelete(insumo.id)}>Eliminar</Button>
                   </TableCell>
                 </TableRow>
