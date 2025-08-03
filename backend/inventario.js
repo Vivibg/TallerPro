@@ -29,6 +29,22 @@ router.post('/', async (req, res) => {
   }
 });
 
+// Editar producto
+router.put('/:id', async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { producto, categoria, stock, minimo, precio, estado } = req.body;
+    await pool.query(
+      'UPDATE inventario SET producto=?, categoria=?, stock=?, minimo=?, precio=?, estado=? WHERE id=?',
+      [producto, categoria, stock, minimo, precio, estado, id]
+    );
+    res.json({ ok: true });
+  } catch (e) {
+    console.error(e);
+    res.status(500).json({ error: 'Error actualizando producto' });
+  }
+});
+
 // Eliminar producto
 router.delete('/:id', async (req, res) => {
   try {
