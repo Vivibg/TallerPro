@@ -16,7 +16,7 @@ function Reparaciones() {
   const [busqueda, setBusqueda] = useState('');
 
   const fetchReparaciones = () => {
-    fetch('http://localhost:4000/api/reparaciones')
+    fetch(`${process.env.REACT_APP_API_URL}/api/reparaciones')
       .then(res => res.json())
       .then(data => Array.isArray(data) ? setDATA(data) : setDATA([]))
       .catch(() => setDATA([]));
@@ -32,7 +32,7 @@ function Reparaciones() {
 
   const handleSubmit = async e => {
     e.preventDefault();
-    await fetch('http://localhost:4000/api/reparaciones', {
+    await fetch(`${process.env.REACT_APP_API_URL}/api/reparaciones', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(form)
@@ -43,7 +43,7 @@ function Reparaciones() {
   };
 
   const handleDelete = async id => {
-    await fetch(`http://localhost:4000/api/reparaciones/${id}`, { method: 'DELETE' });
+    await fetch(`${process.env.REACT_APP_API_URL}/api/reparaciones/${id}`, { method: 'DELETE' });
     fetchReparaciones();
   };
 
