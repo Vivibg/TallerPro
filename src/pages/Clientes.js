@@ -1,8 +1,5 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Box, Typography, Paper, Grid, TextField, Button, Dialog, DialogTitle, DialogContent, DialogActions } from '@mui/material';
-
-import { useEffect } from 'react';
-
 
 function Clientes() {
   const [clientes, setClientes] = useState([]);
@@ -36,7 +33,7 @@ function Clientes() {
 
   const handleSubmit = (e) => {
     e.preventDefault();
-    fetch(`${process.env.REACT_APP_API_URL}/api/clientes`), {
+    fetch(`${process.env.REACT_APP_API_URL}/api/clientes`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(form)
@@ -51,6 +48,12 @@ function Clientes() {
         alert('Error al guardar cliente');
         handleClose();
       });
+  };
+
+  const handleDelete = (id) => {
+    fetch(`${process.env.REACT_APP_API_URL}/api/clientes/${id}`, { method: 'DELETE' })
+      .then(() => setClientes(clientes.filter(c => c.id !== id)))
+      .catch(() => alert('Error al eliminar cliente'));
   };
 
   return (
