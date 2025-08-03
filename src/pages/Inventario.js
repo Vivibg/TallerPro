@@ -15,7 +15,7 @@ const Inventario = () => {
   const API_URL = process.env.REACT_APP_API_URL || 'http://localhost:4000';
 
   const fetchInsumos = () => {
-    fetch(`${API_URL}/api/inventario`)
+    fetch(`${process.env.REACT_APP_API_URL}/api/inventario`)
       .then(res => res.json())
       .then(data => Array.isArray(data) ? setInsumos(data) : setInsumos([]))
       .catch(() => setInsumos([]));
