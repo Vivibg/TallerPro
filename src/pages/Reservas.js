@@ -9,10 +9,11 @@ function Reservas() {
   const [open, setOpen] = useState(false);
   const [form, setForm] = useState({ cliente: '', servicio: '', vehiculo: '', hora: '' });
   const [citasHoy, setCitasHoy] = useState([]);
+  const [error, setError] = useState('');
 
   const API_URL = process.env.REACT_APP_API_URL;
 
-  // Formatea la fecha seleccionada a DD-MM-YYYY
+  // Formatea la fecha seleccionada a YYYY-MM-DD
   const fechaActual = selectedDate.toISOString().split('T')[0];
 
   const fetchCitas = () => {
@@ -28,20 +29,38 @@ function Reservas() {
   }, [selectedDate, fechaActual]);
 
   const handleOpen = () => setOpen(true);
-  const handleClose = () => setOpen(false);
+  const handleClose = () => {
+    setOpen(false);
+    setError('');
+  };
 
   const handleChange = e => setForm({ ...form, [e.target.name]: e.target.value });
 
   const handleSubmit = async e => {
     e.preventDefault();
-    await fetch(`${API_URL}/api/reservas`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ ...form, fecha: fechaActual })
-    });
-    setForm({ cliente: '', servicio: '', vehiculo: '', hora: '' });
-    setOpen(false);
-    fetchCitas();
+    setError('');
+    // Validación básica
+    if (!form.cliente || !form.servicio || !form.vehiculo || !form.hora) {
+      setError('Todos los campos son obligatorios');
+      return;
+    }
+    try {
+      const res = await fetch(`${API_URL}/api/reservas`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ ...form, fecha: fechaActual })
+      });
+      if (!res.ok) {
+        const data = await res.json();
+        setError(data.error || 'Error al guardar la reserva');
+        return;
+      }
+      setForm({ cliente: '', servicio: '', vehiculo: '', hora: '' });
+      setOpen(false);
+      fetchCitas();
+    } catch (err) {
+      setError('Error de red o del servidor');
+    }
   };
 
   const handleDelete = async id => {
@@ -99,7 +118,7 @@ function Reservas() {
                         {/* Mostrar estado de asistencia */}
                         {cita.asistio === true && <Chip label="Asistió" color="success" size="small" sx={{ mt: 1 }} />}
                         {cita.asistio === false && <Chip label="No asistió" color="error" size="small" sx={{ mt: 1 }} />}
-                        {cita.asistio === null &&
+                        {(cita.asistio === null || cita.asistio === undefined) &&
                           <>
                             <Button
                               variant="outlined"
@@ -138,6 +157,7 @@ function Reservas() {
                   <TextField label="Servicio" name="servicio" value={form.servicio} onChange={handleChange} required />
                   <TextField label="Vehículo" name="vehiculo" value={form.vehiculo} onChange={handleChange} required />
                   <TextField label="Hora" name="hora" value={form.hora} onChange={handleChange} required placeholder="09:00" />
+                  {error && <Typography color="error" variant="body2">{error}</Typography>}
                 </DialogContent>
                 <DialogActions>
                   <Button onClick={handleClose}>Cancelar</Button>
