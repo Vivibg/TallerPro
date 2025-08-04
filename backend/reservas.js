@@ -9,7 +9,8 @@ router.get('/', async (req, res) => {
     const [rows] = await pool.query('SELECT * FROM reservas ORDER BY fecha, hora');
     res.json(rows);
   } catch (e) {
-    res.status(500).json({ error: 'Error consultando reservas' });
+    console.error('Error consultando reservas:', e);
+    res.status(500).json({ error: 'Error consultando reservas', details: e.message });
   }
 });
 
@@ -17,13 +18,21 @@ router.get('/', async (req, res) => {
 router.post('/', async (req, res) => {
   try {
     const { cliente, servicio, vehiculo, fecha, hora } = req.body;
+
+    // Validación de campos obligatorios
+    if (!cliente || !servicio || !vehiculo || !fecha || !hora) {
+      return res.status(400).json({ error: 'Todos los campos son obligatorios' });
+    }
+
+    // Inserta la reserva con asistio en NULL por defecto
     const [result] = await pool.query(
       'INSERT INTO reservas (cliente, servicio, vehiculo, fecha, hora) VALUES (?, ?, ?, ?, ?)',
       [cliente, servicio, vehiculo, fecha, hora]
     );
     res.status(201).json({ id: result.insertId, cliente, servicio, vehiculo, fecha, hora, asistio: null });
   } catch (e) {
-    res.status(500).json({ error: 'Error creando reserva' });
+    console.error('Error creando reserva:', e);
+    res.status(500).json({ error: 'Error creando reserva', details: e.message });
   }
 });
 
@@ -31,11 +40,15 @@ router.post('/', async (req, res) => {
 router.put('/:id/asistencia', async (req, res) => {
   try {
     const { id } = req.params;
-    const { asistio } = req.body; // true o false
+    const { asistio } = req.body;
+    if (typeof asistio !== 'boolean') {
+      return res.status(400).json({ error: 'El campo asistio debe ser booleano' });
+    }
     await pool.query('UPDATE reservas SET asistio = ? WHERE id = ?', [asistio, id]);
     res.json({ ok: true });
   } catch (e) {
-    res.status(500).json({ error: 'Error actualizando asistencia' });
+    console.error('Error actualizando asistencia:', e);
+    res.status(500).json({ error: 'Error actualizando asistencia', details: e.message });
   }
 });
 
@@ -46,7 +59,8 @@ router.delete('/:id', async (req, res) => {
     await pool.query('DELETE FROM reservas WHERE id = ?', [id]);
     res.json({ ok: true });
   } catch (e) {
-    res.status(500).json({ error: 'Error eliminando reserva' });
+    console.error('Error eliminando reserva:', e);
+    res.status(500).json({ error: 'Error eliminando reserva', details: e.message });
   }
 });
 
