@@ -17,19 +17,15 @@ router.get('/', async (req, res) => {
 // Crear nueva reserva
 router.post('/', async (req, res) => {
   try {
-    const { cliente, servicio, vehiculo, fecha, hora } = req.body;
-
-    // Validación de campos obligatorios
-    if (!cliente || !servicio || !vehiculo || !fecha || !hora) {
+    const { cliente, servicio, vehiculo, fecha, hora, motivo } = req.body;
+    if (!cliente || !servicio || !vehiculo || !fecha || !hora || !motivo) {
       return res.status(400).json({ error: 'Todos los campos son obligatorios' });
     }
-
-    // Inserta la reserva con asistio en NULL por defecto
     const [result] = await pool.query(
-      'INSERT INTO reservas (cliente, servicio, vehiculo, fecha, hora) VALUES (?, ?, ?, ?, ?)',
-      [cliente, servicio, vehiculo, fecha, hora]
+      'INSERT INTO reservas (cliente, servicio, vehiculo, fecha, hora, motivo) VALUES (?, ?, ?, ?, ?, ?)',
+      [cliente, servicio, vehiculo, fecha, hora, motivo]
     );
-    res.status(201).json({ id: result.insertId, cliente, servicio, vehiculo, fecha, hora, asistio: null });
+    res.status(201).json({ id: result.insertId, cliente, servicio, vehiculo, fecha, hora, motivo, asistio: null });
   } catch (e) {
     console.error('Error creando reserva:', e);
     res.status(500).json({ error: 'Error creando reserva', details: e.message });
