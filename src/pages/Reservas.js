@@ -12,7 +12,7 @@ function Reservas() {
 
   const API_URL = process.env.REACT_APP_API_URL;
 
-  // Formatea la fecha seleccionada a YYYY-MM-DD
+  // Formatea la fecha seleccionada a DD-MM-YYYY
   const fechaActual = selectedDate.toISOString().split('T')[0];
 
   const fetchCitas = () => {
