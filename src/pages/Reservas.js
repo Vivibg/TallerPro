@@ -7,13 +7,11 @@ import { DatePicker } from '@mui/x-date-pickers/DatePicker';
 function Reservas() {
   const [selectedDate, setSelectedDate] = useState(new Date());
   const [open, setOpen] = useState(false);
-  const [form, setForm] = useState({ cliente: '', servicio: '', vehiculo: '', hora: '' });
+  const [form, setForm] = useState({ cliente: '', servicio: '', vehiculo: '', hora: '', motivo: '' });
   const [citasHoy, setCitasHoy] = useState([]);
   const [error, setError] = useState('');
 
   const API_URL = process.env.REACT_APP_API_URL;
-
-  // Formatea la fecha seleccionada a YYYY-MM-DD
   const fechaActual = selectedDate.toISOString().split('T')[0];
 
   const fetchCitas = () => {
@@ -39,8 +37,7 @@ function Reservas() {
   const handleSubmit = async e => {
     e.preventDefault();
     setError('');
-    // Validación básica
-    if (!form.cliente || !form.servicio || !form.vehiculo || !form.hora) {
+    if (!form.cliente || !form.servicio || !form.vehiculo || !form.hora || !form.motivo) {
       setError('Todos los campos son obligatorios');
       return;
     }
@@ -55,7 +52,7 @@ function Reservas() {
         setError(data.error || 'Error al guardar la reserva');
         return;
       }
-      setForm({ cliente: '', servicio: '', vehiculo: '', hora: '' });
+      setForm({ cliente: '', servicio: '', vehiculo: '', hora: '', motivo: '' });
       setOpen(false);
       fetchCitas();
     } catch (err) {
@@ -68,7 +65,6 @@ function Reservas() {
     fetchCitas();
   };
 
-  // NUEVO: Confirmar asistencia
   const handleAsistencia = async (id, asistio) => {
     await fetch(`${API_URL}/api/reservas/${id}/asistencia`, {
       method: 'PUT',
@@ -103,11 +99,9 @@ function Reservas() {
               {citasHoy.map((cita, i) => (
                 <ListItem key={cita.id || i} divider
                   secondaryAction={
-                    <>
-                      <Button color="error" size="small" onClick={() => handleDelete(cita.id)}>
-                        Eliminar
-                      </Button>
-                    </>
+                    <Button color="error" size="small" onClick={() => handleDelete(cita.id)}>
+                      Eliminar
+                    </Button>
                   }
                 >
                   <ListItemText
@@ -115,7 +109,7 @@ function Reservas() {
                       <>
                         <Typography variant="subtitle1" fontWeight={600}>{cita.hora} - {cita.cliente}</Typography>
                         <Typography variant="body2" color="text.secondary">{cita.servicio} <br />{cita.vehiculo}</Typography>
-                        {/* Mostrar estado de asistencia */}
+                        <Typography variant="body2" color="text.secondary">Motivo: {cita.motivo}</Typography>
                         {cita.asistio === true && <Chip label="Asistió" color="success" size="small" sx={{ mt: 1 }} />}
                         {cita.asistio === false && <Chip label="No asistió" color="error" size="small" sx={{ mt: 1 }} />}
                         {(cita.asistio === null || cita.asistio === undefined) &&
@@ -157,6 +151,7 @@ function Reservas() {
                   <TextField label="Servicio" name="servicio" value={form.servicio} onChange={handleChange} required />
                   <TextField label="Vehículo" name="vehiculo" value={form.vehiculo} onChange={handleChange} required />
                   <TextField label="Hora" name="hora" value={form.hora} onChange={handleChange} required placeholder="09:00" />
+                  <TextField label="Motivo" name="motivo" value={form.motivo} onChange={handleChange} required />
                   {error && <Typography color="error" variant="body2">{error}</Typography>}
                 </DialogContent>
                 <DialogActions>
