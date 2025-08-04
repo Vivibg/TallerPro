@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Box, Typography, Paper, Grid, Button, List, ListItem, ListItemText, Dialog, DialogTitle, DialogContent, DialogActions, TextField } from '@mui/material';
+import { Box, Typography, Paper, Grid, Button, List, ListItem, ListItemText, Dialog, DialogTitle, DialogContent, DialogActions, TextField, Chip } from '@mui/material';
 import { LocalizationProvider } from '@mui/x-date-pickers/LocalizationProvider';
 import { AdapterDateFns } from '@mui/x-date-pickers/AdapterDateFns';
 import { DatePicker } from '@mui/x-date-pickers/DatePicker';
@@ -10,14 +10,21 @@ function Reservas() {
   const [form, setForm] = useState({ cliente: '', servicio: '', vehiculo: '', hora: '' });
   const [citasHoy, setCitasHoy] = useState([]);
 
+  const API_URL = process.env.REACT_APP_API_URL;
+
   // Formatea la fecha seleccionada a YYYY-MM-DD
   const fechaActual = selectedDate.toISOString().split('T')[0];
 
-  useEffect(() => {
-    fetch(`${process.env.REACT_APP_API_URL}/api/reservas`)
+  const fetchCitas = () => {
+    fetch(`${API_URL}/api/reservas`)
       .then(res => res.json())
       .then(data => setCitasHoy(data.filter(c => c.fecha === fechaActual)))
       .catch(() => setCitasHoy([]));
+  };
+
+  useEffect(() => {
+    fetchCitas();
+    // eslint-disable-next-line
   }, [selectedDate, fechaActual]);
 
   const handleOpen = () => setOpen(true);
@@ -27,25 +34,29 @@ function Reservas() {
 
   const handleSubmit = async e => {
     e.preventDefault();
-    await fetch(`${process.env.REACT_APP_API_URL}/api/reservas`, {
+    await fetch(`${API_URL}/api/reservas`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ ...form, fecha: fechaActual })
     });
     setForm({ cliente: '', servicio: '', vehiculo: '', hora: '' });
     setOpen(false);
-    fetch(`${process.env.REACT_APP_API_URL}/api/reservas`)
-      .then(res => res.json())
-      .then(data => setCitasHoy(data.filter(c => c.fecha === fechaActual)))
-      .catch(() => setCitasHoy([]));
+    fetchCitas();
   };
 
   const handleDelete = async id => {
-    await fetch(`${process.env.REACT_APP_API_URL}/api/reservas/${id}`, { method: 'DELETE' });
-    fetch(`${process.env.REACT_APP_API_URL}/api/reservas`)
-      .then(res => res.json())
-      .then(data => setCitasHoy(data.filter(c => c.fecha === fechaActual)))
-      .catch(() => setCitasHoy([]));
+    await fetch(`${API_URL}/api/reservas/${id}`, { method: 'DELETE' });
+    fetchCitas();
+  };
+
+  // NUEVO: Confirmar asistencia
+  const handleAsistencia = async (id, asistio) => {
+    await fetch(`${API_URL}/api/reservas/${id}/asistencia`, {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ asistio })
+    });
+    fetchCitas();
   };
 
   return (
@@ -53,20 +64,19 @@ function Reservas() {
       <Typography variant="h4" fontWeight={700} mb={3}>Sistema de Reservas</Typography>
       <Grid container spacing={2}>
         <Grid item xs={12} md={8}>
-  <Paper elevation={2} sx={{ p: 3, mb: 2 }}>
-    {/* Aquí estaba el calendario simulado */}
-    <LocalizationProvider dateAdapter={AdapterDateFns}>
-      <DatePicker
-        label="Selecciona una fecha"
-        value={selectedDate}
-        onChange={date => setSelectedDate(date)}
-        views={['year', 'month', 'day']}
-        openTo="day"
-        renderInput={(params) => <TextField {...params} fullWidth />}
-      />
-    </LocalizationProvider>
-  </Paper>
-</Grid>
+          <Paper elevation={2} sx={{ p: 3, mb: 2 }}>
+            <LocalizationProvider dateAdapter={AdapterDateFns}>
+              <DatePicker
+                label="Selecciona una fecha"
+                value={selectedDate}
+                onChange={date => setSelectedDate(date)}
+                views={['year', 'month', 'day']}
+                openTo="day"
+                renderInput={(params) => <TextField {...params} fullWidth />}
+              />
+            </LocalizationProvider>
+          </Paper>
+        </Grid>
         <Grid item xs={12} md={4}>
           <Paper elevation={2} sx={{ p: 3 }}>
             <Typography variant="h6" fontWeight={600} mb={2}>Citas de Hoy</Typography>
@@ -74,9 +84,11 @@ function Reservas() {
               {citasHoy.map((cita, i) => (
                 <ListItem key={cita.id || i} divider
                   secondaryAction={
-                    <Button color="error" size="small" onClick={() => handleDelete(cita.id)}>
-                      Eliminar
-                    </Button>
+                    <>
+                      <Button color="error" size="small" onClick={() => handleDelete(cita.id)}>
+                        Eliminar
+                      </Button>
+                    </>
                   }
                 >
                   <ListItemText
@@ -84,6 +96,31 @@ function Reservas() {
                       <>
                         <Typography variant="subtitle1" fontWeight={600}>{cita.hora} - {cita.cliente}</Typography>
                         <Typography variant="body2" color="text.secondary">{cita.servicio} <br />{cita.vehiculo}</Typography>
+                        {/* Mostrar estado de asistencia */}
+                        {cita.asistio === true && <Chip label="Asistió" color="success" size="small" sx={{ mt: 1 }} />}
+                        {cita.asistio === false && <Chip label="No asistió" color="error" size="small" sx={{ mt: 1 }} />}
+                        {cita.asistio === null &&
+                          <>
+                            <Button
+                              variant="outlined"
+                              color="success"
+                              size="small"
+                              sx={{ mt: 1, mr: 1 }}
+                              onClick={() => handleAsistencia(cita.id, true)}
+                            >
+                              Confirmar Asistencia
+                            </Button>
+                            <Button
+                              variant="outlined"
+                              color="warning"
+                              size="small"
+                              sx={{ mt: 1 }}
+                              onClick={() => handleAsistencia(cita.id, false)}
+                            >
+                              No asistió
+                            </Button>
+                          </>
+                        }
                       </>
                     }
                   />
