@@ -1,4 +1,3 @@
-// backend/reservas.js
 import express from 'express';
 import { pool } from './db.js';
 
@@ -22,9 +21,21 @@ router.post('/', async (req, res) => {
       'INSERT INTO reservas (cliente, servicio, vehiculo, fecha, hora) VALUES (?, ?, ?, ?, ?)',
       [cliente, servicio, vehiculo, fecha, hora]
     );
-    res.status(201).json({ id: result.insertId, cliente, servicio, vehiculo, fecha, hora });
+    res.status(201).json({ id: result.insertId, cliente, servicio, vehiculo, fecha, hora, asistio: null });
   } catch (e) {
     res.status(500).json({ error: 'Error creando reserva' });
+  }
+});
+
+// Confirmar asistencia
+router.put('/:id/asistencia', async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { asistio } = req.body; // true o false
+    await pool.query('UPDATE reservas SET asistio = ? WHERE id = ?', [asistio, id]);
+    res.json({ ok: true });
+  } catch (e) {
+    res.status(500).json({ error: 'Error actualizando asistencia' });
   }
 });
 
