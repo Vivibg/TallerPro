@@ -69,7 +69,7 @@ function Reservas() {
     await fetch(`${API_URL}/api/reservas/${id}/asistencia`, {
       method: 'PUT',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ asistio })
+      body: JSON.stringify({ asiste })
     });
     fetchCitas();
   };
@@ -110,9 +110,9 @@ function Reservas() {
                         <Typography variant="subtitle1" fontWeight={600}>{cita.hora} - {cita.cliente}</Typography>
                         <Typography variant="body2" color="text.secondary">{cita.servicio} <br />{cita.vehiculo}</Typography>
                         <Typography variant="body2" color="text.secondary">Motivo: {cita.motivo}</Typography>
-                        {cita.asistio === true && <Chip label="Asistió" color="success" size="small" sx={{ mt: 1 }} />}
-                        {cita.asistio === false && <Chip label="No asistió" color="error" size="small" sx={{ mt: 1 }} />}
-                        {(cita.asistio === null || cita.asistio === undefined) &&
+                        {cita.asiste === true && <Chip label="Asistió" color="success" size="small" sx={{ mt: 1 }} />}
+                        {cita.asiste === false && <Chip label="No asistió" color="error" size="small" sx={{ mt: 1 }} />}
+                        {(cita.asiste === null || cita.asiste === undefined) &&
                           <>
                             <Button
                               variant="outlined"
