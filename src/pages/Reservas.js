@@ -65,7 +65,7 @@ function Reservas() {
     fetchCitas();
   };
 
-  const handleAsistencia = async (id, asistio) => {
+  const handleAsistencia = async (id, asiste) => {
     await fetch(`${API_URL}/api/reservas/${id}/asistencia`, {
       method: 'PUT',
       headers: { 'Content-Type': 'application/json' },
