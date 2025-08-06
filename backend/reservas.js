@@ -25,7 +25,7 @@ router.post('/', async (req, res) => {
       'INSERT INTO reservas (cliente, servicio, vehiculo, fecha, hora, motivo) VALUES (?, ?, ?, ?, ?, ?)',
       [cliente, servicio, vehiculo, fecha, hora, motivo]
     );
-    res.status(201).json({ id: result.insertId, cliente, servicio, vehiculo, fecha, hora, motivo, asistio: null });
+    res.status(201).json({ id: result.insertId, cliente, servicio, vehiculo, fecha, hora, motivo, asiste: null });
   } catch (e) {
     console.error('Error creando reserva:', e);
     res.status(500).json({ error: 'Error creando reserva', details: e.message });
@@ -36,11 +36,11 @@ router.post('/', async (req, res) => {
 router.put('/:id/asistencia', async (req, res) => {
   try {
     const { id } = req.params;
-    const { asistio } = req.body;
-    if (typeof asistio !== 'boolean') {
+    const { asiste } = req.body;
+    if (typeof asiste !== 'boolean') {
       return res.status(400).json({ error: 'El campo asistio debe ser booleano' });
     }
-    await pool.query('UPDATE reservas SET asistio = ? WHERE id = ?', [asistio, id]);
+    await pool.query('UPDATE reservas SET asistio = ? WHERE id = ?', [asiste, id]);
     res.json({ ok: true });
   } catch (e) {
     console.error('Error actualizando asistencia:', e);
@@ -61,3 +61,4 @@ router.delete('/:id', async (req, res) => {
 });
 
 export default router;
+
