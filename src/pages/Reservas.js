@@ -1,50 +1,30 @@
 import React, { useState, useEffect } from 'react';
 import { Box, Typography, Paper, Grid, Button, List, ListItem, ListItemText, Dialog, DialogTitle, DialogContent, DialogActions, TextField, Chip, Alert } from '@mui/material';
-import { LocalizationProvider } from '@mui/x-date-pickers/LocalizationProvider';
-import { AdapterDateFns } from '@mui/x-date-pickers/AdapterDateFns';
-import { DatePicker } from '@mui/x-date-pickers/DatePicker';
 
 function Reservas() {
-  const [selectedDate, setSelectedDate] = useState(new Date());
   const [open, setOpen] = useState(false);
-  const [form, setForm] = useState({ cliente: '', servicio: '', vehiculo: '', hora: '', motivo: '' });
-  const [citasHoy, setCitasHoy] = useState([]);
+  const [form, setForm] = useState({ cliente: '', servicio: '', vehiculo: '', fecha: '', hora: '', motivo: '' });
+  const [reservas, setReservas] = useState([]);
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
 
   const API_URL = process.env.REACT_APP_API_URL;
-  const fechaActual = selectedDate.toISOString().split('T')[0];
 
-  // Normaliza la fecha a formato YYYY-MM-DD
-  const normalizeFecha = (fecha) => {
-    if (!fecha) return '';
-    // Si ya está en formato YYYY-MM-DD, regresa igual
-    if (/^\d{4}-\d{2}-\d{2}$/.test(fecha)) return fecha;
-    // Si viene como YYYY-M-D, agrega ceros
-    const d = new Date(fecha);
-    return d.toISOString().split('T')[0];
-  };
-
-  // Cargar reservas del backend
-  const fetchCitas = () => {
+  // Cargar todas las reservas al cargar el componente
+  const fetchReservas = () => {
     fetch(`${API_URL}/api/reservas`)
       .then(res => res.json())
-      .then(data => {
-        console.log("Reservas recibidas:", data);
-        console.log("fechaActual:", fechaActual);
-        // Filtrar por la fecha seleccionada, normalizando ambas fechas
-        setCitasHoy(data.filter(c => normalizeFecha(c.fecha) === fechaActual));
-      })
+      .then(data => setReservas(data))
       .catch(() => {
-        setCitasHoy([]);
+        setReservas([]);
         setError('Error al cargar reservas');
       });
   };
 
   useEffect(() => {
-    fetchCitas();
+    fetchReservas();
     // eslint-disable-next-line
-  }, [selectedDate, fechaActual]);
+  }, []);
 
   const handleOpen = () => setOpen(true);
   const handleClose = () => {
@@ -59,7 +39,7 @@ function Reservas() {
     e.preventDefault();
     setError('');
     setSuccess('');
-    if (!form.cliente || !form.servicio || !form.vehiculo || !form.hora || !form.motivo) {
+    if (!form.cliente || !form.servicio || !form.vehiculo || !form.fecha || !form.hora || !form.motivo) {
       setError('Todos los campos son obligatorios');
       return;
     }
@@ -67,17 +47,17 @@ function Reservas() {
       const res = await fetch(`${API_URL}/api/reservas`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ ...form, fecha: fechaActual })
+        body: JSON.stringify(form)
       });
       if (!res.ok) {
         const data = await res.json();
         setError(data.error || 'Error al guardar la reserva');
         return;
       }
-      setForm({ cliente: '', servicio: '', vehiculo: '', hora: '', motivo: '' });
+      setForm({ cliente: '', servicio: '', vehiculo: '', fecha: '', hora: '', motivo: '' });
       setSuccess('¡Reserva creada exitosamente!');
       setOpen(false);
-      fetchCitas();
+      fetchReservas();
     } catch (err) {
       setError('Error de red o del servidor');
     }
@@ -85,7 +65,7 @@ function Reservas() {
 
   const handleDelete = async id => {
     await fetch(`${API_URL}/api/reservas/${id}`, { method: 'DELETE' });
-    fetchCitas();
+    fetchReservas();
   };
 
   const handleAsistencia = async (id, asiste) => {
@@ -94,7 +74,7 @@ function Reservas() {
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ asiste })
     });
-    fetchCitas();
+    fetchReservas();
   };
 
   return (
@@ -103,27 +83,12 @@ function Reservas() {
       <Grid container spacing={2}>
         <Grid item xs={12} md={8}>
           <Paper elevation={2} sx={{ p: 3, mb: 2 }}>
-            <LocalizationProvider dateAdapter={AdapterDateFns}>
-              <DatePicker
-                label="Selecciona una fecha"
-                value={selectedDate}
-                onChange={date => setSelectedDate(date)}
-                views={['year', 'month', 'day']}
-                openTo="day"
-                renderInput={(params) => <TextField {...params} fullWidth />}
-              />
-            </LocalizationProvider>
-          </Paper>
-        </Grid>
-        <Grid item xs={12} md={4}>
-          <Paper elevation={2} sx={{ p: 3 }}>
-            <Typography variant="h6" fontWeight={600} mb={2}>Citas de Hoy</Typography>
-            {success && <Alert severity="success" sx={{ mb: 2 }}>{success}</Alert>}
+            <Typography variant="h6" fontWeight={600} mb={2}>Todas las Reservas</Typography>
             <List>
-              {citasHoy.length === 0 && (
-                <Typography color="text.secondary" sx={{ mt: 2 }}>No hay reservas para esta fecha.</Typography>
+              {reservas.length === 0 && (
+                <Typography color="text.secondary" sx={{ mt: 2 }}>No hay reservas registradas.</Typography>
               )}
-              {citasHoy.map((cita, i) => (
+              {reservas.map((cita, i) => (
                 <ListItem key={cita.id || i} divider
                   secondaryAction={
                     <Button color="error" size="small" onClick={() => handleDelete(cita.id)}>
@@ -134,8 +99,10 @@ function Reservas() {
                   <ListItemText
                     primary={
                       <>
-                        <Typography variant="subtitle1" fontWeight={600}>{cita.hora} - {cita.cliente}</Typography>
-                        <Typography variant="body2" color="text.secondary">{cita.servicio} <br />{cita.vehiculo}</Typography>
+                        <Typography variant="subtitle1" fontWeight={600}>
+                          {cita.fecha} {cita.hora} - {cita.cliente}
+                        </Typography>
+                        <Typography variant="body2" color="text.secondary">{cita.servicio} - {cita.vehiculo}</Typography>
                         <Typography variant="body2" color="text.secondary">Motivo: {cita.motivo}</Typography>
                         {cita.asiste === true && <Chip label="Asistió" color="success" size="small" sx={{ mt: 1 }} />}
                         {cita.asiste === false && <Chip label="No asistió" color="error" size="small" sx={{ mt: 1 }} />}
@@ -167,9 +134,14 @@ function Reservas() {
                 </ListItem>
               ))}
             </List>
-            <Button variant="contained" color="primary" fullWidth sx={{ mt: 2 }} onClick={handleOpen}>
+          </Paper>
+        </Grid>
+        <Grid item xs={12} md={4}>
+          <Paper elevation={2} sx={{ p: 3 }}>
+            <Button variant="contained" color="primary" fullWidth sx={{ mb: 2 }} onClick={handleOpen}>
               + Nueva Reserva
             </Button>
+            {success && <Alert severity="success" sx={{ mb: 2 }}>{success}</Alert>}
             <Dialog open={open} onClose={handleClose}>
               <DialogTitle>Nueva Reserva</DialogTitle>
               <form onSubmit={handleSubmit}>
@@ -177,6 +149,7 @@ function Reservas() {
                   <TextField label="Cliente" name="cliente" value={form.cliente} onChange={handleChange} required />
                   <TextField label="Servicio" name="servicio" value={form.servicio} onChange={handleChange} required />
                   <TextField label="Vehículo" name="vehiculo" value={form.vehiculo} onChange={handleChange} required />
+                  <TextField label="Fecha" name="fecha" value={form.fecha} onChange={handleChange} required placeholder="YYYY-MM-DD" />
                   <TextField label="Hora" name="hora" value={form.hora} onChange={handleChange} required placeholder="09:00" />
                   <TextField label="Motivo" name="motivo" value={form.motivo} onChange={handleChange} required />
                   {error && <Typography color="error" variant="body2">{error}</Typography>}
