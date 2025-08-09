@@ -15,13 +15,25 @@ function Reservas() {
   const API_URL = process.env.REACT_APP_API_URL;
   const fechaActual = selectedDate.toISOString().split('T')[0];
 
+  // Normaliza la fecha a formato YYYY-MM-DD
+  const normalizeFecha = (fecha) => {
+    if (!fecha) return '';
+    // Si ya está en formato YYYY-MM-DD, regresa igual
+    if (/^\d{4}-\d{2}-\d{2}$/.test(fecha)) return fecha;
+    // Si viene como YYYY-M-D, agrega ceros
+    const d = new Date(fecha);
+    return d.toISOString().split('T')[0];
+  };
+
   // Cargar reservas del backend
   const fetchCitas = () => {
     fetch(`${API_URL}/api/reservas`)
       .then(res => res.json())
       .then(data => {
-        // Filtrar por la fecha seleccionada
-        setCitasHoy(data.filter(c => c.fecha === fechaActual));
+        console.log("Reservas recibidas:", data);
+        console.log("fechaActual:", fechaActual);
+        // Filtrar por la fecha seleccionada, normalizando ambas fechas
+        setCitasHoy(data.filter(c => normalizeFecha(c.fecha) === fechaActual));
       })
       .catch(() => {
         setCitasHoy([]);
