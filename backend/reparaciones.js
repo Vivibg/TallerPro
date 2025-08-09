@@ -29,6 +29,28 @@ router.post('/', async (req, res) => {
   }
 });
 
+// Actualizar reparación (solo estado, pero puedes expandir a más campos)
+router.put('/:id', async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { estado } = req.body;
+
+    if (!estado) {
+      return res.status(400).json({ error: 'El campo estado es obligatorio' });
+    }
+
+    await pool.query(
+      'UPDATE reparaciones SET estado = ? WHERE id = ?',
+      [estado, id]
+    );
+
+    res.json({ ok: true });
+  } catch (e) {
+    console.error(e);
+    res.status(500).json({ error: 'Error actualizando reparación' });
+  }
+});
+
 // Eliminar reparación
 router.delete('/:id', async (req, res) => {
   try {
