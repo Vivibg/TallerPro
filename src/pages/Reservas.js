@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Box, Typography, Paper, Grid, Button, List, ListItem, ListItemText, Dialog, DialogTitle, DialogContent, DialogActions, TextField, Chip } from '@mui/material';
+import { Box, Typography, Paper, Grid, Button, List, ListItem, ListItemText, Dialog, DialogTitle, DialogContent, DialogActions, TextField, Chip, Alert } from '@mui/material';
 import { LocalizationProvider } from '@mui/x-date-pickers/LocalizationProvider';
 import { AdapterDateFns } from '@mui/x-date-pickers/AdapterDateFns';
 import { DatePicker } from '@mui/x-date-pickers/DatePicker';
@@ -10,6 +10,7 @@ function Reservas() {
   const [form, setForm] = useState({ cliente: '', servicio: '', vehiculo: '', hora: '', motivo: '' });
   const [citasHoy, setCitasHoy] = useState([]);
   const [error, setError] = useState('');
+  const [success, setSuccess] = useState(''); // Nuevo estado para éxito
 
   const API_URL = process.env.REACT_APP_API_URL;
   const fechaActual = selectedDate.toISOString().split('T')[0];
@@ -30,6 +31,7 @@ function Reservas() {
   const handleClose = () => {
     setOpen(false);
     setError('');
+    setSuccess('');
   };
 
   const handleChange = e => setForm({ ...form, [e.target.name]: e.target.value });
@@ -37,6 +39,7 @@ function Reservas() {
   const handleSubmit = async e => {
     e.preventDefault();
     setError('');
+    setSuccess('');
     if (!form.cliente || !form.servicio || !form.vehiculo || !form.hora || !form.motivo) {
       setError('Todos los campos son obligatorios');
       return;
@@ -53,6 +56,7 @@ function Reservas() {
         return;
       }
       setForm({ cliente: '', servicio: '', vehiculo: '', hora: '', motivo: '' });
+      setSuccess('¡Reserva creada exitosamente!');
       setOpen(false);
       fetchCitas();
     } catch (err) {
@@ -65,11 +69,11 @@ function Reservas() {
     fetchCitas();
   };
 
-  const handleAsistencia = async (id, asiste) => {
+  const handleAsistencia = async (id, asistio) => {
     await fetch(`${API_URL}/api/reservas/${id}/asistencia`, {
       method: 'PUT',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ asiste })
+      body: JSON.stringify({ asistio })
     });
     fetchCitas();
   };
@@ -95,6 +99,7 @@ function Reservas() {
         <Grid item xs={12} md={4}>
           <Paper elevation={2} sx={{ p: 3 }}>
             <Typography variant="h6" fontWeight={600} mb={2}>Citas de Hoy</Typography>
+            {success && <Alert severity="success" sx={{ mb: 2 }}>{success}</Alert>}
             <List>
               {citasHoy.map((cita, i) => (
                 <ListItem key={cita.id || i} divider
@@ -110,9 +115,9 @@ function Reservas() {
                         <Typography variant="subtitle1" fontWeight={600}>{cita.hora} - {cita.cliente}</Typography>
                         <Typography variant="body2" color="text.secondary">{cita.servicio} <br />{cita.vehiculo}</Typography>
                         <Typography variant="body2" color="text.secondary">Motivo: {cita.motivo}</Typography>
-                        {cita.asiste === true && <Chip label="Asistió" color="success" size="small" sx={{ mt: 1 }} />}
-                        {cita.asiste === false && <Chip label="No asistió" color="error" size="small" sx={{ mt: 1 }} />}
-                        {(cita.asiste === null || cita.asiste === undefined) &&
+                        {cita.asistio === true && <Chip label="Asistió" color="success" size="small" sx={{ mt: 1 }} />}
+                        {cita.asistio === false && <Chip label="No asistió" color="error" size="small" sx={{ mt: 1 }} />}
+                        {(cita.asistio === null || cita.asistio === undefined) &&
                           <>
                             <Button
                               variant="outlined"
