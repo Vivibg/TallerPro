@@ -20,6 +20,7 @@ import {
   DialogContent,
   DialogActions
 } from '@mui/material';
+import FichaReparacionModal from './FichaReparacionModal'; // Importa tu modal
 
 const ESTADOS = [
   { value: 'all', label: 'Todos los estados' },
@@ -42,7 +43,10 @@ function Reparaciones() {
   const [estado, setEstado] = useState('all');
   const [busqueda, setBusqueda] = useState('');
 
-  // Trae todas las reparaciones (manuales y desde reservas)
+  // Estado para la ficha/modal
+  const [openFicha, setOpenFicha] = useState(false);
+  const [selectedReparacion, setSelectedReparacion] = useState(null);
+
   const fetchReparaciones = () => {
     fetch(`${process.env.REACT_APP_API_URL}/api/reparaciones`)
       .then(res => res.json())
@@ -193,7 +197,14 @@ function Reparaciones() {
                   ${Number(row.costo).toLocaleString()}
                 </TableCell>
                 <TableCell>
-                  <Button variant="contained" size="small" sx={{ mr: 1 }}>Ver</Button>
+                  <Button
+                    variant="contained"
+                    size="small"
+                    sx={{ mr: 1 }}
+                    onClick={() => { setSelectedReparacion(row); setOpenFicha(true); }}
+                  >
+                    Ver
+                  </Button>
                   <Button variant="outlined" size="small" color="error" onClick={() => handleDelete(row.id)}>Eliminar</Button>
                 </TableCell>
               </TableRow>
@@ -201,6 +212,14 @@ function Reparaciones() {
           </TableBody>
         </Table>
       </TableContainer>
+      {/* Modal de ficha de reparación */}
+      {selectedReparacion && (
+        <FichaReparacionModal
+          open={openFicha}
+          onClose={() => setOpenFicha(false)}
+          reparacion={selectedReparacion}
+        />
+      )}
     </Box>
   );
 }
