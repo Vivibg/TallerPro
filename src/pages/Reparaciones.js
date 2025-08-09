@@ -81,6 +81,16 @@ function Reparaciones() {
     fetchReparaciones();
   };
 
+  // Cambia el estado de la reparación y actualiza en backend
+  const handleEstadoChange = async (id, nuevoEstado) => {
+    await fetch(`${process.env.REACT_APP_API_URL}/api/reparaciones/${id}`, {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ estado: nuevoEstado })
+    });
+    fetchReparaciones();
+  };
+
   const filtrar = (row) => {
     if (estado !== 'all' && row.estado !== estado) return false;
     if (busqueda && !(`${row.cliente} ${row.vehiculo}`.toLowerCase().includes(busqueda.toLowerCase()))) return false;
@@ -163,6 +173,17 @@ function Reparaciones() {
                 <TableCell>{row.vehiculo}</TableCell>
                 <TableCell>{row.problema}</TableCell>
                 <TableCell>
+                  <Select
+                    value={row.estado}
+                    onChange={e => handleEstadoChange(row.id, e.target.value)}
+                    size="small"
+                    sx={{ minWidth: 120 }}
+                  >
+                    <MenuItem value="pending">Pendiente</MenuItem>
+                    <MenuItem value="progress">En Proceso</MenuItem>
+                    <MenuItem value="done">Completado</MenuItem>
+                  </Select>
+                  {" "}
                   {row.estado === 'pending' && <Chip label="Pendiente" color="default" size="small" />}
                   {row.estado === 'progress' && <Chip label="En progreso" color="warning" size="small" />}
                   {row.estado === 'done' && <Chip label="Completado" color="success" size="small" />}
