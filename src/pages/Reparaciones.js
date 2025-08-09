@@ -42,6 +42,7 @@ function Reparaciones() {
   const [estado, setEstado] = useState('all');
   const [busqueda, setBusqueda] = useState('');
 
+  // Trae todas las reparaciones (manuales y desde reservas)
   const fetchReparaciones = () => {
     fetch(`${process.env.REACT_APP_API_URL}/api/reparaciones`)
       .then(res => res.json())
