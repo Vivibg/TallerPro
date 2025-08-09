@@ -3,7 +3,7 @@ import { pool } from './db.js';
 
 const router = Router();
 
-// Listar reparaciones
+// Listar todas las reparaciones
 router.get('/', async (req, res) => {
   try {
     const [rows] = await pool.query('SELECT * FROM reparaciones');
@@ -14,7 +14,7 @@ router.get('/', async (req, res) => {
   }
 });
 
-// Crear reparación
+// Crear reparación (manual o desde reservas)
 router.post('/', async (req, res) => {
   try {
     const { cliente, vehiculo, problema, estado, costo, fecha } = req.body;
@@ -29,7 +29,7 @@ router.post('/', async (req, res) => {
   }
 });
 
-// Actualizar reparación (solo estado, pero puedes expandir a más campos)
+// Actualizar estado de reparación
 router.put('/:id', async (req, res) => {
   try {
     const { id } = req.params;
