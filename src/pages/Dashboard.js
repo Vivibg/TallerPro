@@ -4,78 +4,81 @@ import BuildIcon from '@mui/icons-material/Build';
 import EventNoteIcon from '@mui/icons-material/EventNote';
 import WarningAmberIcon from '@mui/icons-material/WarningAmber';
 import AttachMoneyIcon from '@mui/icons-material/AttachMoney';
+import GroupIcon from '@mui/icons-material/Group';
 
 const API_URL = process.env.REACT_APP_API_URL;
 
 function Dashboard() {
   const [stats, setStats] = useState([
-    { label: 'Reparaciones Activas', value: 0, icon: <BuildIcon color="primary" />, color: '#2258e6' },
-    { label: 'Reservas Hoy', value: 0, icon: <EventNoteIcon color="success" />, color: '#3bb54a' },
+    { label: 'Reservas Totales', value: 0, icon: <EventNoteIcon color="primary" />, color: '#2258e6' },
+    { label: 'Clientes Registrados', value: 0, icon: <GroupIcon color="success" />, color: '#3bb54a' },
     { label: 'Insumos Críticos', value: 0, icon: <WarningAmberIcon color="warning" />, color: '#ffb300' },
-    { label: 'Ingresos del Mes', value: '$0', icon: <AttachMoneyIcon color="secondary" />, color: '#7c3aed' },
+    { label: 'Productos en Inventario', value: 0, icon: <BuildIcon color="secondary" />, color: '#7c3aed' },
   ]);
   const [actividad, setActividad] = useState([]);
 
   useEffect(() => {
-    // Reparaciones activas
-    fetch(`${API_URL}/api/reparaciones`)
-      .then(res => res.json())
-      .then(data => {
-        setStats(s => s.map(stat =>
-          stat.label === 'Reparaciones Activas' ? { ...stat, value: data.filter(r => r.estado !== 'completada').length } : stat
-        ));
-        // Actividad: últimas reparaciones
-        const ultimasRep = data
-          .sort((a, b) => new Date(b.fecha) - new Date(a.fecha))
-          .slice(0, 2)
-          .map(r => ({
-            texto: `Reparación ${r.estado === 'completada' ? 'completada' : 'creada'} - ${r.vehiculo}`,
-            tiempo: r.fecha,
-            icon: <BuildIcon sx={{ color: '#2258e6' }} />
-          }));
-        setActividad(a => [...ultimasRep, ...a]);
-      });
-
-    // Reservas de hoy
-    const hoy = new Date().toISOString().split('T')[0];
+    // RESERVAS
     fetch(`${API_URL}/api/reservas`)
       .then(res => res.json())
       .then(data => {
         setStats(s => s.map(stat =>
-          stat.label === 'Reservas Hoy' ? { ...stat, value: data.filter(r => r.fecha === hoy).length } : stat
+          stat.label === 'Reservas Totales' ? { ...stat, value: data.length } : stat
         ));
         // Actividad: últimas reservas
         const ultimasRes = data
-          .sort((a, b) => new Date(b.fecha + 'T' + b.hora) - new Date(a.fecha + 'T' + a.hora))
+          .sort((a, b) => new Date(b.fecha + 'T' + (b.hora || '00:00')) - new Date(a.fecha + 'T' + (a.hora || '00:00')))
           .slice(0, 2)
           .map(r => ({
             texto: `Nueva reserva - ${r.cliente}`,
             tiempo: `${r.fecha} ${r.hora}`,
-            icon: <EventNoteIcon sx={{ color: '#3bb54a' }} />
+            icon: <EventNoteIcon sx={{ color: '#2258e6' }} />
           }));
         setActividad(a => [...ultimasRes, ...a]);
       });
 
-    // Insumos críticos (stock bajo)
+    // CLIENTES
+    fetch(`${API_URL}/api/clientes`)
+      .then(res => res.json())
+      .then(data => {
+        setStats(s => s.map(stat =>
+          stat.label === 'Clientes Registrados' ? { ...stat, value: data.length } : stat
+        ));
+        // Actividad: último cliente
+        if (data.length > 0) {
+          const ultimo = data[data.length - 1];
+          setActividad(a => [{
+            texto: `Nuevo cliente - ${ultimo.nombre}`,
+            tiempo: 'Reciente',
+            icon: <GroupIcon sx={{ color: '#3bb54a' }} />
+          }, ...a]);
+        }
+      });
+
+    // INVENTARIO
     fetch(`${API_URL}/api/inventario`)
       .then(res => res.json())
       .then(data => {
         setStats(s => s.map(stat =>
-          stat.label === 'Insumos Críticos' ? { ...stat, value: data.filter(p => p.stock <= p.stock_min).length } : stat
+          stat.label === 'Productos en Inventario'
+            ? { ...stat, value: data.length }
+            : stat.label === 'Insumos Críticos'
+              ? { ...stat, value: data.filter(p => p.stock <= p.stock_min).length }
+              : stat
         ));
-        // Actividad: últimas alertas de stock
+        // Actividad: últimos insumos críticos
         const ultimosStock = data
           .filter(p => p.stock <= p.stock_min)
           .slice(0, 1)
           .map(p => ({
-            texto: `Stock bajo - ${p.nombre}`,
+            texto: `Stock crítico - ${p.nombre}`,
             tiempo: 'Hoy',
             icon: <WarningAmberIcon sx={{ color: '#ffb300' }} />
           }));
         setActividad(a => [...ultimosStock, ...a]);
       });
 
-    // Ingresos del mes (puedes adaptar el endpoint)
+    // Si tienes endpoint de ingresos, puedes agregarlo aquí
     // fetch(`${API_URL}/api/ingresos`)
     //   .then(res => res.json())
     //   .then(data => {
