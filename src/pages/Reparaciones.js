@@ -20,7 +20,7 @@ import {
   DialogContent,
   DialogActions
 } from '@mui/material';
-import FichaReparacionModal from './FichaReparacionModal'; // Importa tu modal
+import FichaReparacionModal from './components/FichaReparacionModal';
 
 const ESTADOS = [
   { value: 'all', label: 'Todos los estados' },
