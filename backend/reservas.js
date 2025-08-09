@@ -32,19 +32,60 @@ router.post('/', async (req, res) => {
   }
 });
 
-// Confirmar asistencia
+// Confirmar asistencia y sincronizar con reparaciones, clientes e historial_vehiculos
 router.put('/:id/asistencia', async (req, res) => {
+  const connection = await pool.getConnection();
   try {
     const { id } = req.params;
     const { asiste } = req.body;
     if (typeof asiste !== 'boolean') {
       return res.status(400).json({ error: 'El campo asistio debe ser booleano' });
     }
-    await pool.query('UPDATE reservas SET asistio = ? WHERE id = ?', [asiste, id]);
+
+    // 1. Actualizar asistencia en la reserva
+    await connection.query('UPDATE reservas SET asiste = ? WHERE id = ?', [asiste, id]);
+
+    if (asiste) {
+      // 2. Obtener datos de la reserva
+      const [reservas] = await connection.query('SELECT * FROM reservas WHERE id = ?', [id]);
+      const reserva = reservas[0];
+
+      if (!reserva) {
+        return res.status(404).json({ error: 'Reserva no encontrada' });
+      }
+
+      // 3. Insertar en reparaciones
+      await connection.query(
+        'INSERT INTO reparaciones (cliente, vehiculo, problema, estado, costo, fecha) VALUES (?, ?, ?, ?, ?, ?)',
+        [reserva.cliente, reserva.vehiculo, reserva.motivo, 'pendiente', 0, reserva.fecha]
+      );
+
+      // 4. Verificar si el cliente existe en clientes, si no, agregarlo
+      const [clientes] = await connection.query('SELECT * FROM clientes WHERE nombre = ?', [reserva.cliente]);
+      if (clientes.length === 0) {
+        await connection.query('INSERT INTO clientes (nombre) VALUES (?)', [reserva.cliente]);
+      }
+
+      // 5. Insertar en historial_vehiculos
+      await connection.query(
+        'INSERT INTO historial_vehiculos (vehiculo, cliente, fecha, servicio, taller, placas) VALUES (?, ?, ?, ?, ?, ?)',
+        [
+          reserva.vehiculo,
+          reserva.cliente,
+          reserva.fecha,
+          reserva.servicio,
+          'TallerPro',
+          '' // Ajusta si tienes el campo placas disponible
+        ]
+      );
+    }
+
     res.json({ ok: true });
   } catch (e) {
-    console.error('Error actualizando asistencia:', e);
-    res.status(500).json({ error: 'Error actualizando asistencia', details: e.message });
+    console.error('Error actualizando asistencia y sincronizando datos:', e);
+    res.status(500).json({ error: 'Error actualizando asistencia y sincronizando datos', details: e.message });
+  } finally {
+    connection.release();
   }
 });
 
@@ -61,4 +102,3 @@ router.delete('/:id', async (req, res) => {
 });
 
 export default router;
-
