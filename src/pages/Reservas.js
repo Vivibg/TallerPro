@@ -10,19 +10,29 @@ function Reservas() {
   const [form, setForm] = useState({ cliente: '', servicio: '', vehiculo: '', hora: '', motivo: '' });
   const [citasHoy, setCitasHoy] = useState([]);
   const [error, setError] = useState('');
-  const [success, setSuccess] = useState(''); // Nuevo estado para éxito
+  const [success, setSuccess] = useState('');
 
   const API_URL = process.env.REACT_APP_API_URL;
   const fechaActual = selectedDate.toISOString().split('T')[0];
 
+  // Cargar reservas del backend
   const fetchCitas = () => {
     fetch(`${API_URL}/api/reservas`)
       .then(res => res.json())
-      .then(data => setCitasHoy(data.filter(c => c.fecha === fechaActual)))
-      .catch(() => setCitasHoy([]));
+      .then(data => {
+        console.log("Reservas recibidas:", data);
+        // Asegúrate de que las fechas coincidan exactamente
+        setCitasHoy(data.filter(c => c.fecha === fechaActual));
+      })
+      .catch((err) => {
+        setCitasHoy([]);
+        setError('Error al cargar reservas');
+        console.error("Error al cargar reservas:", err);
+      });
   };
 
   useEffect(() => {
+    console.log("API_URL:", API_URL);
     fetchCitas();
     // eslint-disable-next-line
   }, [selectedDate, fechaActual]);
