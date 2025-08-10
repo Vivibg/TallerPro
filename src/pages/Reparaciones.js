@@ -52,19 +52,14 @@ function Reparaciones() {
   const [openFicha, setOpenFicha] = useState(false);
   const [selectedReparacion, setSelectedReparacion] = useState(null);
 
-  // Normaliza campos vacíos a "Sin dato"
+  // Normaliza campos vacíos a "Sin dato" SOLO para mostrar
+  const normalize = (valor) =>
+    valor && valor.trim() ? valor : 'Sin dato';
+
   const fetchReparaciones = () => {
     fetch(`${process.env.REACT_APP_API_URL}/api/reparaciones`)
       .then(res => res.json())
-      .then(data => {
-        const normalizados = (Array.isArray(data) ? data : []).map(r => ({
-          ...r,
-          cliente: r.cliente && r.cliente.trim() ? r.cliente : 'Sin dato',
-          vehiculo: r.vehiculo && r.vehiculo.trim() ? r.vehiculo : 'Sin dato',
-          problema: r.problema && r.problema.trim() ? r.problema : 'Sin dato'
-        }));
-        setDATA(normalizados);
-      })
+      .then(data => setDATA(Array.isArray(data) ? data : []))
       .catch(() => setDATA([]));
   };
 
@@ -78,6 +73,8 @@ function Reparaciones() {
 
   const handleSubmit = async e => {
     e.preventDefault();
+    // Log para depuración
+    console.log('Enviando reparación:', form);
     await fetch(`${process.env.REACT_APP_API_URL}/api/reparaciones`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
@@ -100,17 +97,15 @@ function Reparaciones() {
     fetchReparaciones();
   };
 
-  // SOLO elimina del frontend (no del backend)
-  const handleDelete = (id) => {
+  const handleDelete = async (id) => {
+    await fetch(`${process.env.REACT_APP_API_URL}/api/reparaciones/${id}`, { method: 'DELETE' });
     setDATA(prev => prev.filter(r => r.id !== id));
   };
 
-  // Cambia el estado de la reparación y actualiza en backend (envía TODOS los campos)
   const handleEstadoChange = async (id, nuevoEstado) => {
     const reparacion = DATA.find(r => r.id === id);
     if (!reparacion) return;
 
-    // Asegura que fecha nunca sea vacía o inválida
     const fechaValida = reparacion.fecha && reparacion.fecha !== '' ? reparacion.fecha : new Date().toISOString().slice(0, 10);
 
     await fetch(`${process.env.REACT_APP_API_URL}/api/reparaciones/${id}`, {
@@ -168,7 +163,7 @@ function Reparaciones() {
               <TextField label="Modelo" name="modelo" value={form.modelo} onChange={handleChange} />
               <TextField label="Año" name="anio" value={form.anio} onChange={handleChange} />
               <TextField label="Kilometraje" name="kilometraje" value={form.kilometraje} onChange={handleChange} />
-              <TextField label="Problema" name="problema" value={form.problema} onChange={handleChange} />
+              <TextField label="Problema" name="problema" value={form.problema} onChange={handleChange} required />
               <TextField
                 label="Estado"
                 name="estado"
@@ -213,14 +208,14 @@ function Reparaciones() {
             {DATA.filter(filtrar).map((row) => (
               <TableRow key={row.id}>
                 <TableCell>#{row.id}</TableCell>
-                <TableCell sx={{ fontWeight: 600 }}>{row.cliente}</TableCell>
-                <TableCell>{row.vehiculo}</TableCell>
-                <TableCell>{row.patente}</TableCell>
-                <TableCell>{row.marca}</TableCell>
-                <TableCell>{row.modelo}</TableCell>
-                <TableCell>{row.anio}</TableCell>
-                <TableCell>{row.kilometraje}</TableCell>
-                <TableCell>{row.problema}</TableCell>
+                <TableCell sx={{ fontWeight: 600 }}>{normalize(row.cliente)}</TableCell>
+                <TableCell>{normalize(row.vehiculo)}</TableCell>
+                <TableCell>{normalize(row.patente)}</TableCell>
+                <TableCell>{normalize(row.marca)}</TableCell>
+                <TableCell>{normalize(row.modelo)}</TableCell>
+                <TableCell>{normalize(row.anio)}</TableCell>
+                <TableCell>{normalize(row.kilometraje)}</TableCell>
+                <TableCell>{normalize(row.problema)}</TableCell>
                 <TableCell>
                   <Select
                     value={row.estado}
