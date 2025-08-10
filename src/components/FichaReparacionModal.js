@@ -42,14 +42,15 @@ function FichaReparacionModal({ open, onClose, reparacion }) {
     setFicha({ ...ficha, repuestos: nuevos });
   };
 
-  // GUARDAR la ficha en el backend
+  // GUARDAR la ficha en el backend, asegurando que siempre se envía "estado"
   const handleGuardarFicha = async () => {
     await fetch(`${process.env.REACT_APP_API_URL}/api/reparaciones/${reparacion.id}`, {
       method: 'PUT',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
         ...ficha,
-        cliente: ficha.nombre // por compatibilidad
+        cliente: ficha.nombre, // por compatibilidad
+        estado: reparacion.estado || 'pendiente' // ¡Siempre envía un estado!
       })
     });
     onClose();
