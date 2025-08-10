@@ -20,6 +20,7 @@ router.get('/', async (req, res) => {
     const [rows] = await pool.query(query, params);
     res.json(rows);
   } catch (e) {
+    console.error(e);
     res.status(500).json({ error: 'Error buscando reparación' });
   }
 });
@@ -27,13 +28,37 @@ router.get('/', async (req, res) => {
 // Actualizar una reparación existente
 router.put('/:id', async (req, res) => {
   try {
-    const { id } = req.params;
-    const {
+    let {
       cliente, vehiculo, problema, estado, costo, fecha,
       telefono, email, marca, modelo, anio, patente, kilometraje,
       fallaReportada, diagnostico, trabajos, repuestos,
       observaciones, garantiaPeriodo, garantiaCondiciones
     } = req.body;
+
+    // Valores por defecto
+    const safe = (v, def = '') => (v === undefined ? def : v);
+    const safeArray = (v) => Array.isArray(v) ? v : [];
+    cliente = safe(cliente);
+    vehiculo = safe(vehiculo);
+    problema = safe(problema);
+    estado = safe(estado, 'pending');
+    costo = safe(costo, 0);
+    fecha = safe(fecha);
+    telefono = safe(telefono);
+    email = safe(email);
+    marca = safe(marca);
+    modelo = safe(modelo);
+    anio = safe(anio);
+    patente = safe(patente);
+    kilometraje = safe(kilometraje);
+    fallaReportada = safe(fallaReportada);
+    diagnostico = safe(diagnostico);
+    trabajos = safe(trabajos);
+    repuestos = JSON.stringify(safeArray(repuestos));
+    observaciones = safe(observaciones);
+    garantiaPeriodo = safe(garantiaPeriodo);
+    garantiaCondiciones = safe(garantiaCondiciones);
+
     await pool.query(
       `UPDATE reparaciones SET
         cliente = ?, vehiculo = ?, problema = ?, estado = ?, costo = ?, fecha = ?,
@@ -44,12 +69,13 @@ router.put('/:id', async (req, res) => {
       [
         cliente, vehiculo, problema, estado, costo, fecha,
         telefono, email, marca, modelo, anio, patente, kilometraje,
-        fallaReportada, diagnostico, trabajos, JSON.stringify(repuestos),
-        observaciones, garantiaPeriodo, garantiaCondiciones, id
+        fallaReportada, diagnostico, trabajos, repuestos,
+        observaciones, garantiaPeriodo, garantiaCondiciones, req.params.id
       ]
     );
     res.json({ ok: true });
   } catch (e) {
+    console.error(e);
     res.status(500).json({ error: 'Error actualizando reparación' });
   }
 });
@@ -57,12 +83,37 @@ router.put('/:id', async (req, res) => {
 // Crear una reparación nueva
 router.post('/', async (req, res) => {
   try {
-    const {
+    let {
       cliente, vehiculo, problema, estado, costo, fecha,
       telefono, email, marca, modelo, anio, patente, kilometraje,
       fallaReportada, diagnostico, trabajos, repuestos,
       observaciones, garantiaPeriodo, garantiaCondiciones
     } = req.body;
+
+    // Valores por defecto
+    const safe = (v, def = '') => (v === undefined ? def : v);
+    const safeArray = (v) => Array.isArray(v) ? v : [];
+    cliente = safe(cliente);
+    vehiculo = safe(vehiculo);
+    problema = safe(problema);
+    estado = safe(estado, 'pending');
+    costo = safe(costo, 0);
+    fecha = safe(fecha);
+    telefono = safe(telefono);
+    email = safe(email);
+    marca = safe(marca);
+    modelo = safe(modelo);
+    anio = safe(anio);
+    patente = safe(patente);
+    kilometraje = safe(kilometraje);
+    fallaReportada = safe(fallaReportada);
+    diagnostico = safe(diagnostico);
+    trabajos = safe(trabajos);
+    repuestos = JSON.stringify(safeArray(repuestos));
+    observaciones = safe(observaciones);
+    garantiaPeriodo = safe(garantiaPeriodo);
+    garantiaCondiciones = safe(garantiaCondiciones);
+
     const [result] = await pool.query(
       `INSERT INTO reparaciones (
         cliente, vehiculo, problema, estado, costo, fecha,
@@ -73,12 +124,13 @@ router.post('/', async (req, res) => {
       [
         cliente, vehiculo, problema, estado, costo, fecha,
         telefono, email, marca, modelo, anio, patente, kilometraje,
-        fallaReportada, diagnostico, trabajos, JSON.stringify(repuestos),
+        fallaReportada, diagnostico, trabajos, repuestos,
         observaciones, garantiaPeriodo, garantiaCondiciones
       ]
     );
     res.status(201).json({ id: result.insertId });
   } catch (e) {
+    console.error(e);
     res.status(500).json({ error: 'Error creando reparación' });
   }
 });
