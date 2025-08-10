@@ -50,7 +50,11 @@ router.delete('/:id', async (req, res) => {
 // Actualizar una reparación existente
 router.put('/:id', async (req, res) => {
   try {
-    console.log('PUT /api/reparaciones/:id body:', req.body);
+    const { id } = req.params;
+    // Obtén los datos actuales para no perder los originales
+    const [rows] = await pool.query('SELECT vehiculo, problema FROM reparaciones WHERE id = ?', [id]);
+    const reparacionActual = rows[0] || {};
+
     let {
       cliente, vehiculo, problema, estado, costo, fecha,
       telefono, email, marca, modelo, anio, patente, kilometraje,
@@ -62,8 +66,9 @@ router.put('/:id', async (req, res) => {
     const safe = (v, def = '') => (v === undefined || v === null ? def : v);
     const safeArray = (v) => Array.isArray(v) ? v : [];
     cliente = safe(cliente);
-    vehiculo = safe(vehiculo);
-    problema = safe(problema);
+    // MANTÉN LOS ORIGINALES SI EL FRONTEND ENVÍA VACÍO
+    vehiculo = vehiculo && vehiculo.trim() ? vehiculo : (reparacionActual.vehiculo || '');
+    problema = problema && problema.trim() ? problema : (reparacionActual.problema || '');
     estado = safe(estado, 'pending');
     costo = safe(costo, 0);
     fecha = safeDate(fecha);
@@ -93,7 +98,7 @@ router.put('/:id', async (req, res) => {
         cliente, vehiculo, problema, estado, costo, fecha,
         telefono, email, marca, modelo, anio, patente, kilometraje,
         fallaReportada, diagnostico, trabajos, repuestos,
-        observaciones, garantiaPeriodo, garantiaCondiciones, req.params.id
+        observaciones, garantiaPeriodo, garantiaCondiciones, id
       ]
     );
     res.json({ ok: true });
@@ -106,7 +111,6 @@ router.put('/:id', async (req, res) => {
 // Crear una reparación nueva
 router.post('/', async (req, res) => {
   try {
-    console.log('POST /api/reparaciones body:', req.body);
     let {
       cliente, vehiculo, problema, estado, costo, fecha,
       telefono, email, marca, modelo, anio, patente, kilometraje,
@@ -114,7 +118,6 @@ router.post('/', async (req, res) => {
       observaciones, garantiaPeriodo, garantiaCondiciones
     } = req.body;
 
-    // Valores por defecto
     const safe = (v, def = '') => (v === undefined || v === null ? def : v);
     const safeArray = (v) => Array.isArray(v) ? v : [];
     cliente = safe(cliente);
