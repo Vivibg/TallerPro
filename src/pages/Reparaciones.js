@@ -59,7 +59,15 @@ function Reparaciones() {
   const fetchReparaciones = () => {
     fetch(`${process.env.REACT_APP_API_URL}/api/reparaciones`)
       .then(res => res.json())
-      .then(data => setDATA(Array.isArray(data) ? data : []))
+      .then(data => {
+        // Guarda los valores originales para vehiculo y problema
+        const normalizados = (Array.isArray(data) ? data : []).map(r => ({
+          ...r,
+          vehiculo_original: r.vehiculo && r.vehiculo !== 'Sin dato' ? r.vehiculo : '',
+          problema_original: r.problema && r.problema !== 'Sin dato' ? r.problema : '',
+        }));
+        setDATA(normalizados);
+      })
       .catch(() => setDATA([]));
   };
 
@@ -105,13 +113,9 @@ function Reparaciones() {
     const reparacion = DATA.find(r => r.id === id);
     if (!reparacion) return;
 
-    // Mantén los valores originales de vehiculo y problema si existen
-    const vehiculoValido = reparacion.vehiculo && reparacion.vehiculo !== 'Sin dato'
-      ? reparacion.vehiculo
-      : (reparacion.marca && reparacion.modelo ? `${reparacion.marca} ${reparacion.modelo}` : '');
-    const problemaValido = reparacion.problema && reparacion.problema !== 'Sin dato'
-      ? reparacion.problema
-      : (reparacion.fallaReportada ? reparacion.fallaReportada : '');
+    // Usa SIEMPRE los valores originales
+    const vehiculoValido = reparacion.vehiculo_original || '';
+    const problemaValido = reparacion.problema_original || '';
 
     const fechaValida = reparacion.fecha && reparacion.fecha !== '' ? reparacion.fecha : new Date().toISOString().slice(0, 10);
 
