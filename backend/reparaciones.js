@@ -30,7 +30,7 @@ router.get('/', async (req, res) => {
     }));
     res.json(normalizados);
   } catch (e) {
-    console.error(e);
+    console.error('Error buscando reparación:', e);
     res.status(500).json({ error: 'Error buscando reparación' });
   }
 });
@@ -42,7 +42,7 @@ router.delete('/:id', async (req, res) => {
     await pool.query('DELETE FROM reparaciones WHERE id = ?', [id]);
     res.json({ ok: true });
   } catch (e) {
-    console.error(e);
+    console.error('Error eliminando reparación:', e);
     res.status(500).json({ error: 'Error eliminando reparación' });
   }
 });
@@ -50,6 +50,7 @@ router.delete('/:id', async (req, res) => {
 // Actualizar una reparación existente
 router.put('/:id', async (req, res) => {
   try {
+    console.log('PUT /api/reparaciones/:id body:', req.body);
     let {
       cliente, vehiculo, problema, estado, costo, fecha,
       telefono, email, marca, modelo, anio, patente, kilometraje,
@@ -58,7 +59,7 @@ router.put('/:id', async (req, res) => {
     } = req.body;
 
     // Valores por defecto
-    const safe = (v, def = '') => (v === undefined ? def : v);
+    const safe = (v, def = '') => (v === undefined || v === null ? def : v);
     const safeArray = (v) => Array.isArray(v) ? v : [];
     cliente = safe(cliente);
     vehiculo = safe(vehiculo);
@@ -97,7 +98,7 @@ router.put('/:id', async (req, res) => {
     );
     res.json({ ok: true });
   } catch (e) {
-    console.error(e);
+    console.error('Error actualizando reparación:', e);
     res.status(500).json({ error: 'Error actualizando reparación' });
   }
 });
@@ -105,6 +106,7 @@ router.put('/:id', async (req, res) => {
 // Crear una reparación nueva
 router.post('/', async (req, res) => {
   try {
+    console.log('POST /api/reparaciones body:', req.body);
     let {
       cliente, vehiculo, problema, estado, costo, fecha,
       telefono, email, marca, modelo, anio, patente, kilometraje,
@@ -113,7 +115,7 @@ router.post('/', async (req, res) => {
     } = req.body;
 
     // Valores por defecto
-    const safe = (v, def = '') => (v === undefined ? def : v);
+    const safe = (v, def = '') => (v === undefined || v === null ? def : v);
     const safeArray = (v) => Array.isArray(v) ? v : [];
     cliente = safe(cliente);
     vehiculo = safe(vehiculo);
@@ -152,7 +154,7 @@ router.post('/', async (req, res) => {
     );
     res.status(201).json({ id: result.insertId });
   } catch (e) {
-    console.error(e);
+    console.error('Error creando reparación:', e);
     res.status(500).json({ error: 'Error creando reparación' });
   }
 });
