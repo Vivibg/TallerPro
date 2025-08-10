@@ -5,6 +5,7 @@ function HistorialVehiculos() {
   const [historiales, setHistoriales] = useState([]);
   const [busqueda, setBusqueda] = useState('');
   const [open, setOpen] = useState(false);
+  const [detalle, setDetalle] = useState(null);
   const [form, setForm] = useState({
     vehiculo: '',
     placas: '',
@@ -14,17 +15,21 @@ function HistorialVehiculos() {
     taller: ''
   });
 
-  // Cargar historial al montar el componente
+  // Cargar historial con ficha al montar el componente
   useEffect(() => {
-    fetch(`${process.env.REACT_APP_API_URL}/api/historial`)
+    fetch(`${process.env.REACT_APP_API_URL}/api/historial/con-ficha`)
       .then(res => res.json())
       .then(data => Array.isArray(data) ? setHistoriales(data) : setHistoriales([]))
       .catch(() => setHistoriales([]));
   }, []);
 
-  // Abrir/cerrar modal
+  // Abrir/cerrar modal de nuevo servicio
   const handleOpen = () => setOpen(true);
   const handleClose = () => setOpen(false);
+
+  // Abrir/cerrar modal de detalle de ficha
+  const handleDetalleOpen = (h) => setDetalle(h);
+  const handleDetalleClose = () => setDetalle(null);
 
   // Manejar cambios en el formulario
   const handleChange = (e) => {
@@ -112,12 +117,73 @@ function HistorialVehiculos() {
               <Typography variant="body2">Servicio: {h.servicio}</Typography>
               <Typography variant="body2">Taller: {h.taller}</Typography>
               <Typography variant="body2" mb={1}>Fecha: {h.fecha}</Typography>
-              <Button variant="contained" size="small" sx={{ mr: 1 }}>Ver Detalle</Button>
+              {/* Resumen de ficha */}
+              {h.diagnostico && (
+                <>
+                  <Typography variant="subtitle2" sx={{ mt: 1 }}>Diagnóstico:</Typography>
+                  <Typography variant="body2">{h.diagnostico}</Typography>
+                </>
+              )}
+              {h.trabajos && (
+                <>
+                  <Typography variant="subtitle2">Trabajos:</Typography>
+                  <Typography variant="body2">{h.trabajos}</Typography>
+                </>
+              )}
+              {h.observaciones && (
+                <>
+                  <Typography variant="subtitle2">Observaciones:</Typography>
+                  <Typography variant="body2">{h.observaciones}</Typography>
+                </>
+              )}
+              <Button
+                variant="contained"
+                size="small"
+                sx={{ mr: 1, mt: 1 }}
+                onClick={() => handleDetalleOpen(h)}
+                disabled={!h.diagnostico && !h.trabajos && !h.observaciones}
+              >
+                Ver Ficha Completa
+              </Button>
               <Button variant="outlined" size="small" color="error" onClick={() => handleDelete(h.id)}>Eliminar</Button>
             </Paper>
           </Grid>
         ))}
       </Grid>
+
+      {/* Modal para ver ficha completa */}
+      <Dialog open={!!detalle} onClose={handleDetalleClose} maxWidth="md" fullWidth>
+        <DialogTitle>Ficha Completa de Reparación</DialogTitle>
+        <DialogContent dividers>
+          {detalle && (
+            <>
+              <Typography variant="subtitle1" gutterBottom>Diagnóstico:</Typography>
+              <Typography variant="body2" gutterBottom>{detalle.diagnostico || 'No registrado'}</Typography>
+              <Typography variant="subtitle1" gutterBottom>Trabajos realizados:</Typography>
+              <Typography variant="body2" gutterBottom>{detalle.trabajos || 'No registrado'}</Typography>
+              <Typography variant="subtitle1" gutterBottom>Repuestos:</Typography>
+              <Typography variant="body2" gutterBottom>
+                {detalle.repuestos
+                  ? Array.isArray(detalle.repuestos)
+                    ? detalle.repuestos.map((r, idx) =>
+                        <div key={idx}>{r.descripcion} ({r.cantidad})</div>
+                      )
+                    : detalle.repuestos
+                  : 'No registrado'}
+              </Typography>
+              <Typography variant="subtitle1" gutterBottom>Observaciones:</Typography>
+              <Typography variant="body2" gutterBottom>{detalle.observaciones || 'No registrado'}</Typography>
+              <Typography variant="subtitle1" gutterBottom>Garantía:</Typography>
+              <Typography variant="body2" gutterBottom>
+                {detalle.garantiaPeriodo || '-'} | {detalle.garantiaCondiciones || '-'}
+              </Typography>
+            </>
+          )}
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={handleDetalleClose}>Cerrar</Button>
+        </DialogActions>
+      </Dialog>
     </Box>
   );
 }
