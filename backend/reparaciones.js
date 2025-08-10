@@ -3,9 +3,6 @@ import { pool } from './db.js';
 
 const router = Router();
 
-// Función segura para la fecha
-const safeDate = (v) => (!v || v === '') ? new Date().toISOString().slice(0, 10) : v;
-
 // Obtener todas las reparaciones o buscar por patente y fecha
 router.get('/', async (req, res) => {
   const { patente, fecha } = req.query;
@@ -46,7 +43,7 @@ router.put('/:id', async (req, res) => {
     problema = safe(problema);
     estado = safe(estado, 'pending');
     costo = safe(costo, 0);
-    fecha = safeDate(fecha); // <- CORRECCIÓN AQUÍ
+    fecha = safe(fecha);
     telefono = safe(telefono);
     email = safe(email);
     marca = safe(marca);
@@ -101,7 +98,7 @@ router.post('/', async (req, res) => {
     problema = safe(problema);
     estado = safe(estado, 'pending');
     costo = safe(costo, 0);
-    fecha = safeDate(fecha); // <- CORRECCIÓN AQUÍ
+    fecha = safe(fecha);
     telefono = safe(telefono);
     email = safe(email);
     marca = safe(marca);
