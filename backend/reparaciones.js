@@ -52,7 +52,7 @@ router.put('/:id', async (req, res) => {
   try {
     const { id } = req.params;
     // Obtén los datos actuales para no perder los originales
-    const [rows] = await pool.query('SELECT vehiculo, problema FROM reparaciones WHERE id = ?', [id]);
+    const [rows] = await pool.query('SELECT cliente, vehiculo, problema FROM reparaciones WHERE id = ?', [id]);
     const reparacionActual = rows[0] || {};
 
     let {
@@ -65,10 +65,10 @@ router.put('/:id', async (req, res) => {
     // Valores por defecto
     const safe = (v, def = '') => (v === undefined || v === null ? def : v);
     const safeArray = (v) => Array.isArray(v) ? v : [];
-    cliente = safe(cliente);
-    // MANTÉN LOS ORIGINALES SI EL FRONTEND ENVÍA VACÍO
-    vehiculo = vehiculo && vehiculo.trim() ? vehiculo : (reparacionActual.vehiculo || '');
-    problema = problema && problema.trim() ? problema : (reparacionActual.problema || '');
+    // MANTÉN LOS ORIGINALES SI EL FRONTEND ENVÍA VACÍO O "Sin dato"
+    cliente = (cliente && cliente.trim() && cliente !== 'Sin dato') ? cliente : (reparacionActual.cliente || '');
+    vehiculo = (vehiculo && vehiculo.trim() && vehiculo !== 'Sin dato') ? vehiculo : (reparacionActual.vehiculo || '');
+    problema = (problema && problema.trim() && problema !== 'Sin dato') ? problema : (reparacionActual.problema || '');
     estado = safe(estado, 'pending');
     costo = safe(costo, 0);
     fecha = safeDate(fecha);
