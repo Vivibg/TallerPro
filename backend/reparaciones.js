@@ -17,37 +17,74 @@ router.get('/', async (req, res) => {
 // Crear reparación (manual o desde reservas)
 router.post('/', async (req, res) => {
   try {
-    const { cliente, vehiculo, problema, estado, costo, fecha } = req.body;
+    const {
+      cliente, vehiculo, problema, estado, costo, fecha,
+      telefono, email, marca, modelo, anio, patente, kilometraje,
+      fallaReportada, diagnostico, trabajos, repuestos,
+      observaciones, garantiaPeriodo, garantiaCondiciones
+    } = req.body;
     const [result] = await pool.query(
-      'INSERT INTO reparaciones (cliente, vehiculo, problema, estado, costo, fecha) VALUES (?, ?, ?, ?, ?, ?)',
-      [cliente, vehiculo, problema, estado || 'pending', costo, fecha]
+      `INSERT INTO reparaciones (
+        cliente, vehiculo, problema, estado, costo, fecha,
+        telefono, email, marca, modelo, anio, patente, kilometraje,
+        fallaReportada, diagnostico, trabajos, repuestos,
+        observaciones, garantiaPeriodo, garantiaCondiciones
+      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+      [
+        cliente, vehiculo, problema, estado || 'pending', costo, fecha,
+        telefono, email, marca, modelo, anio, patente, kilometraje,
+        fallaReportada, diagnostico, trabajos,
+        JSON.stringify(repuestos || []),
+        observaciones, garantiaPeriodo, garantiaCondiciones
+      ]
     );
-    res.status(201).json({ id: result.insertId, cliente, vehiculo, problema, estado, costo, fecha });
+    res.status(201).json({ id: result.insertId, ...req.body });
   } catch (e) {
     console.error(e);
     res.status(500).json({ error: 'Error creando reparación' });
   }
 });
 
-// Actualizar estado de reparación
+// Actualizar ficha de reparación (todos los campos)
 router.put('/:id', async (req, res) => {
   try {
     const { id } = req.params;
-    const { estado } = req.body;
-
-    if (!estado) {
-      return res.status(400).json({ error: 'El campo estado es obligatorio' });
-    }
+    const {
+      estado, telefono, email, marca, modelo, anio, patente, kilometraje,
+      fallaReportada, diagnostico, trabajos, repuestos,
+      observaciones, garantiaPeriodo, garantiaCondiciones
+    } = req.body;
 
     await pool.query(
-      'UPDATE reparaciones SET estado = ? WHERE id = ?',
-      [estado, id]
+      `UPDATE reparaciones SET
+        estado = ?,
+        telefono = ?,
+        email = ?,
+        marca = ?,
+        modelo = ?,
+        anio = ?,
+        patente = ?,
+        kilometraje = ?,
+        fallaReportada = ?,
+        diagnostico = ?,
+        trabajos = ?,
+        repuestos = ?,
+        observaciones = ?,
+        garantiaPeriodo = ?,
+        garantiaCondiciones = ?
+      WHERE id = ?`,
+      [
+        estado, telefono, email, marca, modelo, anio, patente, kilometraje,
+        fallaReportada, diagnostico, trabajos,
+        JSON.stringify(repuestos || []),
+        observaciones, garantiaPeriodo, garantiaCondiciones, id
+      ]
     );
 
     res.json({ ok: true });
   } catch (e) {
     console.error(e);
-    res.status(500).json({ error: 'Error actualizando reparación' });
+    res.status(500).json({ error: 'Error actualizando ficha de reparación' });
   }
 });
 
