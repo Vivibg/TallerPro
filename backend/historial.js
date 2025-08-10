@@ -14,16 +14,20 @@ router.get('/', async (req, res) => {
   }
 });
 
-// Listar historial con resumen de ficha de reparación
+// Listar historial con resumen de ficha de reparación (JOIN robusto solo por fecha)
 router.get('/con-ficha', async (req, res) => {
   try {
     const [rows] = await pool.query(`
       SELECT h.*, r.diagnostico, r.trabajos, r.repuestos, r.observaciones, r.garantiaPeriodo, r.garantiaCondiciones
       FROM historial_vehiculos h
       LEFT JOIN reparaciones r
-        ON h.vehiculo = r.vehiculo AND h.cliente = r.cliente AND h.fecha = r.fecha
+        ON h.vehiculo = r.vehiculo
+        AND h.cliente = r.cliente
+        AND DATE(h.fecha) = DATE(r.fecha)
       ORDER BY h.fecha DESC
     `);
+    // Log para depuración
+    console.log('Historial con ficha:', rows.length, 'resultados');
     res.json(rows);
   } catch (e) {
     console.error(e);
