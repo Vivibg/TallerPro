@@ -54,7 +54,7 @@ router.put('/:id/asistencia', async (req, res) => {
         return res.status(404).json({ error: 'Reserva no encontrada' });
       }
 
-      // 3. Insertar en reparaciones (rellena solo lo que tienes, el resto NULL)
+      // 3. Insertar en reparaciones (rellena solo lo que tienes, el resto con valores por defecto)
       await connection.query(
         `INSERT INTO reparaciones (
           cliente, vehiculo, problema, estado, costo, fecha,
@@ -63,9 +63,14 @@ router.put('/:id/asistencia', async (req, res) => {
           observaciones, garantiaPeriodo, garantiaCondiciones
         ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
         [
-          reserva.cliente, reserva.vehiculo, reserva.motivo, 'pendiente', 0, reserva.fecha,
-          null, null, null, null, null, null, null,
-          null, null, null, JSON.stringify([]), null, null, null
+          reserva.cliente || '',
+          reserva.vehiculo || '',
+          reserva.motivo || '',
+          'pending', // estado por defecto (en inglés para coincidir con el frontend)
+          0,
+          reserva.fecha || new Date().toISOString().slice(0, 10),
+          '', '', '', '', '', reserva.patente || '', '',
+          '', '', '', JSON.stringify([]), '', '', ''
         ]
       );
 
@@ -79,12 +84,12 @@ router.put('/:id/asistencia', async (req, res) => {
       await connection.query(
         'INSERT INTO historial_vehiculos (vehiculo, cliente, fecha, servicio, taller, placas) VALUES (?, ?, ?, ?, ?, ?)',
         [
-          reserva.vehiculo,
-          reserva.cliente,
-          reserva.fecha,
-          reserva.servicio,
+          reserva.vehiculo || '',
+          reserva.cliente || '',
+          reserva.fecha || new Date().toISOString().slice(0, 10),
+          reserva.servicio || '',
           'TallerPro',
-          '' // Ajusta si tienes el campo placas disponible
+          reserva.patente || ''
         ]
       );
     }
