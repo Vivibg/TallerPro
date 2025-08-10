@@ -52,7 +52,7 @@ function Reparaciones() {
   const [openFicha, setOpenFicha] = useState(false);
   const [selectedReparacion, setSelectedReparacion] = useState(null);
 
-  // Función corregida: normaliza campos vacíos a "Sin dato"
+  // Normaliza campos vacíos a "Sin dato"
   const fetchReparaciones = () => {
     fetch(`${process.env.REACT_APP_API_URL}/api/reparaciones`)
       .then(res => res.json())
@@ -100,8 +100,9 @@ function Reparaciones() {
     fetchReparaciones();
   };
 
+  // SOLO elimina del frontend (no del backend)
   const handleDelete = (id) => {
-  setDATA(prev => prev.filter(r => r.id !== id));
+    setDATA(prev => prev.filter(r => r.id !== id));
   };
 
   // Cambia el estado de la reparación y actualiza en backend (envía TODOS los campos)
