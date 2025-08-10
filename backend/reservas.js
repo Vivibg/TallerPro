@@ -54,10 +54,19 @@ router.put('/:id/asistencia', async (req, res) => {
         return res.status(404).json({ error: 'Reserva no encontrada' });
       }
 
-      // 3. Insertar en reparaciones
+      // 3. Insertar en reparaciones (rellena solo lo que tienes, el resto NULL)
       await connection.query(
-        'INSERT INTO reparaciones (cliente, vehiculo, problema, estado, costo, fecha) VALUES (?, ?, ?, ?, ?, ?)',
-        [reserva.cliente, reserva.vehiculo, reserva.motivo, 'pendiente', 0, reserva.fecha]
+        `INSERT INTO reparaciones (
+          cliente, vehiculo, problema, estado, costo, fecha,
+          telefono, email, marca, modelo, anio, patente, kilometraje,
+          fallaReportada, diagnostico, trabajos, repuestos,
+          observaciones, garantiaPeriodo, garantiaCondiciones
+        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+        [
+          reserva.cliente, reserva.vehiculo, reserva.motivo, 'pendiente', 0, reserva.fecha,
+          null, null, null, null, null, null, null,
+          null, null, null, JSON.stringify([]), null, null, null
+        ]
       );
 
       // 4. Verificar si el cliente existe en clientes, si no, agregarlo
