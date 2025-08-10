@@ -38,8 +38,9 @@ function HistorialVehiculos() {
 
   // Abrir/cerrar modal de ficha completa
   const handleVerFicha = async (h) => {
-    // Buscar la reparación asociada a esta patente y fecha
-    const res = await fetch(`${process.env.REACT_APP_API_URL}/api/reparaciones?patente=${h.patente}&fecha=${h.fecha}`);
+    // Normaliza la fecha a YYYY-MM-DD
+    const fecha = h.fecha ? h.fecha.slice(0, 10) : '';
+    const res = await fetch(`${process.env.REACT_APP_API_URL}/api/reparaciones?patente=${h.patente}&fecha=${fecha}`);
     const data = await res.json();
     if (data && data.length > 0) {
       setReparacionSeleccionada(data[0]);
@@ -160,6 +161,7 @@ function HistorialVehiculos() {
                 size="small"
                 sx={{ mr: 1, mt: 1 }}
                 onClick={() => handleVerFicha(h)}
+                disabled={!h.patente || !h.fecha}
               >
                 Ver Ficha Completa
               </Button>
