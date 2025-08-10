@@ -47,12 +47,13 @@ router.delete('/:id', async (req, res) => {
   }
 });
 
-// Actualizar una reparación existente
+// Actualizar una reparación existente y registrar en historial si pasa a "progress"
 router.put('/:id', async (req, res) => {
+  const connection = await pool.getConnection();
   try {
     const { id } = req.params;
     // Obtén los datos actuales para no perder los originales
-    const [rows] = await pool.query('SELECT cliente, vehiculo, problema FROM reparaciones WHERE id = ?', [id]);
+    const [rows] = await connection.query('SELECT cliente, vehiculo, problema, estado, patente, fecha FROM reparaciones WHERE id = ?', [id]);
     const reparacionActual = rows[0] || {};
 
     let {
@@ -65,19 +66,18 @@ router.put('/:id', async (req, res) => {
     // Valores por defecto
     const safe = (v, def = '') => (v === undefined || v === null ? def : v);
     const safeArray = (v) => Array.isArray(v) ? v : [];
-    // MANTÉN LOS ORIGINALES SI EL FRONTEND ENVÍA VACÍO O "Sin dato"
     cliente = (cliente && cliente.trim() && cliente !== 'Sin dato') ? cliente : (reparacionActual.cliente || '');
     vehiculo = (vehiculo && vehiculo.trim() && vehiculo !== 'Sin dato') ? vehiculo : (reparacionActual.vehiculo || '');
     problema = (problema && problema.trim() && problema !== 'Sin dato') ? problema : (reparacionActual.problema || '');
-    estado = safe(estado, 'pending');
+    estado = safe(estado, reparacionActual.estado || 'pending');
     costo = safe(costo, 0);
-    fecha = safeDate(fecha);
+    fecha = safeDate(fecha || reparacionActual.fecha);
     telefono = safe(telefono);
     email = safe(email);
     marca = safe(marca);
     modelo = safe(modelo);
     anio = safe(anio);
-    patente = safe(patente);
+    patente = safe(patente || reparacionActual.patente);
     kilometraje = safe(kilometraje);
     fallaReportada = safe(fallaReportada);
     diagnostico = safe(diagnostico);
@@ -87,7 +87,12 @@ router.put('/:id', async (req, res) => {
     garantiaPeriodo = safe(garantiaPeriodo);
     garantiaCondiciones = safe(garantiaCondiciones);
 
-    await pool.query(
+    // Detecta si el estado cambia a "progress"
+    const estadoAnterior = reparacionActual.estado;
+    const estadoNuevo = estado;
+
+    // Actualiza la reparación
+    await connection.query(
       `UPDATE reparaciones SET
         cliente = ?, vehiculo = ?, problema = ?, estado = ?, costo = ?, fecha = ?,
         telefono = ?, email = ?, marca = ?, modelo = ?, anio = ?, patente = ?, kilometraje = ?,
@@ -95,16 +100,35 @@ router.put('/:id', async (req, res) => {
         observaciones = ?, garantiaPeriodo = ?, garantiaCondiciones = ?
       WHERE id = ?`,
       [
-        cliente, vehiculo, problema, estado, costo, fecha,
+        cliente, vehiculo, problema, estadoNuevo, costo, fecha,
         telefono, email, marca, modelo, anio, patente, kilometraje,
         fallaReportada, diagnostico, trabajos, repuestos,
         observaciones, garantiaPeriodo, garantiaCondiciones, id
       ]
     );
+
+    // Si el estado cambió a "progress" y antes no lo era, registra en historial
+    if (estadoAnterior !== 'progress' && estadoNuevo === 'progress') {
+      await connection.query(
+        `INSERT INTO historial_vehiculos (vehiculo, cliente, fecha, servicio, taller, placas)
+         VALUES (?, ?, ?, ?, ?, ?)`,
+        [
+          vehiculo || reparacionActual.vehiculo || '',
+          cliente || reparacionActual.cliente || '',
+          fecha || reparacionActual.fecha || new Date().toISOString().slice(0, 10),
+          problema || reparacionActual.problema || 'Servicio',
+          'TallerPro',
+          patente || reparacionActual.patente || ''
+        ]
+      );
+    }
+
     res.json({ ok: true });
   } catch (e) {
     console.error('Error actualizando reparación:', e);
     res.status(500).json({ error: 'Error actualizando reparación' });
+  } finally {
+    connection.release();
   }
 });
 
