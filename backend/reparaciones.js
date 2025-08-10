@@ -21,7 +21,6 @@ router.get('/', async (req, res) => {
   }
   try {
     const [rows] = await pool.query(query, params);
-    // Normaliza los campos antes de enviar
     const normalizados = rows.map(r => ({
       ...r,
       cliente: r.cliente && r.cliente.trim() ? r.cliente : 'Sin dato',
@@ -47,12 +46,11 @@ router.delete('/:id', async (req, res) => {
   }
 });
 
-// Actualizar una reparación existente y registrar en historial si pasa a "progress"
+// Actualizar una reparación existente y sincronizar historial
 router.put('/:id', async (req, res) => {
   const connection = await pool.getConnection();
   try {
     const { id } = req.params;
-    // Obtén los datos actuales para no perder los originales
     const [rows] = await connection.query('SELECT cliente, vehiculo, problema, estado, patente, fecha FROM reparaciones WHERE id = ?', [id]);
     const reparacionActual = rows[0] || {};
 
@@ -63,7 +61,6 @@ router.put('/:id', async (req, res) => {
       observaciones, garantiaPeriodo, garantiaCondiciones
     } = req.body;
 
-    // Valores por defecto
     const safe = (v, def = '') => (v === undefined || v === null ? def : v);
     const safeArray = (v) => Array.isArray(v) ? v : [];
     cliente = (cliente && cliente.trim() && cliente !== 'Sin dato') ? cliente : (reparacionActual.cliente || '');
@@ -87,7 +84,6 @@ router.put('/:id', async (req, res) => {
     garantiaPeriodo = safe(garantiaPeriodo);
     garantiaCondiciones = safe(garantiaCondiciones);
 
-    // Detecta si el estado cambia a "progress"
     const estadoAnterior = reparacionActual.estado;
     const estadoNuevo = estado;
 
@@ -107,20 +103,41 @@ router.put('/:id', async (req, res) => {
       ]
     );
 
-    // Si el estado cambió a "progress" y antes no lo era, registra en historial
-    if (estadoAnterior !== 'progress' && estadoNuevo === 'progress') {
-      await connection.query(
-        `INSERT INTO historial_vehiculos (vehiculo, cliente, fecha, servicio, taller, patente)
-         VALUES (?, ?, ?, ?, ?, ?)`,
-        [
-          vehiculo || reparacionActual.vehiculo || '',
-          cliente || reparacionActual.cliente || '',
-          fecha || reparacionActual.fecha || new Date().toISOString().slice(0, 10),
-          problema || reparacionActual.problema || 'Servicio',
-          'TallerPro',
-          patente || reparacionActual.patente || ''
-        ]
+    // Sincroniza historial: si pasa a "progress", inserta o actualiza; si ya estaba, solo actualiza
+    if (estadoNuevo === 'progress') {
+      const [historialRows] = await connection.query(
+        'SELECT id FROM historial_vehiculos WHERE reparacion_id = ?', [id]
       );
+      if (historialRows.length === 0) {
+        await connection.query(
+          `INSERT INTO historial_vehiculos (reparacion_id, vehiculo, cliente, fecha, servicio, taller, patente)
+           VALUES (?, ?, ?, ?, ?, ?, ?)`,
+          [
+            id,
+            vehiculo,
+            cliente,
+            fecha,
+            problema,
+            'TallerPro',
+            patente
+          ]
+        );
+      } else {
+        await connection.query(
+          `UPDATE historial_vehiculos SET
+            vehiculo = ?, cliente = ?, fecha = ?, servicio = ?, taller = ?, patente = ?
+          WHERE reparacion_id = ?`,
+          [
+            vehiculo,
+            cliente,
+            fecha,
+            problema,
+            'TallerPro',
+            patente,
+            id
+          ]
+        );
+      }
     }
 
     res.json({ ok: true });
@@ -183,6 +200,22 @@ router.post('/', async (req, res) => {
   } catch (e) {
     console.error('Error creando reparación:', e);
     res.status(500).json({ error: 'Error creando reparación' });
+  }
+});
+
+// Obtener historial de vehículos con datos de la reparación (JOIN)
+router.get('/historial', async (req, res) => {
+  try {
+    const [rows] = await pool.query(`
+      SELECT h.*, r.*
+      FROM historial_vehiculos h
+      JOIN reparaciones r ON h.reparacion_id = r.id
+      ORDER BY h.fecha DESC
+    `);
+    res.json(rows);
+  } catch (e) {
+    console.error('Error consultando historial:', e);
+    res.status(500).json({ error: 'Error consultando historial', details: e.message });
   }
 });
 
