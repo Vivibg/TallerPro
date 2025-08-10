@@ -160,7 +160,7 @@ function HistorialVehiculos() {
                 size="small"
                 sx={{ mr: 1, mt: 1 }}
                 onClick={() => handleVerFicha(h)}
-              >
+                >
                 Ver Ficha Completa
               </Button>
               <Button variant="outlined" size="small" color="error" onClick={() => handleDelete(h.id)}>Eliminar</Button>
