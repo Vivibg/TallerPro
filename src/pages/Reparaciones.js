@@ -35,6 +35,11 @@ function Reparaciones() {
   const [form, setForm] = useState({
     cliente: '',
     vehiculo: '',
+    patente: '',
+    marca: '',
+    modelo: '',
+    anio: '',
+    kilometraje: '',
     problema: '',
     estado: 'pending',
     costo: '',
@@ -72,6 +77,11 @@ function Reparaciones() {
     setForm({
       cliente: '',
       vehiculo: '',
+      patente: '',
+      marca: '',
+      modelo: '',
+      anio: '',
+      kilometraje: '',
       problema: '',
       estado: 'pending',
       costo: '',
@@ -134,6 +144,11 @@ function Reparaciones() {
             <DialogContent sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
               <TextField label="Cliente" name="cliente" value={form.cliente} onChange={handleChange} required />
               <TextField label="Vehículo" name="vehiculo" value={form.vehiculo} onChange={handleChange} required />
+              <TextField label="Patente" name="patente" value={form.patente} onChange={handleChange} required />
+              <TextField label="Marca" name="marca" value={form.marca} onChange={handleChange} />
+              <TextField label="Modelo" name="modelo" value={form.modelo} onChange={handleChange} />
+              <TextField label="Año" name="anio" value={form.anio} onChange={handleChange} />
+              <TextField label="Kilometraje" name="kilometraje" value={form.kilometraje} onChange={handleChange} />
               <TextField label="Problema" name="problema" value={form.problema} onChange={handleChange} />
               <TextField
                 label="Estado"
@@ -164,6 +179,11 @@ function Reparaciones() {
               <TableCell>ID</TableCell>
               <TableCell>Cliente</TableCell>
               <TableCell>Vehículo</TableCell>
+              <TableCell>Patente</TableCell>
+              <TableCell>Marca</TableCell>
+              <TableCell>Modelo</TableCell>
+              <TableCell>Año</TableCell>
+              <TableCell>Kilometraje</TableCell>
               <TableCell>Problema</TableCell>
               <TableCell>Estado</TableCell>
               <TableCell>Costo</TableCell>
@@ -176,6 +196,11 @@ function Reparaciones() {
                 <TableCell>#{row.id}</TableCell>
                 <TableCell sx={{ fontWeight: 600 }}>{row.cliente}</TableCell>
                 <TableCell>{row.vehiculo}</TableCell>
+                <TableCell>{row.patente}</TableCell>
+                <TableCell>{row.marca}</TableCell>
+                <TableCell>{row.modelo}</TableCell>
+                <TableCell>{row.anio}</TableCell>
+                <TableCell>{row.kilometraje}</TableCell>
                 <TableCell>{row.problema}</TableCell>
                 <TableCell>
                   <Select
