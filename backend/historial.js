@@ -9,9 +9,26 @@ router.get('/', async (req, res) => {
     const [rows] = await pool.query('SELECT * FROM historial_vehiculos');
     res.json(rows);
   } catch (e) {
-  console.error(e); // <--- Esto imprime el error en los logs de Render
-  res.status(500).json({ error: 'Error consultando historial' });
-}
+    console.error(e);
+    res.status(500).json({ error: 'Error consultando historial' });
+  }
+});
+
+// Listar historial con resumen de ficha de reparación
+router.get('/con-ficha', async (req, res) => {
+  try {
+    const [rows] = await pool.query(`
+      SELECT h.*, r.diagnostico, r.trabajos, r.repuestos, r.observaciones, r.garantiaPeriodo, r.garantiaCondiciones
+      FROM historial_vehiculos h
+      LEFT JOIN reparaciones r
+        ON h.vehiculo = r.vehiculo AND h.cliente = r.cliente AND h.fecha = r.fecha
+      ORDER BY h.fecha DESC
+    `);
+    res.json(rows);
+  } catch (e) {
+    console.error(e);
+    res.status(500).json({ error: 'Error consultando historial con ficha' });
+  }
 });
 
 // Crear registro de historial
