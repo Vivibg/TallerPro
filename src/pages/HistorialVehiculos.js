@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Box, Typography, TextField, Paper, Grid, Button, Dialog, DialogTitle, DialogContent, DialogActions } from '@mui/material';
+import FichaReparacionModal from './FichaReparacionModal';
 
 function HistorialVehiculos() {
   const [historiales, setHistoriales] = useState([]);
@@ -15,6 +16,10 @@ function HistorialVehiculos() {
     taller: ''
   });
 
+  // Nuevo estado para la ficha completa
+  const [fichaOpen, setFichaOpen] = useState(false);
+  const [reparacionSeleccionada, setReparacionSeleccionada] = useState(null);
+
   // Cargar historial con ficha al montar el componente
   useEffect(() => {
     fetch(`${process.env.REACT_APP_API_URL}/api/historial/con-ficha`)
@@ -27,9 +32,23 @@ function HistorialVehiculos() {
   const handleOpen = () => setOpen(true);
   const handleClose = () => setOpen(false);
 
-  // Abrir/cerrar modal de detalle de ficha
+  // Abrir/cerrar modal de detalle de ficha (resumen)
   const handleDetalleOpen = (h) => setDetalle(h);
   const handleDetalleClose = () => setDetalle(null);
+
+  // Abrir/cerrar modal de ficha completa
+  const handleVerFicha = async (h) => {
+    // Buscar la reparación asociada a esta patente y fecha
+    const res = await fetch(`${process.env.REACT_APP_API_URL}/api/reparaciones?patente=${h.placas}&fecha=${h.fecha}`);
+    const data = await res.json();
+    if (data && data.length > 0) {
+      setReparacionSeleccionada(data[0]);
+      setFichaOpen(true);
+    } else {
+      alert('No se encontró la ficha de reparación asociada a este historial.');
+    }
+  };
+  const handleFichaClose = () => setFichaOpen(false);
 
   // Manejar cambios en el formulario
   const handleChange = (e) => {
@@ -140,8 +159,7 @@ function HistorialVehiculos() {
                 variant="contained"
                 size="small"
                 sx={{ mr: 1, mt: 1 }}
-                onClick={() => handleDetalleOpen(h)}
-                disabled={!h.diagnostico && !h.trabajos && !h.observaciones}
+                onClick={() => handleVerFicha(h)}
               >
                 Ver Ficha Completa
               </Button>
@@ -151,7 +169,14 @@ function HistorialVehiculos() {
         ))}
       </Grid>
 
-      {/* Modal para ver ficha completa */}
+      {/* Modal para ver ficha completa (usando FichaReparacionModal) */}
+      <FichaReparacionModal
+        open={fichaOpen}
+        onClose={handleFichaClose}
+        reparacion={reparacionSeleccionada || {}}
+      />
+
+      {/* Modal para ver resumen de ficha (opcional, puedes quitarlo si no lo usas) */}
       <Dialog open={!!detalle} onClose={handleDetalleClose} maxWidth="md" fullWidth>
         <DialogTitle>Ficha Completa de Reparación</DialogTitle>
         <DialogContent dividers>
