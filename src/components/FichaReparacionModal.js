@@ -6,7 +6,7 @@ import {
 import AddIcon from '@mui/icons-material/Add';
 import DeleteIcon from '@mui/icons-material/Delete';
 
-function FichaReparacionModal({ open, onClose, reparacion }) {
+function FichaReparacionModal({ open, onClose, reparacion, onSaved }) {
   // Normaliza repuestos a array
   const normalizeRepuestos = (r) => {
     if (!r) return [];
@@ -92,7 +92,8 @@ function FichaReparacionModal({ open, onClose, reparacion }) {
         observaciones: ficha.observaciones,
         garantiaPeriodo: ficha.garantiaPeriodo,
         garantiaCondiciones: ficha.garantiaCondiciones,
-        problema: reparacion.problema || '',
+        vehiculo: ficha.marca + ' ' + ficha.modelo, // <--- CORREGIDO
+        problema: ficha.fallaReportada,             // <--- CORREGIDO
         estado: reparacion.estado || 'pendiente',
         costo: reparacion.costo || 0,
         fecha: reparacion.fecha || new Date().toISOString().slice(0, 10)
@@ -105,7 +106,7 @@ function FichaReparacionModal({ open, onClose, reparacion }) {
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
         vehiculo: ficha.marca + ' ' + ficha.modelo,
-        patente: ficha.patente, // catalogar por patente
+        patente: ficha.patente,
         cliente: ficha.nombre,
         fecha: reparacion.fecha || new Date().toISOString().slice(0, 10),
         servicio: ficha.trabajos ? ficha.trabajos.substring(0, 100) : 'Reparación',
@@ -113,13 +114,33 @@ function FichaReparacionModal({ open, onClose, reparacion }) {
       })
     });
 
+    // Refresca la tabla principal si se provee la función
+    if (onSaved) onSaved();
+
     onClose();
   };
 
   return (
     <Dialog open={open} onClose={onClose} maxWidth="md" fullWidth>
-      {/* ...todo igual que tu diseño actual... */}
-      {/* (puedes dejar el resto del render igual) */}
+      <DialogTitle>Ficha de Servicio de Reparación Mecánica</DialogTitle>
+      <DialogContent>
+        {/* ... aquí va tu formulario ... */}
+        {/* Puedes dejar el render igual, solo asegúrate de que los campos estén conectados a ficha */}
+        {/* Ejemplo: */}
+        <Grid container spacing={2} sx={{ mt: 1 }}>
+          <Grid item xs={12} sm={4}>
+            <TextField label="Nombre" name="nombre" value={ficha.nombre} onChange={handleChange} fullWidth />
+          </Grid>
+          <Grid item xs={12} sm={4}>
+            <TextField label="Teléfono" name="telefono" value={ficha.telefono} onChange={handleChange} fullWidth />
+          </Grid>
+          <Grid item xs={12} sm={4}>
+            <TextField label="Correo electrónico" name="email" value={ficha.email} onChange={handleChange} fullWidth />
+          </Grid>
+          {/* ...agrega los demás campos igual que ya tienes... */}
+        </Grid>
+        {/* Repuestos table, observaciones, garantía, etc. */}
+      </DialogContent>
       <DialogActions>
         <Button onClick={onClose}>Cerrar</Button>
         <Button onClick={handleGuardarFicha} variant="contained" color="primary">Guardar</Button>
