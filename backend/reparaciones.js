@@ -110,7 +110,7 @@ router.put('/:id', async (req, res) => {
     // Si el estado cambió a "progress" y antes no lo era, registra en historial
     if (estadoAnterior !== 'progress' && estadoNuevo === 'progress') {
       await connection.query(
-        `INSERT INTO historial_vehiculos (vehiculo, cliente, fecha, servicio, taller, placas)
+        `INSERT INTO historial_vehiculos (vehiculo, cliente, fecha, servicio, taller, patente)
          VALUES (?, ?, ?, ?, ?, ?)`,
         [
           vehiculo || reparacionActual.vehiculo || '',
