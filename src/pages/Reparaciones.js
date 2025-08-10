@@ -52,10 +52,19 @@ function Reparaciones() {
   const [openFicha, setOpenFicha] = useState(false);
   const [selectedReparacion, setSelectedReparacion] = useState(null);
 
+  // Función corregida: normaliza campos vacíos a "Sin dato"
   const fetchReparaciones = () => {
     fetch(`${process.env.REACT_APP_API_URL}/api/reparaciones`)
       .then(res => res.json())
-      .then(data => Array.isArray(data) ? setDATA(data) : setDATA([]))
+      .then(data => {
+        const normalizados = (Array.isArray(data) ? data : []).map(r => ({
+          ...r,
+          cliente: r.cliente && r.cliente.trim() ? r.cliente : 'Sin dato',
+          vehiculo: r.vehiculo && r.vehiculo.trim() ? r.vehiculo : 'Sin dato',
+          problema: r.problema && r.problema.trim() ? r.problema : 'Sin dato'
+        }));
+        setDATA(normalizados);
+      })
       .catch(() => setDATA([]));
   };
 
