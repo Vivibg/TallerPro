@@ -9,7 +9,7 @@ function HistorialVehiculos() {
   const [detalle, setDetalle] = useState(null);
   const [form, setForm] = useState({
     vehiculo: '',
-    placas: '',
+    patente: '',
     cliente: '',
     fecha: '',
     servicio: '',
@@ -39,7 +39,7 @@ function HistorialVehiculos() {
   // Abrir/cerrar modal de ficha completa
   const handleVerFicha = async (h) => {
     // Buscar la reparación asociada a esta patente y fecha
-    const res = await fetch(`${process.env.REACT_APP_API_URL}/api/reparaciones?patente=${h.placas}&fecha=${h.fecha}`);
+    const res = await fetch(`${process.env.REACT_APP_API_URL}/api/reparaciones?patente=${h.patente}&fecha=${h.fecha}`);
     const data = await res.json();
     if (data && data.length > 0) {
       setReparacionSeleccionada(data[0]);
@@ -69,7 +69,7 @@ function HistorialVehiculos() {
         handleClose();
         setForm({
           vehiculo: '',
-          placas: '',
+          patente: '',
           cliente: '',
           fecha: '',
           servicio: '',
@@ -90,7 +90,7 @@ function HistorialVehiculos() {
   // Filtrar resultados por búsqueda
   const resultados = historiales.filter(h =>
     h.vehiculo?.toLowerCase().includes(busqueda.toLowerCase()) ||
-    h.placas?.toLowerCase().includes(busqueda.toLowerCase())
+    h.patente?.toLowerCase().includes(busqueda.toLowerCase())
   );
 
   return (
@@ -99,7 +99,7 @@ function HistorialVehiculos() {
       <Box sx={{ display: 'flex', gap: 2, mb: 3, flexWrap: 'wrap', alignItems: 'center' }}>
         <TextField
           size="small"
-          placeholder="Buscar vehículo o placas..."
+          placeholder="Buscar vehículo o patente..."
           value={busqueda}
           onChange={e => setBusqueda(e.target.value)}
           sx={{ minWidth: 240 }}
@@ -113,7 +113,7 @@ function HistorialVehiculos() {
           <form onSubmit={handleSubmit}>
             <DialogContent sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
               <TextField label="Vehículo" name="vehiculo" value={form.vehiculo} onChange={handleChange} required />
-              <TextField label="Placas" name="placas" value={form.placas} onChange={handleChange} />
+              <TextField label="Patente" name="patente" value={form.patente} onChange={handleChange} />
               <TextField label="Cliente" name="cliente" value={form.cliente} onChange={handleChange} />
               <TextField label="Fecha" name="fecha" value={form.fecha} onChange={handleChange} placeholder="2024-07-27" />
               <TextField label="Servicio" name="servicio" value={form.servicio} onChange={handleChange} />
@@ -131,7 +131,7 @@ function HistorialVehiculos() {
           <Grid item xs={12} md={6} key={h.id || i}>
             <Paper elevation={2} sx={{ p: 2 }}>
               <Typography variant="h6" fontWeight={600}>{h.vehiculo}</Typography>
-              <Typography variant="body2" color="text.secondary">Placas: {h.placas}</Typography>
+              <Typography variant="body2" color="text.secondary">Patente: {h.patente}</Typography>
               <Typography variant="body2">Cliente: {h.cliente}</Typography>
               <Typography variant="body2">Servicio: {h.servicio}</Typography>
               <Typography variant="body2">Taller: {h.taller}</Typography>
