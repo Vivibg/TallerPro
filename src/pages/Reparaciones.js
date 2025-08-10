@@ -60,9 +60,10 @@ function Reparaciones() {
     fetch(`${process.env.REACT_APP_API_URL}/api/reparaciones`)
       .then(res => res.json())
       .then(data => {
-        // Guarda los valores originales para vehiculo y problema
+        // Guarda los valores originales para cliente, vehiculo y problema
         const normalizados = (Array.isArray(data) ? data : []).map(r => ({
           ...r,
+          cliente_original: r.cliente && r.cliente !== 'Sin dato' ? r.cliente : '',
           vehiculo_original: r.vehiculo && r.vehiculo !== 'Sin dato' ? r.vehiculo : '',
           problema_original: r.problema && r.problema !== 'Sin dato' ? r.problema : '',
         }));
@@ -108,12 +109,13 @@ function Reparaciones() {
     setDATA(prev => prev.filter(r => r.id !== id));
   };
 
-  // Cambia el estado de la reparación y mantiene vehiculo/problema originales
+  // Cambia el estado de la reparación y mantiene cliente/vehiculo/problema originales
   const handleEstadoChange = async (id, nuevoEstado) => {
     const reparacion = DATA.find(r => r.id === id);
     if (!reparacion) return;
 
     // Usa SIEMPRE los valores originales
+    const clienteValido = reparacion.cliente_original || '';
     const vehiculoValido = reparacion.vehiculo_original || '';
     const problemaValido = reparacion.problema_original || '';
 
@@ -126,6 +128,7 @@ function Reparaciones() {
         ...reparacion,
         estado: nuevoEstado,
         fecha: fechaValida,
+        cliente: clienteValido,
         vehiculo: vehiculoValido,
         problema: problemaValido
       })
