@@ -100,9 +100,8 @@ function Reparaciones() {
     fetchReparaciones();
   };
 
-  const handleDelete = async id => {
-    await fetch(`${process.env.REACT_APP_API_URL}/api/reparaciones/${id}`, { method: 'DELETE' });
-    fetchReparaciones();
+  const handleDelete = (id) => {
+  setDATA(prev => prev.filter(r => r.id !== id));
   };
 
   // Cambia el estado de la reparación y actualiza en backend (envía TODOS los campos)
