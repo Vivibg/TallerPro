@@ -35,6 +35,18 @@ router.get('/', async (req, res) => {
   }
 });
 
+// Eliminar una reparación por ID
+router.delete('/:id', async (req, res) => {
+  try {
+    const { id } = req.params;
+    await pool.query('DELETE FROM reparaciones WHERE id = ?', [id]);
+    res.json({ ok: true });
+  } catch (e) {
+    console.error(e);
+    res.status(500).json({ error: 'Error eliminando reparación' });
+  }
+});
+
 // Actualizar una reparación existente
 router.put('/:id', async (req, res) => {
   try {
