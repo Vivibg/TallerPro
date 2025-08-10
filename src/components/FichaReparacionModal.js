@@ -42,7 +42,18 @@ function FichaReparacionModal({ open, onClose, reparacion }) {
     setFicha({ ...ficha, repuestos: nuevos });
   };
 
-  // Puedes agregar aquí la lógica para guardar (PUT al backend)
+  // GUARDAR la ficha en el backend
+  const handleGuardarFicha = async () => {
+    await fetch(`${process.env.REACT_APP_API_URL}/api/reparaciones/${reparacion.id}`, {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        ...ficha,
+        cliente: ficha.nombre // por compatibilidad
+      })
+    });
+    onClose();
+  };
 
   return (
     <Dialog open={open} onClose={onClose} maxWidth="md" fullWidth>
@@ -139,8 +150,8 @@ function FichaReparacionModal({ open, onClose, reparacion }) {
         </Grid>
       </DialogContent>
       <DialogActions>
-        {/* Aquí puedes agregar el botón Guardar si quieres persistir */}
         <Button onClick={onClose}>Cerrar</Button>
+        <Button onClick={handleGuardarFicha} variant="contained" color="primary">Guardar</Button>
       </DialogActions>
     </Dialog>
   );
