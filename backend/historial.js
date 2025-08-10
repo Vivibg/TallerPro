@@ -23,6 +23,7 @@ router.get('/con-ficha', async (req, res) => {
       LEFT JOIN reparaciones r
         ON h.vehiculo = r.vehiculo
         AND h.cliente = r.cliente
+        AND h.patente = r.patente
         AND DATE(h.fecha) = DATE(r.fecha)
       ORDER BY h.fecha DESC
     `);
@@ -38,12 +39,12 @@ router.get('/con-ficha', async (req, res) => {
 // Crear registro de historial
 router.post('/', async (req, res) => {
   try {
-    const { vehiculo, placas, cliente, fecha, servicio, taller } = req.body;
+    const { vehiculo, patente, cliente, fecha, servicio, taller } = req.body;
     const [result] = await pool.query(
-      'INSERT INTO historial_vehiculos (vehiculo, placas, cliente, fecha, servicio, taller) VALUES (?, ?, ?, ?, ?, ?)',
-      [vehiculo, placas, cliente, fecha, servicio, taller]
+      'INSERT INTO historial_vehiculos (vehiculo, patente, cliente, fecha, servicio, taller) VALUES (?, ?, ?, ?, ?, ?)',
+      [vehiculo, patente, cliente, fecha, servicio, taller]
     );
-    res.status(201).json({ id: result.insertId, vehiculo, placas, cliente, fecha, servicio, taller });
+    res.status(201).json({ id: result.insertId, vehiculo, patente, cliente, fecha, servicio, taller });
   } catch (e) {
     res.status(500).json({ error: 'Error creando historial' });
   }
