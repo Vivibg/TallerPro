@@ -32,7 +32,7 @@ router.post('/', async (req, res) => {
   }
 });
 
-// Confirmar asistencia y sincronizar con reparaciones, clientes e historial_vehiculos
+// Confirmar asistencia y sincronizar con reparaciones y clientes (NO historial_vehiculos)
 router.put('/:id/asistencia', async (req, res) => {
   const connection = await pool.getConnection();
   try {
@@ -66,7 +66,7 @@ router.put('/:id/asistencia', async (req, res) => {
           reserva.cliente || '',
           reserva.vehiculo || '',
           reserva.motivo || '',
-          'pending', // estado por defecto (en inglés para coincidir con el frontend)
+          'pending', // estado por defecto
           0,
           reserva.fecha || new Date().toISOString().slice(0, 10),
           '', '', '', '', '', reserva.patente || '', '',
@@ -80,18 +80,8 @@ router.put('/:id/asistencia', async (req, res) => {
         await connection.query('INSERT INTO clientes (nombre) VALUES (?)', [reserva.cliente]);
       }
 
-      // 5. Insertar en historial_vehiculos
-      await connection.query(
-        'INSERT INTO historial_vehiculos (vehiculo, cliente, fecha, servicio, taller, patente) VALUES (?, ?, ?, ?, ?, ?)',
-        [
-          reserva.vehiculo || '',
-          reserva.cliente || '',
-          reserva.fecha || new Date().toISOString().slice(0, 10),
-          reserva.servicio || '',
-          'TallerPro',
-          reserva.patente || ''
-        ]
-      );
+      // 5. NO insertar en historial_vehiculos aquí
+      // (El historial se actualiza solo cuando la reparación pasa a estado "En Proceso" en el backend de reparaciones)
     }
 
     res.json({ ok: true });
@@ -116,4 +106,3 @@ router.delete('/:id', async (req, res) => {
 });
 
 export default router;
-
