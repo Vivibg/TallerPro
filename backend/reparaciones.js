@@ -3,18 +3,58 @@ import { pool } from './db.js';
 
 const router = Router();
 
-// Listar todas las reparaciones
+// Obtener todas las reparaciones o buscar por patente y fecha
 router.get('/', async (req, res) => {
+  const { patente, fecha } = req.query;
+  let query = 'SELECT * FROM reparaciones WHERE 1=1';
+  let params = [];
+  if (patente) {
+    query += ' AND patente = ?';
+    params.push(patente);
+  }
+  if (fecha) {
+    query += ' AND DATE(fecha) = DATE(?)';
+    params.push(fecha);
+  }
   try {
-    const [rows] = await pool.query('SELECT * FROM reparaciones');
+    const [rows] = await pool.query(query, params);
     res.json(rows);
   } catch (e) {
-    console.error(e);
-    res.status(500).json({ error: 'Error consultando reparaciones' });
+    res.status(500).json({ error: 'Error buscando reparación' });
   }
 });
 
-// Crear reparación (manual o desde reservas)
+// Actualizar una reparación existente
+router.put('/:id', async (req, res) => {
+  try {
+    const { id } = req.params;
+    const {
+      cliente, vehiculo, problema, estado, costo, fecha,
+      telefono, email, marca, modelo, anio, patente, kilometraje,
+      fallaReportada, diagnostico, trabajos, repuestos,
+      observaciones, garantiaPeriodo, garantiaCondiciones
+    } = req.body;
+    await pool.query(
+      `UPDATE reparaciones SET
+        cliente = ?, vehiculo = ?, problema = ?, estado = ?, costo = ?, fecha = ?,
+        telefono = ?, email = ?, marca = ?, modelo = ?, anio = ?, patente = ?, kilometraje = ?,
+        fallaReportada = ?, diagnostico = ?, trabajos = ?, repuestos = ?,
+        observaciones = ?, garantiaPeriodo = ?, garantiaCondiciones = ?
+      WHERE id = ?`,
+      [
+        cliente, vehiculo, problema, estado, costo, fecha,
+        telefono, email, marca, modelo, anio, patente, kilometraje,
+        fallaReportada, diagnostico, trabajos, JSON.stringify(repuestos),
+        observaciones, garantiaPeriodo, garantiaCondiciones, id
+      ]
+    );
+    res.json({ ok: true });
+  } catch (e) {
+    res.status(500).json({ error: 'Error actualizando reparación' });
+  }
+});
+
+// Crear una reparación nueva
 router.post('/', async (req, res) => {
   try {
     const {
@@ -31,72 +71,15 @@ router.post('/', async (req, res) => {
         observaciones, garantiaPeriodo, garantiaCondiciones
       ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
       [
-        cliente, vehiculo, problema, estado || 'pending', costo, fecha,
+        cliente, vehiculo, problema, estado, costo, fecha,
         telefono, email, marca, modelo, anio, patente, kilometraje,
-        fallaReportada, diagnostico, trabajos,
-        JSON.stringify(repuestos || []),
+        fallaReportada, diagnostico, trabajos, JSON.stringify(repuestos),
         observaciones, garantiaPeriodo, garantiaCondiciones
       ]
     );
-    res.status(201).json({ id: result.insertId, ...req.body });
+    res.status(201).json({ id: result.insertId });
   } catch (e) {
-    console.error(e);
     res.status(500).json({ error: 'Error creando reparación' });
-  }
-});
-
-// Actualizar ficha de reparación (todos los campos)
-router.put('/:id', async (req, res) => {
-  try {
-    const { id } = req.params;
-    const {
-      estado, telefono, email, marca, modelo, anio, patente, kilometraje,
-      fallaReportada, diagnostico, trabajos, repuestos,
-      observaciones, garantiaPeriodo, garantiaCondiciones
-    } = req.body;
-
-    await pool.query(
-      `UPDATE reparaciones SET
-        estado = ?,
-        telefono = ?,
-        email = ?,
-        marca = ?,
-        modelo = ?,
-        anio = ?,
-        patente = ?,
-        kilometraje = ?,
-        fallaReportada = ?,
-        diagnostico = ?,
-        trabajos = ?,
-        repuestos = ?,
-        observaciones = ?,
-        garantiaPeriodo = ?,
-        garantiaCondiciones = ?
-      WHERE id = ?`,
-      [
-        estado, telefono, email, marca, modelo, anio, patente, kilometraje,
-        fallaReportada, diagnostico, trabajos,
-        JSON.stringify(repuestos || []),
-        observaciones, garantiaPeriodo, garantiaCondiciones, id
-      ]
-    );
-
-    res.json({ ok: true });
-  } catch (e) {
-    console.error(e);
-    res.status(500).json({ error: 'Error actualizando ficha de reparación' });
-  }
-});
-
-// Eliminar reparación
-router.delete('/:id', async (req, res) => {
-  try {
-    const { id } = req.params;
-    await pool.query('DELETE FROM reparaciones WHERE id = ?', [id]);
-    res.json({ ok: true });
-  } catch (e) {
-    console.error(e);
-    res.status(500).json({ error: 'Error eliminando reparación' });
   }
 });
 
