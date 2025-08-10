@@ -42,17 +42,33 @@ function FichaReparacionModal({ open, onClose, reparacion }) {
     setFicha({ ...ficha, repuestos: nuevos });
   };
 
-  // GUARDAR la ficha en el backend, asegurando que siempre se envía "estado"
+  // GUARDAR la ficha en el backend y registrar en historial por patente
   const handleGuardarFicha = async () => {
+    // 1. Guardar la ficha en reparaciones
     await fetch(`${process.env.REACT_APP_API_URL}/api/reparaciones/${reparacion.id}`, {
       method: 'PUT',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
         ...ficha,
-        cliente: ficha.nombre, // por compatibilidad
-        estado: reparacion.estado || 'pendiente' // ¡Siempre envía un estado!
+        cliente: ficha.nombre,
+        estado: reparacion.estado || 'pendiente'
       })
     });
+
+    // 2. Registrar en historial, catalogando por patente (placa)
+    await fetch(`${process.env.REACT_APP_API_URL}/api/historial`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        vehiculo: ficha.marca + ' ' + ficha.modelo,
+        placas: ficha.patente, // catalogar por patente
+        cliente: ficha.nombre,
+        fecha: new Date().toISOString().slice(0, 10), // o ficha.fecha si lo tienes
+        servicio: ficha.trabajos ? ficha.trabajos.substring(0, 100) : 'Reparación',
+        taller: 'TallerPro'
+      })
+    });
+
     onClose();
   };
 
