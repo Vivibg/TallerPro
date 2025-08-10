@@ -82,7 +82,7 @@ router.put('/:id/asistencia', async (req, res) => {
 
       // 5. Insertar en historial_vehiculos
       await connection.query(
-        'INSERT INTO historial_vehiculos (vehiculo, cliente, fecha, servicio, taller, placas) VALUES (?, ?, ?, ?, ?, ?)',
+        'INSERT INTO historial_vehiculos (vehiculo, cliente, fecha, servicio, taller, patente) VALUES (?, ?, ?, ?, ?, ?)',
         [
           reserva.vehiculo || '',
           reserva.cliente || '',
@@ -116,3 +116,4 @@ router.delete('/:id', async (req, res) => {
 });
 
 export default router;
+
