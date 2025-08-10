@@ -3,12 +3,16 @@ import { Box, Typography, Paper, Grid, Button, List, ListItem, ListItemText, Dia
 
 function Reservas() {
   const [open, setOpen] = useState(false);
-  const [form, setForm] = useState({ cliente: '', servicio: '', vehiculo: '', fecha: '', hora: '', motivo: '' });
+  const [form, setForm] = useState({ cliente: '', servicio: '', vehiculo: '', patente: '', fecha: '', hora: '', motivo: '' });
   const [reservas, setReservas] = useState([]);
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
 
   const API_URL = process.env.REACT_APP_API_URL;
+
+  // Validación de fecha y hora
+  const isValidDate = (date) => /^\d{4}-\d{2}-\d{2}$/.test(date);
+  const isValidTime = (time) => /^([01]\d|2[0-3]):[0-5]\d$/.test(time);
 
   // Cargar todas las reservas al cargar el componente
   const fetchReservas = () => {
@@ -39,8 +43,16 @@ function Reservas() {
     e.preventDefault();
     setError('');
     setSuccess('');
-    if (!form.cliente || !form.servicio || !form.vehiculo || !form.fecha || !form.hora || !form.motivo) {
+    if (!form.cliente || !form.servicio || !form.vehiculo || !form.patente || !form.fecha || !form.hora || !form.motivo) {
       setError('Todos los campos son obligatorios');
+      return;
+    }
+    if (!isValidDate(form.fecha)) {
+      setError('La fecha debe tener el formato YYYY-MM-DD');
+      return;
+    }
+    if (!isValidTime(form.hora)) {
+      setError('La hora debe tener el formato HH:MM (24h)');
       return;
     }
     try {
@@ -54,7 +66,7 @@ function Reservas() {
         setError(data.error || 'Error al guardar la reserva');
         return;
       }
-      setForm({ cliente: '', servicio: '', vehiculo: '', fecha: '', hora: '', motivo: '' });
+      setForm({ cliente: '', servicio: '', vehiculo: '', patente: '', fecha: '', hora: '', motivo: '' });
       setSuccess('¡Reserva creada exitosamente!');
       setOpen(false);
       fetchReservas();
@@ -103,6 +115,7 @@ function Reservas() {
                           {cita.fecha} {cita.hora} - {cita.cliente}
                         </Typography>
                         <Typography variant="body2" color="text.secondary">{cita.servicio} - {cita.vehiculo}</Typography>
+                        <Typography variant="body2" color="text.secondary">Patente: {cita.patente || 'Sin patente'}</Typography>
                         <Typography variant="body2" color="text.secondary">Motivo: {cita.motivo}</Typography>
                         {cita.asiste === true && <Chip label="Asistió" color="success" size="small" sx={{ mt: 1 }} />}
                         {cita.asiste === false && <Chip label="No asistió" color="error" size="small" sx={{ mt: 1 }} />}
@@ -149,6 +162,7 @@ function Reservas() {
                   <TextField label="Cliente" name="cliente" value={form.cliente} onChange={handleChange} required />
                   <TextField label="Servicio" name="servicio" value={form.servicio} onChange={handleChange} required />
                   <TextField label="Vehículo" name="vehiculo" value={form.vehiculo} onChange={handleChange} required />
+                  <TextField label="Patente" name="patente" value={form.patente} onChange={handleChange} required />
                   <TextField label="Fecha" name="fecha" value={form.fecha} onChange={handleChange} required placeholder="YYYY-MM-DD" />
                   <TextField label="Hora" name="hora" value={form.hora} onChange={handleChange} required placeholder="09:00" />
                   <TextField label="Motivo" name="motivo" value={form.motivo} onChange={handleChange} required />
