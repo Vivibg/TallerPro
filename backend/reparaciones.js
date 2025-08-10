@@ -21,7 +21,14 @@ router.get('/', async (req, res) => {
   }
   try {
     const [rows] = await pool.query(query, params);
-    res.json(rows);
+    // Normaliza los campos antes de enviar
+    const normalizados = rows.map(r => ({
+      ...r,
+      cliente: r.cliente && r.cliente.trim() ? r.cliente : 'Sin dato',
+      vehiculo: r.vehiculo && r.vehiculo.trim() ? r.vehiculo : 'Sin dato',
+      problema: r.problema && r.problema.trim() ? r.problema : 'Sin dato'
+    }));
+    res.json(normalizados);
   } catch (e) {
     console.error(e);
     res.status(500).json({ error: 'Error buscando reparación' });
@@ -46,7 +53,7 @@ router.put('/:id', async (req, res) => {
     problema = safe(problema);
     estado = safe(estado, 'pending');
     costo = safe(costo, 0);
-    fecha = safeDate(fecha); // <--- CORRECCIÓN AQUÍ
+    fecha = safeDate(fecha);
     telefono = safe(telefono);
     email = safe(email);
     marca = safe(marca);
@@ -101,7 +108,7 @@ router.post('/', async (req, res) => {
     problema = safe(problema);
     estado = safe(estado, 'pending');
     costo = safe(costo, 0);
-    fecha = safeDate(fecha); // <--- CORRECCIÓN AQUÍ
+    fecha = safeDate(fecha);
     telefono = safe(telefono);
     email = safe(email);
     marca = safe(marca);
