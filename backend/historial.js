@@ -9,7 +9,7 @@ router.get('/', async (req, res) => {
     const [rows] = await pool.query('SELECT * FROM historial_vehiculos');
     res.json(rows);
   } catch (e) {
-    console.error(e);
+    console.error(e); // <--- Esto imprime el error en los logs de Render
     res.status(500).json({ error: 'Error consultando historial' });
   }
 });
