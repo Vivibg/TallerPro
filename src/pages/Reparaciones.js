@@ -73,8 +73,6 @@ function Reparaciones() {
 
   const handleSubmit = async e => {
     e.preventDefault();
-    // Log para depuración
-    console.log('Enviando reparación:', form);
     await fetch(`${process.env.REACT_APP_API_URL}/api/reparaciones`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
@@ -102,9 +100,18 @@ function Reparaciones() {
     setDATA(prev => prev.filter(r => r.id !== id));
   };
 
+  // Cambia el estado de la reparación y mantiene vehiculo/problema originales
   const handleEstadoChange = async (id, nuevoEstado) => {
     const reparacion = DATA.find(r => r.id === id);
     if (!reparacion) return;
+
+    // Mantén los valores originales de vehiculo y problema si existen
+    const vehiculoValido = reparacion.vehiculo && reparacion.vehiculo !== 'Sin dato'
+      ? reparacion.vehiculo
+      : (reparacion.marca && reparacion.modelo ? `${reparacion.marca} ${reparacion.modelo}` : '');
+    const problemaValido = reparacion.problema && reparacion.problema !== 'Sin dato'
+      ? reparacion.problema
+      : (reparacion.fallaReportada ? reparacion.fallaReportada : '');
 
     const fechaValida = reparacion.fecha && reparacion.fecha !== '' ? reparacion.fecha : new Date().toISOString().slice(0, 10);
 
@@ -114,7 +121,9 @@ function Reparaciones() {
       body: JSON.stringify({
         ...reparacion,
         estado: nuevoEstado,
-        fecha: fechaValida
+        fecha: fechaValida,
+        vehiculo: vehiculoValido,
+        problema: problemaValido
       })
     });
     fetchReparaciones();
@@ -257,6 +266,7 @@ function Reparaciones() {
           open={openFicha}
           onClose={() => setOpenFicha(false)}
           reparacion={selectedReparacion}
+          onSaved={fetchReparaciones}
         />
       )}
     </Box>
