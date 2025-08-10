@@ -96,12 +96,22 @@ function Reparaciones() {
     fetchReparaciones();
   };
 
-  // Cambia el estado de la reparación y actualiza en backend
+  // Cambia el estado de la reparación y actualiza en backend (envía TODOS los campos)
   const handleEstadoChange = async (id, nuevoEstado) => {
+    const reparacion = DATA.find(r => r.id === id);
+    if (!reparacion) return;
+
+    // Asegura que fecha nunca sea vacía o inválida
+    const fechaValida = reparacion.fecha && reparacion.fecha !== '' ? reparacion.fecha : new Date().toISOString().slice(0, 10);
+
     await fetch(`${process.env.REACT_APP_API_URL}/api/reparaciones/${id}`, {
       method: 'PUT',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ estado: nuevoEstado })
+      body: JSON.stringify({
+        ...reparacion,
+        estado: nuevoEstado,
+        fecha: fechaValida
+      })
     });
     fetchReparaciones();
   };
