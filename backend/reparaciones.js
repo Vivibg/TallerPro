@@ -6,9 +6,7 @@ const router = Router();
 // Función segura para la fecha
 const safeDate = (v) => {
   if (!v || v === '') return new Date().toISOString().slice(0, 10);
-  // Si ya está en formato YYYY-MM-DD, úsalo directo
   if (/^\d{4}-\d{2}-\d{2}$/.test(v)) return v;
-  // Si viene en formato ISO, extrae solo la fecha
   if (typeof v === 'string' && v.includes('T')) return v.split('T')[0];
   return v;
 };
@@ -53,7 +51,7 @@ router.delete('/:id', async (req, res) => {
   }
 });
 
-// Actualizar una reparación existente y sincronizar historial
+// Actualizar una reparación existente y sincronizar historial y cliente
 router.put('/:id', async (req, res) => {
   const connection = await pool.getConnection();
   try {
@@ -116,7 +114,6 @@ router.put('/:id', async (req, res) => {
     );
     if (estadoNuevo === 'progress') {
       if (historialRows.length === 0) {
-        // Solo inserta si no existe
         await connection.query(
           `INSERT INTO historial_vehiculos (reparacion_id, vehiculo, cliente, fecha, servicio, taller, patente)
            VALUES (?, ?, ?, ?, ?, ?, ?)`,
@@ -131,7 +128,6 @@ router.put('/:id', async (req, res) => {
           ]
         );
       } else {
-        // Si ya existe, actualiza
         await connection.query(
           `UPDATE historial_vehiculos SET
             vehiculo = ?, cliente = ?, fecha = ?, servicio = ?, taller = ?, patente = ?
@@ -148,10 +144,22 @@ router.put('/:id', async (req, res) => {
         );
       }
     }
-    // (Opcional) Si quieres eliminar del historial cuando sale de "progress", descomenta:
-    // else if (historialRows.length > 0) {
-    //   await connection.query('DELETE FROM historial_vehiculos WHERE reparacion_id = ?', [id]);
-    // }
+
+    // Sincroniza datos de contacto del cliente en la tabla clientes
+    if (cliente && (telefono || email)) {
+      const [clientes] = await connection.query('SELECT * FROM clientes WHERE nombre = ?', [cliente]);
+      if (clientes.length === 0) {
+        await connection.query(
+          'INSERT INTO clientes (nombre, telefono, email) VALUES (?, ?, ?)',
+          [cliente, telefono || '', email || '']
+        );
+      } else {
+        await connection.query(
+          'UPDATE clientes SET telefono = ?, email = ? WHERE nombre = ?',
+          [telefono || '', email || '', cliente]
+        );
+      }
+    }
 
     res.json({ ok: true });
   } catch (e) {
@@ -162,7 +170,7 @@ router.put('/:id', async (req, res) => {
   }
 });
 
-// Crear una reparación nueva
+// Crear una reparación nueva (y sincronizar cliente)
 router.post('/', async (req, res) => {
   try {
     let {
@@ -209,6 +217,23 @@ router.post('/', async (req, res) => {
         observaciones, garantiaPeriodo, garantiaCondiciones
       ]
     );
+
+    // Sincroniza datos de contacto del cliente en la tabla clientes
+    if (cliente && (telefono || email)) {
+      const [clientes] = await pool.query('SELECT * FROM clientes WHERE nombre = ?', [cliente]);
+      if (clientes.length === 0) {
+        await pool.query(
+          'INSERT INTO clientes (nombre, telefono, email) VALUES (?, ?, ?)',
+          [cliente, telefono || '', email || '']
+        );
+      } else {
+        await pool.query(
+          'UPDATE clientes SET telefono = ?, email = ? WHERE nombre = ?',
+          [telefono || '', email || '', cliente]
+        );
+      }
+    }
+
     res.status(201).json({ id: result.insertId });
   } catch (e) {
     console.error('Error creando reparación:', e);
