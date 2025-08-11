@@ -54,7 +54,7 @@ function Reparaciones() {
 
   // Normaliza campos vacíos a "Sin dato" SOLO para mostrar
   const normalize = (valor) =>
-    valor && valor.trim() ? valor : 'Sin dato';
+    valor && valor.toString().trim() ? valor : 'Sin dato';
 
   const fetchReparaciones = () => {
     fetch(`${process.env.REACT_APP_API_URL}/api/reparaciones`)
@@ -192,7 +192,14 @@ function Reparaciones() {
                 <option value="progress">En Proceso</option>
                 <option value="done">Completado</option>
               </TextField>
-              <TextField label="Costo" name="costo" value={form.costo} onChange={handleChange} type="number" />
+              <TextField
+                label="Costo"
+                name="costo"
+                value={form.costo}
+                onChange={handleChange}
+                type="number"
+                InputProps={{ inputProps: { min: 0 } }}
+              />
               <TextField label="Fecha" name="fecha" value={form.fecha} onChange={handleChange} placeholder="2024-07-27" />
             </DialogContent>
             <DialogActions>
