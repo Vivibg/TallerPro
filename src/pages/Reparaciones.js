@@ -36,10 +36,6 @@ function Reparaciones() {
     cliente: '',
     vehiculo: '',
     patente: '',
-    marca: '',
-    modelo: '',
-    anio: '',
-    kilometraje: '',
     problema: '',
     estado: 'pending',
     costo: '',
@@ -91,10 +87,6 @@ function Reparaciones() {
       cliente: '',
       vehiculo: '',
       patente: '',
-      marca: '',
-      modelo: '',
-      anio: '',
-      kilometraje: '',
       problema: '',
       estado: 'pending',
       costo: '',
@@ -175,10 +167,6 @@ function Reparaciones() {
               <TextField label="Cliente" name="cliente" value={form.cliente} onChange={handleChange} required />
               <TextField label="Vehículo" name="vehiculo" value={form.vehiculo} onChange={handleChange} required />
               <TextField label="Patente" name="patente" value={form.patente} onChange={handleChange} required />
-              //<TextField label="Marca" name="marca" value={form.marca} onChange={handleChange} />
-              //<TextField label="Modelo" name="modelo" value={form.modelo} onChange={handleChange} />
-              //<TextField label="Año" name="anio" value={form.anio} onChange={handleChange} />
-              //<TextField label="Kilometraje" name="kilometraje" value={form.kilometraje} onChange={handleChange} />
               <TextField label="Problema" name="problema" value={form.problema} onChange={handleChange} required />
               <TextField
                 label="Estado"
@@ -217,10 +205,6 @@ function Reparaciones() {
               <TableCell>Cliente</TableCell>
               <TableCell>Vehículo</TableCell>
               <TableCell>Patente</TableCell>
-              <TableCell>Marca</TableCell>
-              <TableCell>Modelo</TableCell>
-              <TableCell>Año</TableCell>
-              <TableCell>Kilometraje</TableCell>
               <TableCell>Problema</TableCell>
               <TableCell>Estado</TableCell>
               <TableCell>Costo</TableCell>
@@ -234,10 +218,6 @@ function Reparaciones() {
                 <TableCell sx={{ fontWeight: 600 }}>{normalize(row.cliente)}</TableCell>
                 <TableCell>{normalize(row.vehiculo)}</TableCell>
                 <TableCell>{normalize(row.patente)}</TableCell>
-                <TableCell>{normalize(row.marca)}</TableCell>
-                <TableCell>{normalize(row.modelo)}</TableCell>
-                <TableCell>{normalize(row.anio)}</TableCell>
-                <TableCell>{normalize(row.kilometraje)}</TableCell>
                 <TableCell>{normalize(row.problema)}</TableCell>
                 <TableCell>
                   <Select
