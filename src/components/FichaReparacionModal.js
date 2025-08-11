@@ -34,6 +34,8 @@ function FichaReparacionModal({ open, onClose, reparacion, modoHistorial }) {
         <TextField label="Vehículo" name="vehiculo" value={form.vehiculo || ''} onChange={handleChange} fullWidth />
         <TextField label="Patente" name="patente" value={form.patente || ''} onChange={handleChange} fullWidth />
         <TextField label="Cliente" name="cliente" value={form.cliente || ''} onChange={handleChange} fullWidth />
+        <TextField label="Correo electrónico" name="email" value={form.email || ''} onChange={handleChange} fullWidth />
+        <TextField label="Teléfono" name="telefono" value={form.telefono || ''} onChange={handleChange} fullWidth />
         <TextField label="Servicio" name="problema" value={form.problema || ''} onChange={handleChange} fullWidth />
         <TextField label="Diagnóstico" name="diagnostico" value={form.diagnostico || ''} onChange={handleChange} fullWidth />
         <TextField label="Trabajos" name="trabajos" value={form.trabajos || ''} onChange={handleChange} fullWidth />
@@ -48,4 +50,5 @@ function FichaReparacionModal({ open, onClose, reparacion, modoHistorial }) {
 }
 
 export default FichaReparacionModal;
+
 
