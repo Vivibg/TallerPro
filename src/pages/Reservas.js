@@ -115,7 +115,7 @@ function Reservas() {
                           {cita.fecha} {cita.hora} - {cita.cliente}
                         </Typography>
                         <Typography variant="body2" color="text.secondary">{cita.servicio} - {cita.vehiculo}</Typography>
-                        <Typography variant="body2" color="text.secondary">Patente: {cita.patente || 'Sin patente'}</Typography>
+                        <Typography variant="body2" color="text.secondary">Patente: {cita.patente}</Typography>
                         <Typography variant="body2" color="text.secondary">Motivo: {cita.motivo}</Typography>
                         {cita.asiste === true && <Chip label="Asistió" color="success" size="small" sx={{ mt: 1 }} />}
                         {cita.asiste === false && <Chip label="No asistió" color="error" size="small" sx={{ mt: 1 }} />}
