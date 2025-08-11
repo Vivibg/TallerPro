@@ -120,7 +120,6 @@ function Clientes() {
             <TextField label="Email" name="email" value={form.email} onChange={handleChange} />
             <TextField label="Vehículo" name="vehiculo" value={form.vehiculo} onChange={handleChange} />
             <TextField label="Última visita" name="ultimaVisita" value={form.ultimaVisita} onChange={handleChange} placeholder="2024-07-27" />
-            <TextField label="Cliente desde (año)" name="desde" value={form.desde} onChange={handleChange} />
           </DialogContent>
           <DialogActions>
             <Button onClick={handleClose}>Cancelar</Button>
