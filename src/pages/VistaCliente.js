@@ -59,6 +59,8 @@ function VistaCliente() {
               <TableCell>Trabajo Realizado</TableCell>
               <TableCell>Estado</TableCell>
               <TableCell>Costo Final</TableCell>
+              <TableCell>Taller</TableCell>
+              <TableCell>Mecánico</TableCell>
             </TableRow>
           </TableHead>
           <TableBody>
@@ -69,6 +71,8 @@ function VistaCliente() {
                 <TableCell>{r.trabajos || '-'}</TableCell>
                 <TableCell>{r.estado || '-'}</TableCell>
                 <TableCell>${Number(r.costo).toLocaleString()}</TableCell>
+                <TableCell>{r.taller || '-'}</TableCell>
+                <TableCell>{r.mecanico || '-'}</TableCell>
               </TableRow>
             ))}
           </TableBody>
