@@ -1,5 +1,16 @@
 import React, { useState, useEffect } from 'react';
-import { Box, Typography, Paper, Grid, TextField, Button, Dialog, DialogTitle, DialogContent, DialogActions } from '@mui/material';
+import {
+  Box,
+  Typography,
+  Paper,
+  Grid,
+  TextField,
+  Button,
+  Dialog,
+  DialogTitle,
+  DialogContent,
+  DialogActions
+} from '@mui/material';
 
 function Clientes() {
   const [clientes, setClientes] = useState([]);
@@ -16,7 +27,9 @@ function Clientes() {
   const handleOpen = () => setOpen(true);
   const handleClose = () => setOpen(false);
 
-  const resultados = clientes.filter(c => c.nombre?.toLowerCase().includes(busqueda.toLowerCase()));
+  const resultados = clientes.filter(c =>
+    c.nombre?.toLowerCase().includes(busqueda.toLowerCase())
+  );
 
   const [form, setForm] = useState({
     nombre: '',
@@ -41,7 +54,14 @@ function Clientes() {
       .then(res => res.json())
       .then(nuevo => {
         setClientes([...clientes, nuevo]);
-        setForm({ nombre: '', telefono: '', email: '', vehiculo: '', ultimaVisita: '', desde: '' });
+        setForm({
+          nombre: '',
+          telefono: '',
+          email: '',
+          vehiculo: '',
+          ultimaVisita: '',
+          desde: ''
+        });
         handleClose();
       })
       .catch(() => {
