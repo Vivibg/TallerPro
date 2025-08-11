@@ -22,8 +22,8 @@ router.post('/', async (req, res) => {
       return res.status(400).json({ error: 'Todos los campos son obligatorios' });
     }
     const [result] = await pool.query(
-      'INSERT INTO reservas (cliente, servicio, vehiculo, patente, fecha, hora, motivo) VALUES (?, ?, ?, ?, ?, ?)',
-      [cliente, servicio, vehiculo, patente, fecha, hora, motivo]
+      'INSERT INTO reservas (cliente, servicio, vehiculo, fecha, hora, motivo, patente) VALUES (?, ?, ?, ?, ?, ?, ?)',
+      [cliente, servicio, vehiculo, fecha, hora, motivo, patente]
     );
     res.status(201).json({ id: result.insertId, cliente, servicio, vehiculo, patente, fecha, hora, motivo, asiste: null });
   } catch (e) {
@@ -106,5 +106,6 @@ router.delete('/:id', async (req, res) => {
 });
 
 export default router;
+
 
 
