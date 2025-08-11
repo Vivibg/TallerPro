@@ -39,6 +39,20 @@ router.get('/', async (req, res) => {
   }
 });
 
+// Endpoint público: Buscar reparaciones por patente (solo campos relevantes para clientes)
+router.get('/por-patente/:patente', async (req, res) => {
+  try {
+    const { patente } = req.params;
+    const [rows] = await pool.query(
+      'SELECT fecha, diagnostico, trabajos, estado, costo FROM reparaciones WHERE patente = ? ORDER BY fecha DESC',
+      [patente]
+    );
+    res.json(rows);
+  } catch (e) {
+    res.status(500).json({ error: 'Error consultando reparaciones por patente' });
+  }
+});
+
 // Eliminar una reparación por ID
 router.delete('/:id', async (req, res) => {
   try {
