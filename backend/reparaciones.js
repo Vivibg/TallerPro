@@ -4,7 +4,14 @@ import { pool } from './db.js';
 const router = Router();
 
 // Función segura para la fecha
-const safeDate = (v) => (!v || v === '') ? new Date().toISOString().slice(0, 10) : v;
+const safeDate = (v) => {
+  if (!v || v === '') return new Date().toISOString().slice(0, 10);
+  // Si ya está en formato YYYY-MM-DD, úsalo directo
+  if (/^\d{4}-\d{2}-\d{2}$/.test(v)) return v;
+  // Si viene en formato ISO, extrae solo la fecha
+  if (typeof v === 'string' && v.includes('T')) return v.split('T')[0];
+  return v;
+};
 
 // Obtener todas las reparaciones o buscar por patente y fecha
 router.get('/', async (req, res) => {
