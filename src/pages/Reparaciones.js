@@ -175,10 +175,10 @@ function Reparaciones() {
               <TextField label="Cliente" name="cliente" value={form.cliente} onChange={handleChange} required />
               <TextField label="Vehículo" name="vehiculo" value={form.vehiculo} onChange={handleChange} required />
               <TextField label="Patente" name="patente" value={form.patente} onChange={handleChange} required />
-              <TextField label="Marca" name="marca" value={form.marca} onChange={handleChange} />
-              <TextField label="Modelo" name="modelo" value={form.modelo} onChange={handleChange} />
-              <TextField label="Año" name="anio" value={form.anio} onChange={handleChange} />
-              <TextField label="Kilometraje" name="kilometraje" value={form.kilometraje} onChange={handleChange} />
+              //<TextField label="Marca" name="marca" value={form.marca} onChange={handleChange} />
+              //<TextField label="Modelo" name="modelo" value={form.modelo} onChange={handleChange} />
+              //<TextField label="Año" name="anio" value={form.anio} onChange={handleChange} />
+              //<TextField label="Kilometraje" name="kilometraje" value={form.kilometraje} onChange={handleChange} />
               <TextField label="Problema" name="problema" value={form.problema} onChange={handleChange} required />
               <TextField
                 label="Estado"
