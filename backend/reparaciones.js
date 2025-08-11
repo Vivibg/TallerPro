@@ -103,12 +103,13 @@ router.put('/:id', async (req, res) => {
       ]
     );
 
-    // Sincroniza historial: si pasa a "progress", inserta o actualiza; si ya estaba, solo actualiza
+    // Sincroniza historial: si está en "progress", inserta si no existe, actualiza si existe
+    const [historialRows] = await connection.query(
+      'SELECT id FROM historial_vehiculos WHERE reparacion_id = ?', [id]
+    );
     if (estadoNuevo === 'progress') {
-      const [historialRows] = await connection.query(
-        'SELECT id FROM historial_vehiculos WHERE reparacion_id = ?', [id]
-      );
       if (historialRows.length === 0) {
+        // Solo inserta si no existe
         await connection.query(
           `INSERT INTO historial_vehiculos (reparacion_id, vehiculo, cliente, fecha, servicio, taller, patente)
            VALUES (?, ?, ?, ?, ?, ?, ?)`,
@@ -123,6 +124,7 @@ router.put('/:id', async (req, res) => {
           ]
         );
       } else {
+        // Si ya existe, actualiza
         await connection.query(
           `UPDATE historial_vehiculos SET
             vehiculo = ?, cliente = ?, fecha = ?, servicio = ?, taller = ?, patente = ?
@@ -139,6 +141,10 @@ router.put('/:id', async (req, res) => {
         );
       }
     }
+    // (Opcional) Si quieres eliminar del historial cuando sale de "progress", descomenta:
+    // else if (historialRows.length > 0) {
+    //   await connection.query('DELETE FROM historial_vehiculos WHERE reparacion_id = ?', [id]);
+    // }
 
     res.json({ ok: true });
   } catch (e) {
