@@ -36,6 +36,7 @@ function Clientes() {
     telefono: '',
     email: '',
     vehiculo: '',
+    patente: '',
     ultimaVisita: '',
     desde: ''
   });
@@ -59,6 +60,7 @@ function Clientes() {
           telefono: '',
           email: '',
           vehiculo: '',
+          patente: '',
           ultimaVisita: '',
           desde: ''
         });
@@ -118,6 +120,7 @@ function Clientes() {
             <TextField label="Teléfono" name="telefono" value={form.telefono} onChange={handleChange} />
             <TextField label="Email" name="email" value={form.email} onChange={handleChange} />
             <TextField label="Vehículo" name="vehiculo" value={form.vehiculo} onChange={handleChange} />
+            <TextField label="Patente" name="patente" value={form.patente} onChange={handleChange} />
             <TextField label="Última visita" name="ultimaVisita" value={form.ultimaVisita} onChange={handleChange} placeholder="2024-07-27" />
           </DialogContent>
           <DialogActions>
