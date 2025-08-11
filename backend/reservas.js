@@ -17,15 +17,15 @@ router.get('/', async (req, res) => {
 // Crear nueva reserva
 router.post('/', async (req, res) => {
   try {
-    const { cliente, servicio, vehiculo, fecha, hora, motivo } = req.body;
+    const { cliente, servicio, vehiculo, patente, fecha, hora, motivo } = req.body;
     if (!cliente || !servicio || !vehiculo || !fecha || !hora || !motivo) {
       return res.status(400).json({ error: 'Todos los campos son obligatorios' });
     }
     const [result] = await pool.query(
-      'INSERT INTO reservas (cliente, servicio, vehiculo, fecha, hora, motivo) VALUES (?, ?, ?, ?, ?, ?)',
+      'INSERT INTO reservas (cliente, servicio, vehiculo, patente, fecha, hora, motivo) VALUES (?, ?, ?, ?, ?, ?)',
       [cliente, servicio, vehiculo, fecha, hora, motivo]
     );
-    res.status(201).json({ id: result.insertId, cliente, servicio, vehiculo, fecha, hora, motivo, asiste: null });
+    res.status(201).json({ id: result.insertId, cliente, servicio, vehiculo, patente, fecha, hora, motivo, asiste: null });
   } catch (e) {
     console.error('Error creando reserva:', e);
     res.status(500).json({ error: 'Error creando reserva', details: e.message });
@@ -106,3 +106,4 @@ router.delete('/:id', async (req, res) => {
 });
 
 export default router;
+
