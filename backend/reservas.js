@@ -77,7 +77,16 @@ router.put('/:id/asistencia', async (req, res) => {
       // 4. Verificar si el cliente existe en clientes, si no, agregarlo
       const [clientes] = await connection.query('SELECT * FROM clientes WHERE nombre = ?', [reserva.cliente]);
       if (clientes.length === 0) {
-        await connection.query('INSERT INTO clientes (nombre) VALUES (?)', [reserva.cliente]);
+        await connection.query(
+          'INSERT INTO clientes (nombre, vehiculo, patente, ultimaVisita) VALUES (?, ?, ?, ?)',
+          [reserva.cliente, reserva.vehiculo, reserva.patente, reserva.fecha]
+        );
+      } else {
+        // Actualizar datos de vehiculo, patente y ultimaVisita
+        await connection.query(
+          'UPDATE clientes SET vehiculo = ?, patente = ?, ultimaVisita = ? WHERE nombre = ?',
+          [reserva.vehiculo, reserva.patente, reserva.fecha, reserva.cliente]
+        );
       }
 
       // 5. NO insertar en historial_vehiculos aquí
@@ -106,6 +115,3 @@ router.delete('/:id', async (req, res) => {
 });
 
 export default router;
-
-
-
