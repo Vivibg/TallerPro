@@ -102,6 +102,7 @@ function Clientes() {
                 <Typography variant="body2">Teléfono: {c.telefono}</Typography>
                 <Typography variant="body2">Email: {c.email}</Typography>
                 <Typography variant="body2">Vehículo: {c.vehiculo}</Typography>
+                <Typography variant="body2">Patente: {c.patente}</Typography>
                 <Typography variant="body2" mb={1}>Última visita: {c.ultimaVisita ? new Date(c.ultimaVisita).toLocaleDateString() : ''}</Typography>
                 <Button variant="contained" size="small" sx={{ mr: 1 }}>Ver Historial</Button>
                 <Button variant="outlined" size="small" color="error" onClick={() => handleDelete(c.id)}>Eliminar</Button>
