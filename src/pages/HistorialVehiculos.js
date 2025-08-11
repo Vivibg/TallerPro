@@ -55,7 +55,7 @@ function HistorialVehiculos() {
           <Grid item xs={12} md={6} key={item.id}>
             <Paper sx={{ p: 2 }}>
               <Typography variant="h6" fontWeight={700}>{item.vehiculo}</Typography>
-              <Typography>Placas: {item.patente}</Typography>
+              <Typography>Patente: {item.patente}</Typography>
               <Typography>Cliente: {item.cliente}</Typography>
               <Typography>Servicio: {item.servicio}</Typography>
               <Typography>Taller: {item.taller}</Typography>
