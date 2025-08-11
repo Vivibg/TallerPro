@@ -37,7 +37,7 @@ function FichaReparacionModal({ open, onClose, reparacion, modoHistorial }) {
         <TextField label="Servicio" name="problema" value={form.problema || ''} onChange={handleChange} fullWidth />
         <TextField label="Diagnóstico" name="diagnostico" value={form.diagnostico || ''} onChange={handleChange} fullWidth />
         <TextField label="Trabajos" name="trabajos" value={form.trabajos || ''} onChange={handleChange} fullWidth />
-        {/* Agrega más campos según lo que necesites */}
+        <TextField label="Costo" name="costo" type="number" value={form.costo || ''} onChange={handleChange} fullWidth InputProps={{ inputProps: { min: 0 } }}/>
       </DialogContent>
       <DialogActions>
         <Button onClick={onClose}>Cancelar</Button>
@@ -48,3 +48,4 @@ function FichaReparacionModal({ open, onClose, reparacion, modoHistorial }) {
 }
 
 export default FichaReparacionModal;
+
