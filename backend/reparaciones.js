@@ -126,6 +126,43 @@ router.put('/:id', async (req, res) => {
       ]
     );
 
+    // Sincroniza historial: si está en "progress", inserta si no existe, actualiza si existe
+    const [historialRows] = await connection.query(
+      'SELECT id FROM historial_vehiculos WHERE reparacion_id = ?', [id]
+    );
+    if (estado === 'progress') {
+      if (historialRows.length === 0) {
+        await connection.query(
+          `INSERT INTO historial_vehiculos (reparacion_id, vehiculo, cliente, fecha, servicio, taller, patente)
+           VALUES (?, ?, ?, ?, ?, ?, ?)`,
+          [
+            id,
+            vehiculo,
+            cliente,
+            fecha,
+            problema,
+            taller,
+            patente
+          ]
+        );
+      } else {
+        await connection.query(
+          `UPDATE historial_vehiculos SET
+            vehiculo = ?, cliente = ?, fecha = ?, servicio = ?, taller = ?, patente = ?
+          WHERE reparacion_id = ?`,
+          [
+            vehiculo,
+            cliente,
+            fecha,
+            problema,
+            taller,
+            patente,
+            id
+          ]
+        );
+      }
+    }
+
     // (El resto de la lógica de sincronización permanece igual...)
 
     res.json({ ok: true });
