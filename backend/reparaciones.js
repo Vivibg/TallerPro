@@ -3,7 +3,7 @@ import { pool } from './db.js';
 
 const router = Router();
 
-// Función segura para la fecha
+
 const safeDate = (v) => {
   if (!v || v === '') return new Date().toISOString().slice(0, 10);
   if (/^\d{4}-\d{2}-\d{2}$/.test(v)) return v;
@@ -11,7 +11,7 @@ const safeDate = (v) => {
   return v;
 };
 
-// Obtener todas las reparaciones o buscar por patente y fecha
+
 router.get('/', async (req, res) => {
   const { patente, fecha } = req.query;
   let query = 'SELECT * FROM reparaciones WHERE 1=1';
@@ -108,7 +108,7 @@ router.put('/:id', async (req, res) => {
     taller = safe(taller, reparacionActual.taller || 'TallerPro');
     mecanico = safe(mecanico, reparacionActual.mecanico || '');
 
-    // Actualiza la reparación
+
     await connection.query(
       `UPDATE reparaciones SET
         cliente = ?, vehiculo = ?, problema = ?, estado = ?, costo = ?, fecha = ?,
@@ -126,7 +126,7 @@ router.put('/:id', async (req, res) => {
       ]
     );
 
-    // Sincroniza historial: si está en "progress", inserta si no existe, actualiza si existe
+    
     const [historialRows] = await connection.query(
       'SELECT id FROM historial_vehiculos WHERE reparacion_id = ?', [id]
     );
@@ -163,7 +163,7 @@ router.put('/:id', async (req, res) => {
       }
     }
 
-    // (El resto de la lógica de sincronización permanece igual...)
+   
 
     res.json({ ok: true });
   } catch (e) {
@@ -227,7 +227,7 @@ router.post('/', async (req, res) => {
       ]
     );
 
-    // (El resto de la lógica de sincronización permanece igual...)
+
 
     res.status(201).json({ id: result.insertId });
   } catch (e) {
@@ -236,7 +236,7 @@ router.post('/', async (req, res) => {
   }
 });
 
-// Obtener historial de vehículos con datos de la reparación (JOIN)
+
 router.get('/historial', async (req, res) => {
   try {
     const [rows] = await pool.query(`
