@@ -78,7 +78,7 @@ function Dashboard() {
         setActividad(a => [...ultimosStock, ...a]);
       });
 
-    // Si tienes endpoint de ingresos, puedes agregarlo aquí
+
     // fetch(`${API_URL}/api/ingresos`)
     //   .then(res => res.json())
     //   .then(data => {
