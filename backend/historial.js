@@ -14,7 +14,7 @@ router.get('/', async (req, res) => {
   }
 });
 
-// Listar historial con resumen de ficha de reparación (JOIN robusto solo por fecha)
+// Listar historial con resumen de ficha de reparación 
 router.get('/con-ficha', async (req, res) => {
   try {
     const [rows] = await pool.query(`
