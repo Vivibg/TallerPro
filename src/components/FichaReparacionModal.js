@@ -1,7 +1,15 @@
 import React, { useState } from 'react';
-import { Dialog, DialogTitle, DialogContent, DialogActions, Button, TextField, Typography } from '@mui/material';
+import { Dialog, DialogTitle, DialogContent, DialogActions, Button, TextField, Typography, Select, MenuItem, InputLabel, FormControl } from '@mui/material';
 
 const API_URL = process.env.REACT_APP_API_URL;
+
+const SERVICIOS = [
+  "Servicios básicos",
+  "Mantenimiento preventivo",
+  "Reparaciones",
+  "Servicios más especializados",
+  "Extras en talleres más modernos"
+];
 
 function FichaReparacionModal({ open, onClose, reparacion, modoHistorial }) {
   const [form, setForm] = useState(reparacion);
@@ -15,8 +23,11 @@ function FichaReparacionModal({ open, onClose, reparacion, modoHistorial }) {
     setForm({ ...form, [e.target.name]: e.target.value });
   };
 
+  const handleSelectServicio = e => {
+    setForm({ ...form, problema: e.target.value });
+  };
+
   const handleGuardar = async () => {
-    // Actualiza la reparación (esto también actualiza el historial en backend)
     await fetch(`${API_URL}/api/reparaciones/${form.id}`, {
       method: 'PUT',
       headers: { 'Content-Type': 'application/json' },
@@ -36,7 +47,23 @@ function FichaReparacionModal({ open, onClose, reparacion, modoHistorial }) {
         <TextField label="Cliente" name="cliente" value={form.cliente || ''} onChange={handleChange} fullWidth />
         <TextField label="Correo electrónico" name="email" value={form.email || ''} onChange={handleChange} fullWidth />
         <TextField label="Teléfono" name="telefono" value={form.telefono || ''} onChange={handleChange} fullWidth />
-        <TextField label="Servicio" name="problema" value={form.problema || ''} onChange={handleChange} fullWidth />
+
+        {/* Servicio como lista desplegable */}
+        <FormControl fullWidth>
+          <InputLabel id="servicio-label">Servicio</InputLabel>
+          <Select
+            labelId="servicio-label"
+            label="Servicio"
+            name="problema"
+            value={form.problema || ''}
+            onChange={handleSelectServicio}
+          >
+            {SERVICIOS.map((servicio) => (
+              <MenuItem key={servicio} value={servicio}>{servicio}</MenuItem>
+            ))}
+          </Select>
+        </FormControl>
+
         <TextField label="Diagnóstico" name="diagnostico" value={form.diagnostico || ''} onChange={handleChange} fullWidth />
         <TextField label="Trabajos" name="trabajos" value={form.trabajos || ''} onChange={handleChange} fullWidth />
         <TextField label="Costo" name="costo" type="number" value={form.costo || ''} onChange={handleChange} fullWidth InputProps={{ inputProps: { min: 0 } }}/>
