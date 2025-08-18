@@ -17,7 +17,8 @@ function VistaCliente() {
   const [resultados, setResultados] = useState([]);
   const [error, setError] = useState('');
 
-    const estadoEnEsp = estado => {
+  // Función para traducir estado a español
+  const estadoEnEsp = estado => {
     switch ((estado || '').toLowerCase()) {
       case 'process':
       case 'progress':
@@ -88,7 +89,7 @@ function VistaCliente() {
                 <TableCell>{r.fecha ? new Date(r.fecha).toLocaleDateString() : ''}</TableCell>
                 <TableCell>{r.diagnostico || '-'}</TableCell>
                 <TableCell>{r.trabajos || '-'}</TableCell>
-                <TableCell>{r.estado || '-'}</TableCell>
+                <TableCell>{estadoEnEsp(r.estado)}</TableCell>
                 <TableCell>${Number(r.costo).toLocaleString()}</TableCell>
                 <TableCell>{r.taller || '-'}</TableCell>
                 <TableCell>{r.mecanico || '-'}</TableCell>
