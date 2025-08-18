@@ -8,7 +8,7 @@ import {
 const Inventario = () => {
   const [insumos, setInsumos] = useState([]);
   const [open, setOpen] = useState(false);
-  const [form, setForm] = useState({ producto: '', categoria: '', stock: '', minimo: '', precio: '' });
+  const [form, setForm] = useState({ producto: '', categoria: '', unidad: '', stock: '', minimo: '', maximo: '', precio: '', costo_unitario: '' });
   const [editForm, setEditForm] = useState(null);
 
   const API_URL = process.env.REACT_APP_API_URL || 'http://localhost:4000';
@@ -25,9 +25,8 @@ const Inventario = () => {
     // eslint-disable-next-line
   }, []);
 
-  // Cálculo de totales reales
   const totalProductos = insumos.length;
-  const valorInventario = insumos.reduce((acc, curr) => acc + Number(curr.precio || 0), 0);
+  const valorInventario = insumos.reduce((acc, curr) => acc + Number(curr.total || 0), 0);
   const productosCriticos = insumos.filter(i => i.estado === 'Crítico').length;
 
   const resumen = [
@@ -48,7 +47,7 @@ const Inventario = () => {
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(form)
     });
-    setForm({ producto: '', categoria: '', stock: '', minimo: '', precio: '' });
+    setForm({ producto: '', categoria: '', unidad: '', stock: '', minimo: '', maximo: '', precio: '', costo_unitario: '' });
     setOpen(false);
     fetchInsumos();
   };
@@ -99,8 +98,11 @@ const Inventario = () => {
             <DialogContent sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
               <TextField label="Producto" name="producto" value={form.producto} onChange={handleChange} required />
               <TextField label="Categoría" name="categoria" value={form.categoria} onChange={handleChange} />
+              <TextField label="Unidad de Medida" name="unidad" value={form.unidad} onChange={handleChange} />
               <TextField label="Stock" name="stock" value={form.stock} onChange={handleChange} type="number" />
               <TextField label="Mínimo" name="minimo" value={form.minimo} onChange={handleChange} type="number" />
+              <TextField label="Máximo" name="maximo" value={form.maximo} onChange={handleChange} type="number" />
+              <TextField label="Costo Unitario" name="costo_unitario" value={form.costo_unitario} onChange={handleChange} type="number" />
               <TextField label="Precio" name="precio" value={form.precio} onChange={handleChange} type="number" />
             </DialogContent>
             <DialogActions>
@@ -116,8 +118,11 @@ const Inventario = () => {
             <DialogContent sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
               <TextField label="Producto" name="producto" value={editForm?.producto || ''} onChange={handleEditChange} required />
               <TextField label="Categoría" name="categoria" value={editForm?.categoria || ''} onChange={handleEditChange} />
+              <TextField label="Unidad de Medida" name="unidad" value={editForm?.unidad || ''} onChange={handleEditChange} />
               <TextField label="Stock" name="stock" value={editForm?.stock || ''} onChange={handleEditChange} type="number" />
               <TextField label="Mínimo" name="minimo" value={editForm?.minimo || ''} onChange={handleEditChange} type="number" />
+              <TextField label="Máximo" name="maximo" value={editForm?.maximo || ''} onChange={handleEditChange} type="number" />
+              <TextField label="Costo Unitario" name="costo_unitario" value={editForm?.costo_unitario || ''} onChange={handleEditChange} type="number" />
               <TextField label="Precio" name="precio" value={editForm?.precio || ''} onChange={handleEditChange} type="number" />
             </DialogContent>
             <DialogActions>
@@ -132,8 +137,12 @@ const Inventario = () => {
               <TableRow>
                 <TableCell>Producto</TableCell>
                 <TableCell>Categoría</TableCell>
+                <TableCell>Unidad</TableCell>
                 <TableCell>Stock</TableCell>
                 <TableCell>Mínimo</TableCell>
+                <TableCell>Máximo</TableCell>
+                <TableCell>Costo Unitario</TableCell>
+                <TableCell>Total</TableCell>
                 <TableCell>Precio</TableCell>
                 <TableCell>Estado</TableCell>
                 <TableCell>Acciones</TableCell>
@@ -144,8 +153,12 @@ const Inventario = () => {
                 <TableRow key={i}>
                   <TableCell>{insumo.producto}</TableCell>
                   <TableCell>{insumo.categoria}</TableCell>
+                  <TableCell>{insumo.unidad}</TableCell>
                   <TableCell>{insumo.stock}</TableCell>
                   <TableCell>{insumo.minimo}</TableCell>
+                  <TableCell>{insumo.maximo}</TableCell>
+                  <TableCell>${insumo.costo_unitario}</TableCell>
+                  <TableCell>${insumo.total}</TableCell>
                   <TableCell>${insumo.precio}</TableCell>
                   <TableCell>
                     {insumo.estado === 'Crítico' && <Chip label="Crítico" color="error" size="small" />}
