@@ -17,6 +17,25 @@ function VistaCliente() {
   const [resultados, setResultados] = useState([]);
   const [error, setError] = useState('');
 
+    const estadoEnEsp = estado => {
+    switch ((estado || '').toLowerCase()) {
+      case 'process':
+      case 'progress':
+        return 'En proceso';
+      case 'pendiente':
+      case 'pending':
+        return 'Pendiente';
+      case 'completado':
+      case 'completed':
+        return 'Completado';
+      case 'cancelado':
+      case 'cancelled':
+        return 'Cancelado';
+      default:
+        return estado || '-';
+    }
+  };
+
   const handleBuscar = async () => {
     setError('');
     setResultados([]);
