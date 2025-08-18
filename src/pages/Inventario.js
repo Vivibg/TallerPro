@@ -1,10 +1,14 @@
 import React, { useState, useEffect } from 'react';
-import { Box, Typography, Paper, Grid, Table, TableBody, TableCell, TableContainer, TableHead, TableRow, Button, Chip, Dialog, DialogTitle, DialogContent, DialogActions, TextField } from '@mui/material';
+import {
+  Box, Typography, Paper, Grid, Table, TableBody, TableCell,
+  TableContainer, TableHead, TableRow, Button, Chip, Dialog,
+  DialogTitle, DialogContent, DialogActions, TextField
+} from '@mui/material';
 
 const Inventario = () => {
   const [insumos, setInsumos] = useState([]);
   const [open, setOpen] = useState(false);
-  const [form, setForm] = useState({ producto: '', categoria: '', stock: '', minimo: '', precio: '', estado: 'ok' });
+  const [form, setForm] = useState({ producto: '', categoria: '', stock: '', minimo: '', precio: '' });
   const [editForm, setEditForm] = useState(null);
 
   const API_URL = process.env.REACT_APP_API_URL || 'http://localhost:4000';
@@ -24,7 +28,7 @@ const Inventario = () => {
   // Cálculo de totales reales
   const totalProductos = insumos.length;
   const valorInventario = insumos.reduce((acc, curr) => acc + Number(curr.precio || 0), 0);
-  const productosCriticos = insumos.filter(i => i.estado === 'bajo').length;
+  const productosCriticos = insumos.filter(i => i.estado === 'Crítico').length;
 
   const resumen = [
     { label: 'Total de Productos', value: totalProductos, color: '#2258e6' },
@@ -44,7 +48,7 @@ const Inventario = () => {
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(form)
     });
-    setForm({ producto: '', categoria: '', stock: '', minimo: '', precio: '', estado: 'ok' });
+    setForm({ producto: '', categoria: '', stock: '', minimo: '', precio: '' });
     setOpen(false);
     fetchInsumos();
   };
@@ -98,10 +102,6 @@ const Inventario = () => {
               <TextField label="Stock" name="stock" value={form.stock} onChange={handleChange} type="number" />
               <TextField label="Mínimo" name="minimo" value={form.minimo} onChange={handleChange} type="number" />
               <TextField label="Precio" name="precio" value={form.precio} onChange={handleChange} type="number" />
-              <TextField label="Estado" name="estado" value={form.estado} onChange={handleChange} select SelectProps={{ native: true }}>
-                <option value="ok">OK</option>
-                <option value="bajo">Bajo</option>
-              </TextField>
             </DialogContent>
             <DialogActions>
               <Button onClick={handleClose}>Cancelar</Button>
@@ -119,10 +119,6 @@ const Inventario = () => {
               <TextField label="Stock" name="stock" value={editForm?.stock || ''} onChange={handleEditChange} type="number" />
               <TextField label="Mínimo" name="minimo" value={editForm?.minimo || ''} onChange={handleEditChange} type="number" />
               <TextField label="Precio" name="precio" value={editForm?.precio || ''} onChange={handleEditChange} type="number" />
-              <TextField label="Estado" name="estado" value={editForm?.estado || 'ok'} onChange={handleEditChange} select SelectProps={{ native: true }}>
-                <option value="ok">OK</option>
-                <option value="bajo">Bajo</option>
-              </TextField>
             </DialogContent>
             <DialogActions>
               <Button onClick={handleEditClose}>Cancelar</Button>
@@ -152,8 +148,8 @@ const Inventario = () => {
                   <TableCell>{insumo.minimo}</TableCell>
                   <TableCell>${insumo.precio}</TableCell>
                   <TableCell>
-                    {insumo.estado === 'bajo' && <Chip label="Stock bajo" color="error" size="small" />}
-                    {insumo.estado === 'ok' && <Chip label="Disponible" color="success" size="small" />}
+                    {insumo.estado === 'Crítico' && <Chip label="Crítico" color="error" size="small" />}
+                    {insumo.estado === 'Disponible' && <Chip label="Disponible" color="success" size="small" />}
                   </TableCell>
                   <TableCell>
                     <Button variant="contained" size="small" sx={{ mr: 1 }} onClick={() => handleEditOpen(insumo)}>Editar</Button>
