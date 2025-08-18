@@ -220,17 +220,6 @@ function Reparaciones() {
                 <TableCell>{normalize(row.patente)}</TableCell>
                 <TableCell>{normalize(row.problema)}</TableCell>
                 <TableCell>
-                  <Select
-                    value={row.estado}
-                    onChange={e => handleEstadoChange(row.id, e.target.value)}
-                    size="small"
-                    sx={{ minWidth: 120 }}
-                  >
-                    <MenuItem value="pending">Pendiente</MenuItem>
-                    <MenuItem value="progress">En Proceso</MenuItem>
-                    <MenuItem value="done">Completado</MenuItem>
-                  </Select>
-                  {" "}
                   {row.estado === 'pending' && <Chip label="Pendiente" color="default" size="small" />}
                   {row.estado === 'progress' && <Chip label="En progreso" color="warning" size="small" />}
                   {row.estado === 'done' && <Chip label="Completado" color="success" size="small" />}
@@ -239,6 +228,16 @@ function Reparaciones() {
                   ${Number(row.costo).toLocaleString()}
                 </TableCell>
                 <TableCell>
+                  <Select
+                    value={row.estado}
+                    onChange={e => handleEstadoChange(row.id, e.target.value)}
+                    size="small"
+                    sx={{ minWidth: 120, mr: 1 }}
+                  >
+                    <MenuItem value="pending">Pendiente</MenuItem>
+                    <MenuItem value="progress">En Proceso</MenuItem>
+                    <MenuItem value="done">Completado</MenuItem>
+                  </Select>
                   <Button
                     variant="contained"
                     size="small"
