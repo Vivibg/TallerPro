@@ -27,7 +27,7 @@ function VistaCliente() {
       case 'pending':
         return 'Pendiente';
       case 'completado':
-      case 'completed':
+      case 'done':
         return 'Completado';
       case 'cancelado':
       case 'cancelled':
