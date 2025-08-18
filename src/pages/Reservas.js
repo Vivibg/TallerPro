@@ -1,6 +1,17 @@
 import React, { useState, useEffect } from 'react';
 import { Box, Typography, Paper, Grid, Button, List, ListItem, ListItemText, Dialog, DialogTitle, DialogContent, DialogActions, TextField, Chip, Alert } from '@mui/material';
 
+// Función para formatear fecha y hora
+function formatearFechaHora(fecha, hora) {
+  let soloFecha = fecha;
+  if (fecha && fecha.includes('T')) {
+    soloFecha = fecha.split('T')[0];
+  }
+  if (!soloFecha) return '';
+  const [yyyy, mm, dd] = soloFecha.split('-');
+  return `${dd}-${mm}-${yyyy}${hora ? ' ' + hora : ''}`;
+}
+
 function Reservas() {
   const [open, setOpen] = useState(false);
   const [form, setForm] = useState({ cliente: '', servicio: '', vehiculo: '', patente: '', fecha: '', hora: '', motivo: '' });
@@ -112,7 +123,7 @@ function Reservas() {
                     primary={
                       <>
                         <Typography variant="subtitle1" fontWeight={600}>
-                          {cita.fecha} {cita.hora} - {cita.cliente}
+                          {formatearFechaHora(cita.fecha, cita.hora)} - {cita.cliente}
                         </Typography>
                         <Typography variant="body2" color="text.secondary">{cita.servicio} - {cita.vehiculo}</Typography>
                         <Typography variant="body2" color="text.secondary">Patente: {cita.patente}</Typography>
