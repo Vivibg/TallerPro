@@ -5,6 +5,9 @@ import {
   DialogTitle, DialogContent, DialogActions, TextField
 } from '@mui/material';
 
+const formatoPesos = valor =>
+  Number(valor).toLocaleString('es-CL', { style: 'currency', currency: 'CLP', minimumFractionDigits: 0, maximumFractionDigits: 0 });
+
 const Inventario = () => {
   const [insumos, setInsumos] = useState([]);
   const [open, setOpen] = useState(false);
@@ -31,7 +34,7 @@ const Inventario = () => {
 
   const resumen = [
     { label: 'Total de Productos', value: totalProductos, color: '#2258e6' },
-    { label: 'Valor del Inventario', value: `$${valorInventario.toLocaleString()}`, color: '#3bb54a' },
+    { label: 'Valor del Inventario', value: formatoPesos(valorInventario), color: '#3bb54a' },
     { label: 'Productos Críticos', value: productosCriticos, color: '#ff4d4f' },
   ];
 
@@ -157,9 +160,9 @@ const Inventario = () => {
                   <TableCell>{insumo.stock}</TableCell>
                   <TableCell>{insumo.minimo}</TableCell>
                   <TableCell>{insumo.maximo}</TableCell>
-                  <TableCell>${insumo.costo_unitario}</TableCell>
-                  <TableCell>${insumo.total}</TableCell>
-                  <TableCell>${insumo.precio}</TableCell>
+                  <TableCell>{formatoPesos(insumo.costo_unitario)}</TableCell>
+                  <TableCell>{formatoPesos(insumo.total)}</TableCell>
+                  <TableCell>{formatoPesos(insumo.precio)}</TableCell>
                   <TableCell>
                     {insumo.estado === 'Crítico' && <Chip label="Crítico" color="error" size="small" />}
                     {insumo.estado === 'Disponible' && <Chip label="Disponible" color="success" size="small" />}
