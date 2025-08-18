@@ -1,8 +1,17 @@
 import React, { useEffect, useState } from 'react';
-import { Box, Typography, Paper, Button, Grid, TextField, List, ListItem } from '@mui/material';
+import { Box, Typography, Paper, Button, Grid, TextField } from '@mui/material';
 import FichaReparacionModal from '../components/FichaReparacionModal';
 
 const API_URL = process.env.REACT_APP_API_URL;
+
+// Función para formatear la fecha a DD-MM-YYYY
+function formatearFecha(fecha) {
+  if (!fecha) return '';
+  let soloFecha = fecha;
+  if (fecha.includes('T')) soloFecha = fecha.split('T')[0];
+  const [yyyy, mm, dd] = soloFecha.split('-');
+  return `${dd}-${mm}-${yyyy}`;
+}
 
 function HistorialVehiculos() {
   const [historial, setHistorial] = useState([]);
@@ -59,7 +68,7 @@ function HistorialVehiculos() {
               <Typography>Cliente: {item.cliente}</Typography>
               <Typography>Servicio: {item.servicio}</Typography>
               <Typography>Taller: {item.taller}</Typography>
-              <Typography>Fecha: {item.fecha && item.fecha.toString().slice(0,10)}</Typography>
+              <Typography>Fecha: {formatearFecha(item.fecha)}</Typography>
               <Typography>Diagnóstico: {item.diagnostico || 'Sin diagnóstico'}</Typography>
               <Typography>Trabajos: {item.trabajos || 'Sin trabajos'}</Typography>
               <Button
