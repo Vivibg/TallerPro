@@ -8,6 +8,17 @@ import GroupIcon from '@mui/icons-material/Group';
 
 const API_URL = process.env.REACT_APP_API_URL;
 
+// Función para formatear fecha y hora
+function formatearFechaHora(fecha, hora) {
+  let soloFecha = fecha;
+  if (fecha && fecha.includes('T')) {
+    soloFecha = fecha.split('T')[0];
+  }
+  if (!soloFecha) return '';
+  const [yyyy, mm, dd] = soloFecha.split('-');
+  return `${dd}-${mm}-${yyyy}${hora ? ' ' + hora : ''}`;
+}
+
 function Dashboard() {
   const [stats, setStats] = useState([
     { label: 'Reservas Totales', value: 0, icon: <EventNoteIcon color="primary" />, color: '#2258e6' },
@@ -31,7 +42,7 @@ function Dashboard() {
           .slice(0, 2)
           .map(r => ({
             texto: `Nueva reserva - ${r.cliente}`,
-            tiempo: `${r.fecha} ${r.hora}`,
+            tiempo: formatearFechaHora(r.fecha, r.hora),
             icon: <EventNoteIcon sx={{ color: '#2258e6' }} />
           }));
         setActividad(a => [...ultimasRes, ...a]);
@@ -77,7 +88,6 @@ function Dashboard() {
           }));
         setActividad(a => [...ultimosStock, ...a]);
       });
-
 
     // fetch(`${API_URL}/api/ingresos`)
     //   .then(res => res.json())
