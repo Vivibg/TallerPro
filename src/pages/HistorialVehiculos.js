@@ -4,7 +4,7 @@ import FichaReparacionModal from '../components/FichaReparacionModal';
 
 const API_URL = process.env.REACT_APP_API_URL;
 
-// Función para formatear la fecha a DD-MM-YYYY
+
 function formatearFecha(fecha) {
   if (!fecha) return '';
   let soloFecha = fecha;
