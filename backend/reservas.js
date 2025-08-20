@@ -32,7 +32,7 @@ router.post('/', async (req, res) => {
   }
 });
 
-// Confirmar asistencia y sincronizar con reparaciones y clientes (NO historial_vehiculos)
+
 router.put('/:id/asistencia', async (req, res) => {
   const connection = await pool.getConnection();
   try {
@@ -42,7 +42,7 @@ router.put('/:id/asistencia', async (req, res) => {
       return res.status(400).json({ error: 'El campo asistio debe ser booleano' });
     }
 
-    // 1. Actualizar asistencia en la reserva
+    
     await connection.query('UPDATE reservas SET asiste = ? WHERE id = ?', [asiste, id]);
 
     if (asiste) {
@@ -54,7 +54,7 @@ router.put('/:id/asistencia', async (req, res) => {
         return res.status(404).json({ error: 'Reserva no encontrada' });
       }
 
-      // 3. Insertar en reparaciones (rellena solo lo que tienes, el resto con valores por defecto)
+    
       await connection.query(
         `INSERT INTO reparaciones (
           cliente, vehiculo, problema, estado, costo, fecha,
@@ -74,7 +74,7 @@ router.put('/:id/asistencia', async (req, res) => {
         ]
       );
 
-      // 4. Verificar si el cliente existe en clientes, si no, agregarlo
+     
       const [clientes] = await connection.query('SELECT * FROM clientes WHERE nombre = ?', [reserva.cliente]);
       if (clientes.length === 0) {
         await connection.query(
@@ -89,8 +89,7 @@ router.put('/:id/asistencia', async (req, res) => {
         );
       }
 
-      // 5. NO insertar en historial_vehiculos aquí
-      // (El historial se actualiza solo cuando la reparación pasa a estado "En Proceso" en el backend de reparaciones)
+     
     }
 
     res.json({ ok: true });
@@ -115,3 +114,4 @@ router.delete('/:id', async (req, res) => {
 });
 
 export default router;
+
