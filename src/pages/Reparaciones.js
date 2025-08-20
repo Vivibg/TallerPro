@@ -44,11 +44,11 @@ function Reparaciones() {
   const [estado, setEstado] = useState('all');
   const [busqueda, setBusqueda] = useState('');
 
-  // Estado para la ficha/modal
+ 
   const [openFicha, setOpenFicha] = useState(false);
   const [selectedReparacion, setSelectedReparacion] = useState(null);
 
-  // Normaliza campos vacíos a "Sin dato" SOLO para mostrar
+ 
   const normalize = (valor) =>
     valor && valor.toString().trim() ? valor : 'Sin dato';
 
@@ -101,7 +101,7 @@ function Reparaciones() {
     setDATA(prev => prev.filter(r => r.id !== id));
   };
 
-  // Cambia el estado de la reparación y mantiene cliente/vehiculo/problema originales
+  
   const handleEstadoChange = async (id, nuevoEstado) => {
     const reparacion = DATA.find(r => r.id === id);
     if (!reparacion) return;
