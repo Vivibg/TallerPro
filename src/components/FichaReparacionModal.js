@@ -14,7 +14,7 @@ const SERVICIOS = [
 function FichaReparacionModal({ open, onClose, reparacion, modoHistorial }) {
   const [form, setForm] = useState(reparacion);
 
-  // Actualiza el form si cambia la reparación seleccionada
+  
   React.useEffect(() => {
     setForm(reparacion);
   }, [reparacion]);
@@ -79,3 +79,4 @@ function FichaReparacionModal({ open, onClose, reparacion, modoHistorial }) {
 }
 
 export default FichaReparacionModal;
+
