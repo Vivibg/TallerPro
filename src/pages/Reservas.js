@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Box, Typography, Paper, Grid, Button, List, ListItem, ListItemText, Dialog, DialogTitle, DialogContent, DialogActions, TextField, Chip, Alert } from '@mui/material';
 
-// Función para formatear fecha y hora
+
 function formatearFechaHora(fecha, hora) {
   let soloFecha = fecha;
   if (fecha && fecha.includes('T')) {
@@ -21,11 +21,11 @@ function Reservas() {
 
   const API_URL = process.env.REACT_APP_API_URL;
 
-  // Validación de fecha y hora
+  
   const isValidDate = (date) => /^\d{4}-\d{2}-\d{2}$/.test(date);
   const isValidTime = (time) => /^([01]\d|2[0-3]):[0-5]\d$/.test(time);
 
-  // Cargar todas las reservas al cargar el componente
+ 
   const fetchReservas = () => {
     fetch(`${API_URL}/api/reservas`)
       .then(res => res.json())
