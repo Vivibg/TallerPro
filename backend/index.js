@@ -14,7 +14,7 @@ const app = express();
 
 const allowedOrigins = [
   'https://tallerpro-vivian-branas-projects.vercel.app'
-  // Puedes agregar 'http://localhost:3000' si quieres probar localmente con React
+  
 ];
 
 app.use(cors({
