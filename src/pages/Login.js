@@ -1,188 +1,65 @@
-import React, { useEffect, useRef, useState } from 'react';
-import {
-  Box, Paper, Typography, TextField, Button, Alert, Divider, Tabs, Tab, Stack
-} from '@mui/material';
+import React, { useState } from 'react';
+import { Box, Paper, Typography, TextField, Button, Alert } from '@mui/material';
 
-const API_URL = import.meta?.env?.VITE_API_URL || '';
-const GOOGLE_CLIENT_ID = import.meta?.env?.VITE_GOOGLE_CLIENT_ID || process.env.REACT_APP_GOOGLE_CLIENT_ID;
-console.log('API_URL =', API_URL);
+// Prefer CRA env (process.env.REACT_APP_*) and fallback to Vite only if present
+const API_URL =
+  process.env.REACT_APP_API_URL ||
+  (typeof import !== 'undefined' && typeof import.meta !== 'undefined' ? import.meta.env?.VITE_API_URL : '') ||
+  '';
 
 function Login({ onLogin }) {
-  const [tab, setTab] = useState(0); // 0=Entrar, 1=Crear cuenta
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
-  const [name, setName] = useState('');
   const [error, setError] = useState('');
-  const [loading, setLoading] = useState(false);
-  const googleDivRef = useRef(null);
 
-  useEffect(() => {
-    if (!window.google || !GOOGLE_CLIENT_ID || !googleDivRef.current) return;
-    window.google.accounts.id.initialize({
-      client_id: GOOGLE_CLIENT_ID,
-      callback: async (resp) => {
-        setLoading(true);
-        setError('');
-        try {
-          const r = await fetch(`${API_URL}/api/auth/google`, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ idToken: resp.credential })
-          });
-          const data = await r.json();
-          if (!r.ok) throw new Error(data.error || 'Error autenticando con Google');
-
-          localStorage.setItem('token', data.token);
-          localStorage.setItem('user', JSON.stringify(data.user)); // {id,name,email,role,picture}
-          onLogin?.(data.user);
-        } catch (e) {
-          setError(e.message);
-        } finally {
-          setLoading(false);
-        }
-      },
-      ux_mode: 'popup',
-      auto_select: false
-    });
-
-    // Render del botón de Google
-    window.google.accounts.id.renderButton(googleDivRef.current, {
-      theme: 'outline',
-      size: 'large',
-      text: 'continue_with'
-    });
-  }, []);
-
-  const handleLogin = async (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
-    setError('');
-    setLoading(true);
     try {
       const r = await fetch(`${API_URL}/api/auth/login`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ email, password })
       });
-      const data = await r.json();
-      if (!r.ok) throw new Error(data.error || 'Error iniciando sesión');
+      const txt = await r.text();
+      let data; try { data = JSON.parse(txt); } catch { data = {}; }
+      if (!r.ok) throw new Error(data.error || txt || 'Error iniciando sesión');
 
-      localStorage.setItem('token', data.token);
-      localStorage.setItem('user', JSON.stringify(data.user)); // {id,name,email,role}
-      onLogin?.(data.user);
+      onLogin?.({ name: 'Carlos', email });
     } catch (e) {
       setError(e.message);
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const handleRegister = async (e) => {
-    e.preventDefault();
-    setError('');
-    setLoading(true);
-    try {
-      if (!email || !password) throw new Error('Email y contraseña son requeridos');
-      if (password.length < 8) throw new Error('La contraseña debe tener al menos 8 caracteres');
-
-      const r = await fetch(`${API_URL}/api/auth/register`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ email, password, name })
-      });
-      const data = await r.json();
-      if (!r.ok) throw new Error(data.error || 'Error registrando usuario');
-
-      localStorage.setItem('token', data.token);
-      localStorage.setItem('user', JSON.stringify(data.user)); // {id,name,email,role}
-      onLogin?.(data.user);
-    } catch (e) {
-      setError(e.message);
-    } finally {
-      setLoading(false);
     }
   };
 
   return (
     <Box sx={{ minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center', background: '#f5f6fa' }}>
-      <Paper elevation={3} sx={{ p: 4, minWidth: 320, width: 400, maxWidth: '92vw' }}>
+      <Paper elevation={3} sx={{ p: 4, minWidth: 320 }}>
         <Typography variant="h5" fontWeight={700} mb={2} align="center">
           Iniciar Sesión
         </Typography>
-
         {error && <Alert severity="error" sx={{ mb: 2 }}>{error}</Alert>}
-
-        <div ref={googleDivRef} style={{ display: 'flex', justifyContent: 'center', marginBottom: 12 }} />
-
-        <Divider sx={{ my: 2 }}>o</Divider>
-
-        <Tabs
-          value={tab}
-          onChange={(_, v) => setTab(v)}
-          variant="fullWidth"
-          sx={{ mb: 2 }}
-        >
-          <Tab label="Entrar" />
-          <Tab label="Crear cuenta" />
-        </Tabs>
-
-        {tab === 0 && (
-          <form onSubmit={handleLogin}>
-            <Stack spacing={2}>
-              <TextField
-                label="Email"
-                type="email"
-                fullWidth
-                required
-                value={email}
-                onChange={e => setEmail(e.target.value)}
-              />
-              <TextField
-                label="Contraseña"
-                type="password"
-                fullWidth
-                required
-                value={password}
-                onChange={e => setPassword(e.target.value)}
-              />
-              <Button type="submit" variant="contained" fullWidth disabled={loading}>
-                Entrar
-              </Button>
-            </Stack>
-          </form>
-        )}
-
-        {tab === 1 && (
-          <form onSubmit={handleRegister}>
-            <Stack spacing={2}>
-              <TextField
-                label="Nombre"
-                type="text"
-                fullWidth
-                value={name}
-                onChange={e => setName(e.target.value)}
-              />
-              <TextField
-                label="Email"
-                type="email"
-                fullWidth
-                required
-                value={email}
-                onChange={e => setEmail(e.target.value)}
-              />
-              <TextField
-                label="Contraseña (mín. 8)"
-                type="password"
-                fullWidth
-                required
-                value={password}
-                onChange={e => setPassword(e.target.value)}
-              />
-              <Button type="submit" variant="contained" fullWidth disabled={loading}>
-                Crear cuenta
-              </Button>
-            </Stack>
-          </form>
-        )}
+        <form onSubmit={handleSubmit}>
+          <TextField
+            label="Email"
+            type="email"
+            fullWidth
+            required
+            margin="normal"
+            value={email}
+            onChange={e => setEmail(e.target.value)}
+          />
+          <TextField
+            label="Contraseña"
+            type="password"
+            fullWidth
+            required
+            margin="normal"
+            value={password}
+            onChange={e => setPassword(e.target.value)}
+          />
+          <Button type="submit" variant="contained" color="primary" fullWidth sx={{ mt: 2 }}>
+            Entrar
+          </Button>
+        </form>
       </Paper>
     </Box>
   );
