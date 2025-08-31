@@ -3,8 +3,9 @@ import {
   Box, Paper, Typography, TextField, Button, Alert, Divider, Tabs, Tab, Stack
 } from '@mui/material';
 
-const API_URL = import.meta?.env?.VITE_API_URL || ''; // ej: https://tu-backend.onrender.com
+const API_URL = import.meta?.env?.VITE_API_URL || '';
 const GOOGLE_CLIENT_ID = import.meta?.env?.VITE_GOOGLE_CLIENT_ID || process.env.REACT_APP_GOOGLE_CLIENT_ID;
+console.log('API_URL =', API_URL);
 
 function Login({ onLogin }) {
   const [tab, setTab] = useState(0); // 0=Entrar, 1=Crear cuenta
