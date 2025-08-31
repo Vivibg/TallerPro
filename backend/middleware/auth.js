@@ -34,7 +34,6 @@ router.post('/google', async (req, res) => {
     const name = payload.name || '';
     const picture = payload.picture || '';
 
-    // Buscar/crear usuario
     const [rows] = await pool.query('SELECT * FROM users WHERE email = ?', [email]);
     let user = rows[0];
 
@@ -46,7 +45,6 @@ router.post('/google', async (req, res) => {
       );
       user = { id: result.insertId, email, name, picture, role };
     } else {
-      // Actualizar datos visibles y elevar rol si es admin
       const newRole = adminEmails.includes(email) ? 'admin' : user.role;
       if (user.name !== name || user.picture !== picture || user.role !== newRole) {
         await pool.query(
