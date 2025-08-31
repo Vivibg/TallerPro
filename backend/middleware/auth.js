@@ -49,9 +49,10 @@ router.post('/google', async (req, res) => {
       // Actualizar datos visibles y elevar rol si es admin
       const newRole = adminEmails.includes(email) ? 'admin' : user.role;
       if (user.name !== name || user.picture !== picture || user.role !== newRole) {
-        await pool.query('UPDATE users SET name=?, picture=?, role=?, provider=COALESCE(provider, ?) WHERE id=?', [
-          name, picture, newRole, 'google', user.id
-        ]);
+        await pool.query(
+          'UPDATE users SET name=?, picture=?, role=?, provider=COALESCE(provider, ?) WHERE id=?',
+          [name, picture, newRole, 'google', user.id]
+        );
         user.name = name;
         user.picture = picture;
         user.role = newRole;
@@ -59,7 +60,10 @@ router.post('/google', async (req, res) => {
     }
 
     const token = signToken(user);
-    return res.json({ token, user: { id: user.id, name: user.name, email: user.email, role: user.role, picture: user.picture } });
+    return res.json({
+      token,
+      user: { id: user.id, name: user.name, email: user.email, role: user.role, picture: user.picture }
+    });
   } catch (e) {
     console.error('Google auth error', e);
     return res.status(401).json({ error: 'Token de Google inválido' });
@@ -70,16 +74,14 @@ router.post('/google', async (req, res) => {
 router.post('/register', async (req, res) => {
   try {
     const { email, password, name = '' } = req.body || {};
-    if (!email || !password) {
-      return res.status(400).json({ error: 'Email y contraseña son requeridos' });
-    }
+    if (!email || !password) return res.status(400).json({ error: 'Email y contraseña son requeridos' });
+
     const normEmail = String(email).trim().toLowerCase();
-    if (password.length < 8) {
-      return res.status(400).json({ error: 'La contraseña debe tener al menos 8 caracteres' });
-    }
+    if (password.length < 8) return res.status(400).json({ error: 'La contraseña debe tener al menos 8 caracteres' });
 
     const [rows] = await pool.query('SELECT * FROM users WHERE email = ?', [normEmail]);
     const existing = rows[0];
+
     if (existing && existing.password_hash) {
       return res.status(409).json({ error: 'El correo ya está registrado' });
     }
@@ -115,15 +117,13 @@ router.post('/register', async (req, res) => {
 router.post('/login', async (req, res) => {
   try {
     const { email, password } = req.body || {};
-    if (!email || !password) {
-      return res.status(400).json({ error: 'Email y contraseña son requeridos' });
-    }
+    if (!email || !password) return res.status(400).json({ error: 'Email y contraseña son requeridos' });
+
     const normEmail = String(email).trim().toLowerCase();
 
     const [rows] = await pool.query('SELECT * FROM users WHERE email = ?', [normEmail]);
     const user = rows[0];
     if (!user || !user.password_hash) {
-      // No revelar si el email existe
       return res.status(401).json({ error: 'Credenciales inválidas' });
     }
 
