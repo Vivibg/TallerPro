@@ -15,7 +15,7 @@ import { authRequired, roleRequired } from './middleware/auth.js';
 const app = express();
 
 const allowedOrigins = [
-  'https://tallerpro-vivian-branas-projects.vercel.app'
+  'https://tallerpro-vivian-branas-projects.vercel.app',
   'http://localhost:5173'
 ];
 
@@ -35,7 +35,7 @@ app.use(express.json());
 // Salud pública para verificación de despliegue
 app.get('/health', (req, res) => res.json({ ok: true }));
 
-// Rutas de autenticación (Google, me)
+// Rutas de autenticación (Google, register, login, me)
 app.use('/api/auth', authRouter);
 
 // Rutas protegidas
