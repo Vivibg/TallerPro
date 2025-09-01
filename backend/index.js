@@ -88,10 +88,10 @@ app.get('/routes', (req, res) => {
 app.use('/api/reservas', authRequired, reservasRouter);
 app.use('/api/historial', authRequired, historialRouter);
 
-// Solo admin
-app.use('/api/inventario', authRequired, roleRequired('admin'), inventarioRouter);
-app.use('/api/reparaciones', authRequired, roleRequired('admin'), reparacionesRouter);
-app.use('/api/clientes', authRequired, roleRequired('admin'), clientesRouter);
+// Módulos: cualquier usuario autenticado puede acceder
+app.use('/api/inventario', authRequired, inventarioRouter);
+app.use('/api/reparaciones', authRequired, reparacionesRouter);
+app.use('/api/clientes', authRequired, clientesRouter);
 
 const PORT = process.env.PORT || 4000;
 app.listen(PORT, () => {
