@@ -1,4 +1,4 @@
-import React, { useEffect, useRef, useState } from 'react';
+  import React, { useEffect, useRef, useState } from 'react';
 import {
   Box,
   Paper,
@@ -11,6 +11,7 @@ import {
   Tab,
   Stack
 } from '@mui/material';
+import { apiFetch } from '../utils/api';
 
 // CRA env variables
 const API_URL = process.env.REACT_APP_API_URL || '';
@@ -42,13 +43,10 @@ function Login({ onLogin }) {
         setLoading(true);
         setError('');
         try {
-          const r = await fetch(`${API_URL}/api/auth/google`, {
+          const data = await apiFetch('/api/auth/google', {
             method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ idToken: resp.credential })
           });
-          const data = await parseJsonSafe(r);
-          if (!r.ok) throw new Error(data.error || 'Error autenticando con Google');
 
           localStorage.setItem('token', data.token);
           localStorage.setItem('user', JSON.stringify(data.user)); // {id,name,email,role,picture}
@@ -76,13 +74,10 @@ function Login({ onLogin }) {
     setLoading(true);
     try {
       if (!API_URL) throw new Error('API_URL no configurado');
-      const r = await fetch(`${API_URL}/api/auth/login`, {
+      const data = await apiFetch('/api/auth/login', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ email, password })
       });
-      const data = await parseJsonSafe(r);
-      if (!r.ok) throw new Error(data.error || 'Error iniciando sesión');
 
       localStorage.setItem('token', data.token);
       localStorage.setItem('user', JSON.stringify(data.user)); // {id,name,email,role}
@@ -103,13 +98,10 @@ function Login({ onLogin }) {
       if (!email || !password) throw new Error('Email y contraseña son requeridos');
       if (password.length < 8) throw new Error('La contraseña debe tener al menos 8 caracteres');
 
-      const r = await fetch(`${API_URL}/api/auth/register`, {
+      const data = await apiFetch('/api/auth/register', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ email, password, name })
       });
-      const data = await parseJsonSafe(r);
-      if (!r.ok) throw new Error(data.error || 'Error registrando usuario');
 
       localStorage.setItem('token', data.token);
       localStorage.setItem('user', JSON.stringify(data.user)); // {id,name,email,role}
@@ -204,4 +196,3 @@ function Login({ onLogin }) {
 }
 
 export default Login;
- 
