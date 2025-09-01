@@ -1,79 +1,79 @@
-// backend/reservas.js
-import express from 'express';
+import { Router } from 'express';
 import { pool } from './db.js';
 
-const router = express.Router();
+const router = Router();
 
-// Obtener todas las reservas
+// Listar reparaciones
 router.get('/', async (req, res) => {
   try {
-    const [rows] = await pool.query('SELECT * FROM reservas ORDER BY fecha, hora');
+    const [rows] = await pool.query('SELECT * FROM reparaciones');
     res.json(rows);
   } catch (e) {
-    res.status(500).json({ error: 'Error consultando reservas' });
+    console.error(e);
+    res.status(500).json({ error: 'Error consultando reparaciones' });
   }
 });
 
-// Crear nueva reserva
-router.post('/', async (req, res) => {
-  try {
-    const { cliente, servicio, vehiculo, patente, fecha, hora, motivo } = req.body;
-    const [result] = await pool.query(
-      'INSERT INTO reservas (cliente, servicio, vehiculo, patente, fecha, hora, motivo) VALUES (?, ?, ?, ?, ?, ?, ?)',
-      [cliente, servicio, vehiculo, patente, fecha, hora, motivo]
-    );
-    res.status(201).json({ id: result.insertId, cliente, servicio, vehiculo, patente, fecha, hora, motivo });
-  } catch (e) {
-    console.error('Error creando reserva:', e.code || e.message, e.sqlMessage || '');
-    res.status(500).json({ error: 'Error creando reserva' });
-  }
-});
-
-// Confirmar asistencia: crea una reparación a partir de la reserva
-router.put('/:id/asistencia', async (req, res) => {
+// Obtener una reparación por ID
+router.get('/:id', async (req, res) => {
   try {
     const { id } = req.params;
-    let { asiste } = req.body || {};
-    // Normalizar a booleano
-    asiste = asiste === true || asiste === 'true' || asiste === 1 || asiste === '1';
-
-    const [rows] = await pool.query('SELECT * FROM reservas WHERE id = ?', [id]);
-    const r = rows[0];
-    if (!r) return res.status(404).json({ error: 'Reserva no encontrada' });
-
-    // Intentar marcar la asistencia en la tabla de reservas (si existe la columna)
-    try {
-      await pool.query('UPDATE reservas SET asiste = ? WHERE id = ?', [asiste ? 1 : 0, id]);
-    } catch (e) {
-      // Si la columna no existe, continuar sin fallar
-    }
-
-    let reparacionId = null;
-    if (asiste) {
-      // Crear reparación usando datos de la reserva
-      const [result] = await pool.query(
-        'INSERT INTO reparaciones (cliente, vehiculo, problema, estado, costo, fecha) VALUES (?, ?, ?, ?, ?, NOW())',
-        [r.cliente, r.vehiculo, r.servicio || r.motivo || 'Servicio', 'pending', 0]
-      );
-      reparacionId = result.insertId;
-    }
-
-    return res.json({ ok: true, reparacionId });
+    const [rows] = await pool.query('SELECT * FROM reparaciones WHERE id = ?', [id]);
+    const row = rows[0];
+    if (!row) return res.status(404).json({ error: 'Reparación no encontrada' });
+    res.json(row);
   } catch (e) {
-    console.error('Asistencia reserva error:', e.code || e.message);
-    return res.status(500).json({ error: 'Error confirmando asistencia' });
+    console.error(e);
+    res.status(500).json({ error: 'Error consultando reparación' });
   }
 });
 
-// Eliminar reserva
+// Crear reparación
+router.post('/', async (req, res) => {
+  try {
+    const { cliente, vehiculo, problema, estado, costo, fecha } = req.body;
+    const [result] = await pool.query(
+      'INSERT INTO reparaciones (cliente, vehiculo, problema, estado, costo, fecha) VALUES (?, ?, ?, ?, ?, ?)',
+      [cliente, vehiculo, problema, estado || 'pending', costo, fecha]
+    );
+    res.status(201).json({ id: result.insertId, cliente, vehiculo, problema, estado, costo, fecha });
+  } catch (e) {
+    console.error(e);
+    res.status(500).json({ error: 'Error creando reparación' });
+  }
+});
+
+// Actualizar reparación
+router.put('/:id', async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { problema, estado, costo, fecha } = req.body;
+    // Construir SET dinámico
+    const fields = [];
+    const values = [];
+    if (problema !== undefined) { fields.push('problema = ?'); values.push(problema); }
+    if (estado !== undefined) { fields.push('estado = ?'); values.push(estado); }
+    if (costo !== undefined) { fields.push('costo = ?'); values.push(costo); }
+    if (fecha !== undefined) { fields.push('fecha = ?'); values.push(fecha); }
+    if (fields.length === 0) return res.json({ ok: true });
+    values.push(id);
+    await pool.query(`UPDATE reparaciones SET ${fields.join(', ')} WHERE id = ?`, values);
+    res.json({ ok: true });
+  } catch (e) {
+    console.error(e);
+    res.status(500).json({ error: 'Error actualizando reparación' });
+  }
+});
+
+// Eliminar reparación
 router.delete('/:id', async (req, res) => {
   try {
     const { id } = req.params;
-    await pool.query('DELETE FROM reservas WHERE id = ?', [id]);
-
+    await pool.query('DELETE FROM reparaciones WHERE id = ?', [id]);
     res.json({ ok: true });
   } catch (e) {
-    res.status(500).json({ error: 'Error eliminando reserva' });
+    console.error(e);
+    res.status(500).json({ error: 'Error eliminando reparación' });
   }
 });
 
