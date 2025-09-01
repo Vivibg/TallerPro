@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Box, Typography, Paper, Grid, Button, List, ListItem, ListItemText, Dialog, DialogTitle, DialogContent, DialogActions, TextField, Chip, Alert } from '@mui/material';
-
+import { apiFetch } from '../utils/api';
 
 function formatearFechaHora(fecha, hora) {
   let soloFecha = fecha;
@@ -19,17 +19,12 @@ function Reservas() {
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
 
-  const API_URL = process.env.REACT_APP_API_URL;
-
-  
   const isValidDate = (date) => /^\d{4}-\d{2}-\d{2}$/.test(date);
   const isValidTime = (time) => /^([01]\d|2[0-3]):[0-5]\d$/.test(time);
 
- 
   const fetchReservas = () => {
-    fetch(`${API_URL}/api/reservas`)
-      .then(res => res.json())
-      .then(data => setReservas(data))
+    apiFetch('/api/reservas')
+      .then(data => setReservas(Array.isArray(data) ? data : []))
       .catch(() => {
         setReservas([]);
         setError('Error al cargar reservas');
@@ -67,38 +62,33 @@ function Reservas() {
       return;
     }
     try {
-      const res = await fetch(`${API_URL}/api/reservas`, {
+      await apiFetch('/api/reservas', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(form)
       });
-      if (!res.ok) {
-        const data = await res.json();
-        setError(data.error || 'Error al guardar la reserva');
-        return;
-      }
       setForm({ cliente: '', servicio: '', vehiculo: '', patente: '', fecha: '', hora: '', motivo: '' });
       setSuccess('¡Reserva creada exitosamente!');
       setOpen(false);
       fetchReservas();
     } catch (err) {
-      setError('Error de red o del servidor');
+      setError(err.message || 'Error de red o del servidor');
     }
   };
 
   const handleDelete = async id => {
-    await fetch(`${API_URL}/api/reservas/${id}`, { method: 'DELETE' });
+    await apiFetch(`/api/reservas/${id}`, { method: 'DELETE' });
     fetchReservas();
   };
 
   const handleAsistencia = async (id, asiste) => {
-    await fetch(`${API_URL}/api/reservas/${id}/asistencia`, {
+    await apiFetch(`/api/reservas/${id}/asistencia`, {
       method: 'PUT',
-      headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ asiste })
     });
     fetchReservas();
   };
+
+  const listaReservas = Array.isArray(reservas) ? reservas : [];
 
   return (
     <Box>
@@ -108,10 +98,10 @@ function Reservas() {
           <Paper elevation={2} sx={{ p: 3, mb: 2 }}>
             <Typography variant="h6" fontWeight={600} mb={2}>Todas las Reservas</Typography>
             <List>
-              {reservas.length === 0 && (
+              {listaReservas.length === 0 && (
                 <Typography color="text.secondary" sx={{ mt: 2 }}>No hay reservas registradas.</Typography>
               )}
-              {reservas.map((cita, i) => (
+              {listaReservas.map((cita, i) => (
                 <ListItem key={cita.id || i} divider
                   secondaryAction={
                     <Button color="error" size="small" onClick={() => handleDelete(cita.id)}>
