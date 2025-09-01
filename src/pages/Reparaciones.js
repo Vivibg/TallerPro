@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Box, Typography, Paper, Button, Table, TableBody, TableCell, TableContainer, TableHead, TableRow, Select, MenuItem, TextField, Chip, Stack, Dialog, DialogTitle, DialogContent, DialogActions } from '@mui/material';
+import { Box, Typography, Paper, Button, Table, TableBody, TableCell, TableContainer, TableHead, TableRow, Select, MenuItem, TextField, Chip, Stack, Dialog, DialogTitle, DialogContent, DialogActions, Alert } from '@mui/material';
 import { apiFetch } from '../utils/api';
 
 const ESTADOS = [
@@ -15,11 +15,23 @@ function Reparaciones() {
   const [form, setForm] = useState({ cliente: '', vehiculo: '', problema: '', estado: 'pending', costo: '', fecha: '' });
   const [estado, setEstado] = useState('all');
   const [busqueda, setBusqueda] = useState('');
+  const [error, setError] = useState('');
 
   const fetchReparaciones = () => {
+    setError('');
     apiFetch('/api/reparaciones')
-      .then(data => Array.isArray(data) ? setDATA(data) : setDATA([]))
-      .catch(() => setDATA([]));
+      .then(data => {
+        Array.isArray(data) ? setDATA(data) : setDATA([]);
+      })
+      .catch((err) => {
+        setDATA([]);
+        const msg = (err?.message || '').toLowerCase();
+        if (msg.includes('forbidden') || msg.includes('no autorizado') || msg.includes('403')) {
+          setError('No tienes permiso para ver reparaciones (requiere rol admin).');
+        } else {
+          setError('Error al cargar reparaciones.');
+        }
+      });
   };
 
   useEffect(() => {
@@ -91,7 +103,9 @@ function Reparaciones() {
           <Button variant="contained" color="primary" sx={{ ml: 'auto' }} onClick={handleOpen}>
             + Nueva Reparación
           </Button>
+          <Button variant="outlined" onClick={fetchReparaciones}>Refrescar</Button>
         </Stack>
+        {error && <Alert severity="warning" sx={{ mt: 2 }}>{error}</Alert>}
         <Dialog open={open} onClose={handleClose}>
           <DialogTitle>Nueva Reparación</DialogTitle>
           <form onSubmit={handleSubmit}>
