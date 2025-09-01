@@ -39,7 +39,7 @@ router.post('/google', async (req, res) => {
     let user = rows[0];
 
     if (!user) {
-      const role = adminEmails.includes(email) ? 'admin' : 'cliente';
+      const role = adminEmails.includes(email) ? 'admin' : 'client';
       const [result] = await pool.query(
         'INSERT INTO users (email, name, picture, role, provider) VALUES (?, ?, ?, ?, ?)',
         [email, name, picture, role, 'google']
@@ -82,7 +82,7 @@ router.post('/register', async (req, res) => {
     }
 
     const hash = await bcrypt.hash(password, 10);
-    const role = adminEmails.includes(normEmail) ? 'admin' : 'cliente';
+    const role = adminEmails.includes(normEmail) ? 'admin' : 'client';
 
     let userId;
     if (!existing) {
