@@ -47,7 +47,13 @@ router.post('/', async (req, res) => {
 router.put('/:id', async (req, res) => {
   try {
     const { id } = req.params;
-    const { problema, estado, costo, fecha } = req.body;
+    const { problema, estado, costo, fecha } = req.body || {};
+
+    // Obtener estado actual antes de actualizar
+    const [currentRows] = await pool.query('SELECT * FROM reparaciones WHERE id = ?', [id]);
+    const current = currentRows[0];
+    if (!current) return res.status(404).json({ error: 'Reparación no encontrada' });
+
     // Construir SET dinámico
     const fields = [];
     const values = [];
@@ -55,9 +61,39 @@ router.put('/:id', async (req, res) => {
     if (estado !== undefined) { fields.push('estado = ?'); values.push(estado); }
     if (costo !== undefined) { fields.push('costo = ?'); values.push(costo); }
     if (fecha !== undefined) { fields.push('fecha = ?'); values.push(fecha); }
-    if (fields.length === 0) return res.json({ ok: true });
-    values.push(id);
-    await pool.query(`UPDATE reparaciones SET ${fields.join(', ')} WHERE id = ?`, values);
+
+    if (fields.length > 0) {
+      values.push(id);
+      await pool.query(`UPDATE reparaciones SET ${fields.join(', ')} WHERE id = ?`, values);
+    }
+
+    // Si pasa a 'progress' desde otro estado, registrar en historial
+    const prevEstado = (current.estado || '').toLowerCase();
+    const newEstado = (estado !== undefined ? estado : current.estado || '').toLowerCase();
+    if (prevEstado !== 'progress' && newEstado === 'progress') {
+      try {
+        // Descubrir columnas de historial para insertar lo que exista
+        const [cols] = await pool.query('SHOW COLUMNS FROM historial');
+        const names = cols.map(c => c.Field);
+        const hFields = [];
+        const hValues = [];
+        const pushIf = (name, val) => { if (names.includes(name)) { hFields.push(name); hValues.push(val ?? null); } };
+        pushIf('vehiculo', current.vehiculo);
+        pushIf('placas', current.patente || null);
+        pushIf('cliente', current.cliente);
+        pushIf('fecha', new Date());
+        pushIf('servicio', problema !== undefined ? problema : current.problema);
+        pushIf('taller', process.env.TALLER_NOMBRE || null);
+        if (hFields.length > 0) {
+          const placeholders = hFields.map(() => '?').join(', ');
+          await pool.query(`INSERT INTO historial (${hFields.join(', ')}) VALUES (${placeholders})`, hValues);
+        }
+      } catch (e) {
+        // No bloquear la respuesta si historial falla
+        console.error('No se pudo registrar en historial:', e.code || e.message);
+      }
+    }
+
     res.json({ ok: true });
   } catch (e) {
     console.error(e);
@@ -78,4 +114,3 @@ router.delete('/:id', async (req, res) => {
 });
 
 export default router;
- 
