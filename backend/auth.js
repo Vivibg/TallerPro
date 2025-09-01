@@ -61,7 +61,7 @@ router.post('/google', async (req, res) => {
     const token = signToken(user);
     return res.json({ token, user: { id: user.id, name: user.name, email: user.email, role: user.role, picture: user.picture } });
   } catch (e) {
-    console.error('Google auth error', e);
+    console.error('Google auth error:', e.code || e.name, e.sqlMessage || e.message);
     return res.status(401).json({ error: 'Token de Google inválido' });
   }
 });
