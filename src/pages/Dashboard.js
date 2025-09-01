@@ -5,8 +5,7 @@ import EventNoteIcon from '@mui/icons-material/EventNote';
 import WarningAmberIcon from '@mui/icons-material/WarningAmber';
 import AttachMoneyIcon from '@mui/icons-material/AttachMoney';
 import GroupIcon from '@mui/icons-material/Group';
-
-const API_URL = process.env.REACT_APP_API_URL;
+import { apiFetch } from '../utils/api';
 
 // Función para formatear fecha y hora
 function formatearFechaHora(fecha, hora) {
@@ -29,15 +28,16 @@ function Dashboard() {
   const [actividad, setActividad] = useState([]);
 
   useEffect(() => {
-    // RESERVAS
-    fetch(`${API_URL}/api/reservas`)
-      .then(res => res.json())
-      .then(data => {
+    (async () => {
+      try {
+        // RESERVAS
+        const reservas = await apiFetch('/api/reservas');
+        const reservasArr = Array.isArray(reservas) ? reservas : [];
         setStats(s => s.map(stat =>
-          stat.label === 'Reservas Totales' ? { ...stat, value: data.length } : stat
+          stat.label === 'Reservas Totales' ? { ...stat, value: reservasArr.length } : stat
         ));
-        // Actividad: últimas reservas
-        const ultimasRes = data
+        const ultimasRes = reservasArr
+          .slice()
           .sort((a, b) => new Date(b.fecha + 'T' + (b.hora || '00:00')) - new Date(a.fecha + 'T' + (a.hora || '00:00')))
           .slice(0, 2)
           .map(r => ({
@@ -46,48 +46,44 @@ function Dashboard() {
             icon: <EventNoteIcon sx={{ color: '#2258e6' }} />
           }));
         setActividad(a => [...ultimasRes, ...a]);
-      });
 
-    // CLIENTES
-    fetch(`${API_URL}/api/clientes`)
-      .then(res => res.json())
-      .then(data => {
+        // CLIENTES
+        const clientes = await apiFetch('/api/clientes');
+        const clientesArr = Array.isArray(clientes) ? clientes : [];
         setStats(s => s.map(stat =>
-          stat.label === 'Clientes Registrados' ? { ...stat, value: data.length } : stat
+          stat.label === 'Clientes Registrados' ? { ...stat, value: clientesArr.length } : stat
         ));
-        // Actividad: último cliente
-        if (data.length > 0) {
-          const ultimo = data[data.length - 1];
+        if (clientesArr.length > 0) {
+          const ultimo = clientesArr[clientesArr.length - 1];
           setActividad(a => [{
             texto: `Nuevo cliente - ${ultimo.nombre}`,
             tiempo: 'Reciente',
             icon: <GroupIcon sx={{ color: '#3bb54a' }} />
           }, ...a]);
         }
-      });
 
-    // INVENTARIO
-    fetch(`${API_URL}/api/inventario`)
-      .then(res => res.json())
-      .then(data => {
-        setStats(s => s.map(stat =>
-          stat.label === 'Productos en Inventario'
-            ? { ...stat, value: data.length }
-            : stat.label === 'Insumos Críticos'
-              ? { ...stat, value: data.filter(p => p.stock <= p.stock_min).length }
-              : stat
-        ));
-        // Actividad: últimos insumos críticos
-        const ultimosStock = data
-          .filter(p => p.stock <= p.stock_min)
+        // INVENTARIO
+        const inventario = await apiFetch('/api/inventario');
+        const inventarioArr = Array.isArray(inventario) ? inventario : [];
+        setStats(s => s.map(stat => {
+          if (stat.label === 'Productos en Inventario') return { ...stat, value: inventarioArr.length };
+          if (stat.label === 'Insumos Críticos') return { ...stat, value: inventarioArr.filter(p => (p?.stock ?? 0) <= (p?.stock_min ?? 0)).length };
+          return stat;
+        }));
+        const ultimosStock = inventarioArr
+          .filter(p => (p?.stock ?? 0) <= (p?.stock_min ?? 0))
           .slice(0, 1)
           .map(p => ({
-            texto: `Stock crítico - ${p.nombre}`,
+            texto: `Stock crítico - ${p?.nombre ?? 'Producto'}`,
             tiempo: 'Hoy',
             icon: <WarningAmberIcon sx={{ color: '#ffb300' }} />
           }));
         setActividad(a => [...ultimosStock, ...a]);
-      });
+      } catch (err) {
+        // apiFetch ya maneja 401 globalmente; aquí solo evitamos romper la UI
+        console.error('Dashboard load error:', err?.message || err);
+      }
+    })();
 
     // fetch(`${API_URL}/api/ingresos`)
     //   .then(res => res.json())
