@@ -42,6 +42,29 @@ app.use(express.json());
 // Salud pública para verificación de despliegue
 app.get('/health', (req, res) => res.json({ ok: true }));
 
+// Consulta pública por patente para Vista Cliente
+app.get('/api/reparaciones/por-patente/:patente', async (req, res) => {
+  try {
+    const { patente } = req.params;
+    // Buscar por coincidencia exacta de patente en tabla reparaciones
+    const [rows] = await pool.query('SELECT * FROM reparaciones WHERE patente = ? ORDER BY fecha DESC', [patente]);
+    // Sanitizar respuesta a los campos esperados por la vista pública
+    const out = rows.map(r => ({
+      fecha: r.fecha || null,
+      diagnostico: r.diagnostico || null,
+      trabajos: r.trabajos || null,
+      estado: r.estado || null,
+      costo: r.costo ?? null,
+      taller: r.taller || null,
+      mecanico: r.mecanico || null,
+    }));
+    res.json(out);
+  } catch (e) {
+    console.error('por-patente error:', e.code || e.message);
+    res.status(500).json({ error: 'Error consultando por patente' });
+  }
+});
+
 // Salud de base de datos (diagnóstico)
 app.get('/health/db', async (req, res) => {
   try {
