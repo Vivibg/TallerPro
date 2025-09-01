@@ -29,8 +29,8 @@ function App() {
     }
     (async () => {
       try {
-        // If valid, apiFetch returns user/me info; 401 is handled globally (redirects)
-        const me = await apiFetch('/api/auth/me');
+        // Evita redirección automática en 401 para poder mostrar <Login/>
+        const me = await apiFetch('/api/auth/me', { noRedirectOn401: true });
         setUser(me?.user || storedUser || null);
       } catch {
         // On error, ensure state cleared
@@ -86,4 +86,3 @@ function App() {
 }
 
 export default App;
- 
