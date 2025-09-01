@@ -4,6 +4,7 @@ import { apiFetch } from '../utils/api';
 
 const ESTADOS = [
   { value: 'all', label: 'Todos los estados' },
+  { value: 'pending', label: 'Pendiente' },
   { value: 'progress', label: 'En progreso' },
   { value: 'done', label: 'Completado' },
 ];
@@ -46,8 +47,10 @@ function Reparaciones() {
   };
 
   const filtrar = (row) => {
-    if (estado !== 'all' && row.estado !== estado) return false;
-    if (busqueda && !(`${row.cliente} ${row.vehiculo}`.toLowerCase().includes(busqueda.toLowerCase()))) return false;
+    // Tratar 'open' (legacy) como 'pending' para compatibilidad
+    const estadoRow = row.estado === 'open' ? 'pending' : row.estado;
+    if (estado !== 'all' && estadoRow !== estado) return false;
+    if (busqueda && !( `${row.cliente} ${row.vehiculo}`.toLowerCase().includes(busqueda.toLowerCase()) )) return false;
     return true;
   };
 
@@ -132,6 +135,7 @@ function Reparaciones() {
                 <TableCell>{row.vehiculo}</TableCell>
                 <TableCell>{row.problema}</TableCell>
                 <TableCell>
+                  {(row.estado === 'pending' || row.estado === 'open') && <Chip label="Pendiente" color="info" size="small" />}
                   {row.estado === 'progress' && <Chip label="En progreso" color="warning" size="small" />}
                   {row.estado === 'done' && <Chip label="Completado" color="success" size="small" />}
                 </TableCell>
@@ -150,4 +154,3 @@ function Reparaciones() {
 }
 
 export default Reparaciones;
- 
