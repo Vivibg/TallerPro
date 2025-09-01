@@ -33,7 +33,7 @@ app.use(cors({
 
 app.use(express.json());
 
-
+// Salud pública para verificación de despliegue
 app.get('/health', (req, res) => res.json({ ok: true }));
 
 // Salud de base de datos (diagnóstico)
@@ -50,7 +50,7 @@ app.get('/health/db', async (req, res) => {
 // Rutas de autenticación (Google, register, login, me)
 app.use('/api/auth', authRouter);
 
-
+// Inspector temporal de rutas (diagnóstico)
 app.get('/routes', (req, res) => {
   const collect = (stack, base = '') => {
     const out = [];
