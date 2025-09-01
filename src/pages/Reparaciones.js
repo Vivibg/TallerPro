@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Box, Typography, Paper, Button, Table, TableBody, TableCell, TableContainer, TableHead, TableRow, Select, MenuItem, TextField, Chip, Stack, Dialog, DialogTitle, DialogContent, DialogActions, Alert } from '@mui/material';
 import { apiFetch } from '../utils/api';
+import FichaReparacionModal from '../components/FichaReparacionModal';
 
 const ESTADOS = [
   { value: 'all', label: 'Todos los estados' },
@@ -16,13 +17,15 @@ function Reparaciones() {
   const [estado, setEstado] = useState('all');
   const [busqueda, setBusqueda] = useState('');
   const [error, setError] = useState('');
+  const [fichaOpen, setFichaOpen] = useState(false);
+  const [fichaItem, setFichaItem] = useState(null);
 
   const fetchReparaciones = () => {
     setError('');
     apiFetch('/api/reparaciones')
       .then(data => {
         Array.isArray(data) ? setDATA(data) : setDATA([]);
-      })
+      })  
       .catch((err) => {
         setDATA([]);
         const msg = (err?.message || '').toLowerCase();
@@ -37,6 +40,30 @@ function Reparaciones() {
   useEffect(() => {
     fetchReparaciones();
   }, []);
+
+  const handleEstadoChange = async (id, nuevo) => {
+    try {
+      await apiFetch(`/api/reparaciones/${id}`, {
+        method: 'PUT',
+        body: JSON.stringify({ estado: nuevo })
+      });
+      fetchReparaciones();
+    } catch (e) {
+      console.error('No se pudo actualizar estado:', e?.message || e);
+    }
+  };
+
+  const abrirFicha = async (row) => {
+    try {
+      // Cargar datos frescos por ID por si faltan campos
+      const detalle = await apiFetch(`/api/reparaciones/${row.id}`);
+      setFichaItem(detalle || row);
+    } catch {
+      setFichaItem(row);
+    } finally {
+      setFichaOpen(true);
+    }
+  };
 
   const handleOpen = () => setOpen(true);
   const handleClose = () => setOpen(false);
@@ -149,23 +176,38 @@ function Reparaciones() {
                 <TableCell>{row.vehiculo}</TableCell>
                 <TableCell>{row.problema}</TableCell>
                 <TableCell>
-                  {(row.estado === 'pending' || row.estado === 'open') && <Chip label="Pendiente" color="info" size="small" />}
-                  {row.estado === 'progress' && <Chip label="En progreso" color="warning" size="small" />}
-                  {row.estado === 'done' && <Chip label="Completado" color="success" size="small" />}
+                  <Select
+                    size="small"
+                    value={row.estado === 'open' ? 'pending' : row.estado}
+                    onChange={(e) => handleEstadoChange(row.id, e.target.value)}
+                  >
+                    <MenuItem value="pending">Pendiente</MenuItem>
+                    <MenuItem value="progress">En progreso</MenuItem>
+                    <MenuItem value="done">Completado</MenuItem>
+                  </Select>
                 </TableCell>
                 <TableCell>${row.costo.toLocaleString()}</TableCell>
                 <TableCell>
-                  <Button variant="contained" size="small" sx={{ mr: 1 }}>Ver</Button>
-                  <Button variant="outlined" size="small" color="error" onClick={() => handleDelete(row.id)}>Eliminar</Button>
+                  <Button variant="contained" size="small" onClick={() => abrirFicha(row)}>VER</Button>
+                  &nbsp;
+                  <Button variant="outlined" color="error" size="small" onClick={() => handleDelete(row.id)}>ELIMINAR</Button>
                 </TableCell>
               </TableRow>
             ))}
           </TableBody>
         </Table>
       </TableContainer>
+
+      {/* Ficha de reparación */}
+      {fichaItem && (
+        <FichaReparacionModal
+          open={fichaOpen}
+          onClose={() => setFichaOpen(false)}
+          reparacion={fichaItem}
+        />
+      )}
     </Box>
   );
 }
 
 export default Reparaciones;
- 
