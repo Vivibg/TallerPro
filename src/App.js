@@ -29,11 +29,19 @@ function App() {
     }
     (async () => {
       try {
+        // Timeout de 3s para evitar quedar colgado si hay problemas de red/CORS
+        const controller = new AbortController();
+        const t = setTimeout(() => controller.abort(), 3000);
         // Evita redirección automática en 401 para poder mostrar <Login/>
-        const me = await apiFetch('/api/auth/me', { noRedirectOn401: true });
+        const me = await apiFetch('/api/auth/me', { noRedirectOn401: true, signal: controller.signal });
+        clearTimeout(t);
         setUser(me?.user || storedUser || null);
       } catch {
-        // On error, ensure state cleared
+        // En error o timeout: limpiar y mostrar Login
+        try {
+          localStorage.removeItem('token');
+          localStorage.removeItem('user');
+        } catch {}
         setUser(null);
       } finally {
         setChecking(false);
