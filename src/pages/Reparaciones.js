@@ -1,30 +1,9 @@
 import React, { useState, useEffect } from 'react';
-import {
-  Box,
-  Typography,
-  Paper,
-  Button,
-  Table,
-  TableBody,
-  TableCell,
-  TableContainer,
-  TableHead,
-  TableRow,
-  Select,
-  MenuItem,
-  TextField,
-  Chip,
-  Stack,
-  Dialog,
-  DialogTitle,
-  DialogContent,
-  DialogActions
-} from '@mui/material';
-import FichaReparacionModal from '../components/FichaReparacionModal';
+import { Box, Typography, Paper, Button, Table, TableBody, TableCell, TableContainer, TableHead, TableRow, Select, MenuItem, TextField, Chip, Stack, Dialog, DialogTitle, DialogContent, DialogActions } from '@mui/material';
+import { apiFetch } from '../utils/api';
 
 const ESTADOS = [
   { value: 'all', label: 'Todos los estados' },
-  { value: 'pending', label: 'Pendiente' },
   { value: 'progress', label: 'En progreso' },
   { value: 'done', label: 'Completado' },
 ];
@@ -32,39 +11,13 @@ const ESTADOS = [
 function Reparaciones() {
   const [DATA, setDATA] = useState([]);
   const [open, setOpen] = useState(false);
-  const [form, setForm] = useState({
-    cliente: '',
-    vehiculo: '',
-    patente: '',
-    problema: '',
-    estado: 'pending',
-    costo: '',
-    fecha: ''
-  });
+  const [form, setForm] = useState({ cliente: '', vehiculo: '', problema: '', estado: 'pending', costo: '', fecha: '' });
   const [estado, setEstado] = useState('all');
   const [busqueda, setBusqueda] = useState('');
 
- 
-  const [openFicha, setOpenFicha] = useState(false);
-  const [selectedReparacion, setSelectedReparacion] = useState(null);
-
- 
-  const normalize = (valor) =>
-    valor && valor.toString().trim() ? valor : 'Sin dato';
-
   const fetchReparaciones = () => {
-    fetch(`${process.env.REACT_APP_API_URL}/api/reparaciones`)
-      .then(res => res.json())
-      .then(data => {
-        // Guarda los valores originales para cliente, vehiculo y problema
-        const normalizados = (Array.isArray(data) ? data : []).map(r => ({
-          ...r,
-          cliente_original: r.cliente && r.cliente !== 'Sin dato' ? r.cliente : '',
-          vehiculo_original: r.vehiculo && r.vehiculo !== 'Sin dato' ? r.vehiculo : '',
-          problema_original: r.problema && r.problema !== 'Sin dato' ? r.problema : '',
-        }));
-        setDATA(normalizados);
-      })
+    apiFetch('/api/reparaciones')
+      .then(data => Array.isArray(data) ? setDATA(data) : setDATA([]))
       .catch(() => setDATA([]));
   };
 
@@ -78,53 +31,17 @@ function Reparaciones() {
 
   const handleSubmit = async e => {
     e.preventDefault();
-    await fetch(`${process.env.REACT_APP_API_URL}/api/reparaciones`, {
+    await apiFetch('/api/reparaciones', {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(form)
     });
-    setForm({
-      cliente: '',
-      vehiculo: '',
-      patente: '',
-      problema: '',
-      estado: 'pending',
-      costo: '',
-      fecha: ''
-    });
+    setForm({ cliente: '', vehiculo: '', problema: '', estado: 'pending', costo: '', fecha: '' });
     setOpen(false);
     fetchReparaciones();
   };
 
-  const handleDelete = async (id) => {
-    await fetch(`${process.env.REACT_APP_API_URL}/api/reparaciones/${id}`, { method: 'DELETE' });
-    setDATA(prev => prev.filter(r => r.id !== id));
-  };
-
-  
-  const handleEstadoChange = async (id, nuevoEstado) => {
-    const reparacion = DATA.find(r => r.id === id);
-    if (!reparacion) return;
-
-    // Usa SIEMPRE los valores originales
-    const clienteValido = reparacion.cliente_original || '';
-    const vehiculoValido = reparacion.vehiculo_original || '';
-    const problemaValido = reparacion.problema_original || '';
-
-    const fechaValida = reparacion.fecha && reparacion.fecha !== '' ? reparacion.fecha : new Date().toISOString().slice(0, 10);
-
-    await fetch(`${process.env.REACT_APP_API_URL}/api/reparaciones/${id}`, {
-      method: 'PUT',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        ...reparacion,
-        estado: nuevoEstado,
-        fecha: fechaValida,
-        cliente: clienteValido,
-        vehiculo: vehiculoValido,
-        problema: problemaValido
-      })
-    });
+  const handleDelete = async id => {
+    await apiFetch(`/api/reparaciones/${id}`, { method: 'DELETE' });
     fetchReparaciones();
   };
 
@@ -156,6 +73,18 @@ function Reparaciones() {
             onChange={e => setBusqueda(e.target.value)}
             sx={{ minWidth: 200 }}
           />
+          <TextField
+            select
+            size="small"
+            value={estado}
+            onChange={e => setEstado(e.target.value)}
+            SelectProps={{ native: true }}
+          >
+            <option value="all">Todos</option>
+            {ESTADOS.map((e) => (
+              <option value={e.value} key={e.value}>{e.label}</option>
+            ))}
+          </TextField>
           <Button variant="contained" color="primary" sx={{ ml: 'auto' }} onClick={handleOpen}>
             + Nueva Reparación
           </Button>
@@ -166,28 +95,13 @@ function Reparaciones() {
             <DialogContent sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
               <TextField label="Cliente" name="cliente" value={form.cliente} onChange={handleChange} required />
               <TextField label="Vehículo" name="vehiculo" value={form.vehiculo} onChange={handleChange} required />
-              <TextField label="Patente" name="patente" value={form.patente} onChange={handleChange} required />
-              <TextField label="Problema" name="problema" value={form.problema} onChange={handleChange} required />
-              <TextField
-                label="Estado"
-                name="estado"
-                value={form.estado}
-                onChange={handleChange}
-                select
-                SelectProps={{ native: true }}
-              >
+              <TextField label="Problema" name="problema" value={form.problema} onChange={handleChange} />
+              <TextField label="Estado" name="estado" value={form.estado} onChange={handleChange} select SelectProps={{ native: true }}>
                 <option value="pending">Pendiente</option>
                 <option value="progress">En Proceso</option>
                 <option value="done">Completado</option>
               </TextField>
-              <TextField
-                label="Costo"
-                name="costo"
-                value={form.costo}
-                onChange={handleChange}
-                type="number"
-                InputProps={{ inputProps: { min: 0 } }}
-              />
+              <TextField label="Costo" name="costo" value={form.costo} onChange={handleChange} type="number" />
               <TextField label="Fecha" name="fecha" value={form.fecha} onChange={handleChange} placeholder="2024-07-27" />
             </DialogContent>
             <DialogActions>
@@ -204,7 +118,6 @@ function Reparaciones() {
               <TableCell>ID</TableCell>
               <TableCell>Cliente</TableCell>
               <TableCell>Vehículo</TableCell>
-              <TableCell>Patente</TableCell>
               <TableCell>Problema</TableCell>
               <TableCell>Estado</TableCell>
               <TableCell>Costo</TableCell>
@@ -212,40 +125,19 @@ function Reparaciones() {
             </TableRow>
           </TableHead>
           <TableBody>
-            {DATA.filter(filtrar).map((row) => (
+            {(Array.isArray(DATA) ? DATA : []).filter(filtrar).map((row) => (
               <TableRow key={row.id}>
                 <TableCell>#{row.id}</TableCell>
-                <TableCell sx={{ fontWeight: 600 }}>{normalize(row.cliente)}</TableCell>
-                <TableCell>{normalize(row.vehiculo)}</TableCell>
-                <TableCell>{normalize(row.patente)}</TableCell>
-                <TableCell>{normalize(row.problema)}</TableCell>
+                <TableCell sx={{ fontWeight: 600 }}>{row.cliente}</TableCell>
+                <TableCell>{row.vehiculo}</TableCell>
+                <TableCell>{row.problema}</TableCell>
                 <TableCell>
-                  {row.estado === 'pending' && <Chip label="Pendiente" color="default" size="small" />}
                   {row.estado === 'progress' && <Chip label="En progreso" color="warning" size="small" />}
                   {row.estado === 'done' && <Chip label="Completado" color="success" size="small" />}
                 </TableCell>
+                <TableCell>${row.costo.toLocaleString()}</TableCell>
                 <TableCell>
-                  ${Number(row.costo).toLocaleString()}
-                </TableCell>
-                <TableCell>
-                  <Select
-                    value={row.estado}
-                    onChange={e => handleEstadoChange(row.id, e.target.value)}
-                    size="small"
-                    sx={{ minWidth: 120, mr: 1 }}
-                  >
-                    <MenuItem value="pending">Pendiente</MenuItem>
-                    <MenuItem value="progress">En Proceso</MenuItem>
-                    <MenuItem value="done">Completado</MenuItem>
-                  </Select>
-                  <Button
-                    variant="contained"
-                    size="small"
-                    sx={{ mr: 1 }}
-                    onClick={() => { setSelectedReparacion(row); setOpenFicha(true); }}
-                  >
-                    Ver
-                  </Button>
+                  <Button variant="contained" size="small" sx={{ mr: 1 }}>Ver</Button>
                   <Button variant="outlined" size="small" color="error" onClick={() => handleDelete(row.id)}>Eliminar</Button>
                 </TableCell>
               </TableRow>
@@ -253,15 +145,6 @@ function Reparaciones() {
           </TableBody>
         </Table>
       </TableContainer>
-      {/* Modal de ficha de reparación */}
-      {selectedReparacion && (
-        <FichaReparacionModal
-          open={openFicha}
-          onClose={() => setOpenFicha(false)}
-          reparacion={selectedReparacion}
-          onSaved={fetchReparaciones}
-        />
-      )}
     </Box>
   );
 }
