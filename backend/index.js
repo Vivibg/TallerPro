@@ -15,21 +15,27 @@ import { authRequired, roleRequired } from './middleware/auth.js';
 const app = express();
 
 const allowedOrigins = [
+  process.env.FRONTEND_ORIGIN, // p.ej. https://<tu-app>.vercel.app
   'https://tallerpro-vivian-branas-projects.vercel.app',
   'http://localhost:5173',
   'http://localhost:3000'
-];
+].filter(Boolean);
 
-app.use(cors({
-  origin: function(origin, callback){
+const corsOptions = {
+  origin(origin, callback) {
     // Permitir requests sin origin (como Postman) o si está en la lista
-    if(!origin || allowedOrigins.indexOf(origin) !== -1){
-      callback(null, true);
-    }else{
-      callback(new Error('Not allowed by CORS'));
+    if (!origin || allowedOrigins.includes(origin)) {
+      return callback(null, true);
     }
-  }
-}));
+    return callback(new Error('Not allowed by CORS'));
+  },
+  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+  allowedHeaders: ['Content-Type', 'Authorization'],
+  credentials: true,
+};
+
+app.use(cors(corsOptions));
+app.options('*', cors(corsOptions));
 
 app.use(express.json());
 
