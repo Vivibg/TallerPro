@@ -1,95 +1,116 @@
-import React, { useEffect, useState } from 'react';
-import { Box, Typography, Paper, Button, Grid, TextField } from '@mui/material';
-import FichaReparacionModal from '../components/FichaReparacionModal';
+import React, { useState } from 'react';
+import { Box, Typography, TextField, Paper, Grid, Button, List, ListItem, ListItemText, Dialog, DialogTitle, DialogContent, DialogActions } from '@mui/material';
 
-const API_URL = process.env.REACT_APP_API_URL;
+import { useEffect } from 'react';
+import { apiFetch } from '../utils/api';
 
-
-function formatearFecha(fecha) {
-  if (!fecha) return '';
-  let soloFecha = fecha;
-  if (fecha.includes('T')) soloFecha = fecha.split('T')[0];
-  const [yyyy, mm, dd] = soloFecha.split('-');
-  return `${dd}-${mm}-${yyyy}`;
-}
 
 function HistorialVehiculos() {
-  const [historial, setHistorial] = useState([]);
+  const [historiales, setHistoriales] = useState([]);
   const [busqueda, setBusqueda] = useState('');
-  const [fichaOpen, setFichaOpen] = useState(false);
-  const [fichaActual, setFichaActual] = useState(null);
-
-  const fetchHistorial = async () => {
-    const res = await fetch(`${API_URL}/api/reparaciones/historial`);
-    const data = await res.json();
-    setHistorial(data);
-  };
 
   useEffect(() => {
-    fetchHistorial();
-    // eslint-disable-next-line
+    apiFetch('/api/historial')
+      .then(data => Array.isArray(data) ? setHistoriales(data) : setHistoriales([]))
+      .catch(() => setHistoriales([]));
   }, []);
 
-  const handleVerFicha = (item) => {
-    setFichaActual(item);
-    setFichaOpen(true);
+  const [open, setOpen] = useState(false);
+  const handleOpen = () => setOpen(true);
+  const handleClose = () => setOpen(false);
+
+  const [form, setForm] = useState({
+    vehiculo: '',
+    placas: '',
+    cliente: '',
+    fecha: '',
+    servicio: '',
+    taller: ''
+  });
+
+  const handleChange = (e) => {
+    setForm({ ...form, [e.target.name]: e.target.value });
   };
 
-  const handleCloseFicha = () => {
-    setFichaOpen(false);
-    setFichaActual(null);
-    fetchHistorial(); // refresca después de editar
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    try {
+      const nuevo = await apiFetch('/api/historial', {
+        method: 'POST',
+        body: JSON.stringify(form)
+      });
+      setHistoriales([...(Array.isArray(historiales) ? historiales : []), nuevo]);
+      setForm({ vehiculo: '', placas: '', cliente: '', fecha: '', servicio: '', taller: '' });
+      handleClose();
+    } catch {
+      alert('Error al guardar historial');
+      handleClose();
+    }
   };
 
-  const historialFiltrado = historial.filter(item =>
-    item.vehiculo.toLowerCase().includes(busqueda.toLowerCase()) ||
-    (item.patente || '').toLowerCase().includes(busqueda.toLowerCase())
+  async function handleDelete(id) {
+    try {
+      await apiFetch(`/api/historial/${id}`, { method: 'DELETE' });
+      setHistoriales((Array.isArray(historiales) ? historiales : []).filter(h => h.id !== id));
+    } catch {
+      alert('Error al eliminar historial');
+    }
+  }
+
+  const resultados = (Array.isArray(historiales) ? historiales : []).filter(h =>
+    h.vehiculo?.toLowerCase().includes(busqueda.toLowerCase()) ||
+    h.placas?.toLowerCase().includes(busqueda.toLowerCase())
   );
 
   return (
     <Box>
       <Typography variant="h4" fontWeight={700} mb={3}>Historial de Vehículos</Typography>
-      <TextField
-        label="Buscar vehículo o placas..."
-        value={busqueda}
-        onChange={e => setBusqueda(e.target.value)}
-        sx={{ mb: 2, mr: 2 }}
-      />
-      <Button variant="contained" onClick={fetchHistorial}>Buscar</Button>
-      <Grid container spacing={2} sx={{ mt: 2 }}>
-        {historialFiltrado.length === 0 && (
-          <Typography sx={{ m: 2 }}>No hay registros.</Typography>
-        )}
-        {historialFiltrado.map(item => (
-          <Grid item xs={12} md={6} key={item.id}>
-            <Paper sx={{ p: 2 }}>
-              <Typography variant="h6" fontWeight={700}>{item.vehiculo}</Typography>
-              <Typography>Patente: {item.patente}</Typography>
-              <Typography>Cliente: {item.cliente}</Typography>
-              <Typography>Servicio: {item.servicio}</Typography>
-              <Typography>Taller: {item.taller}</Typography>
-              <Typography>Fecha: {formatearFecha(item.fecha)}</Typography>
-              <Typography>Diagnóstico: {item.diagnostico || 'Sin diagnóstico'}</Typography>
-              <Typography>Trabajos: {item.trabajos || 'Sin trabajos'}</Typography>
-              <Button
-                sx={{ mt: 2, mr: 1 }}
-                variant="contained"
-                onClick={() => handleVerFicha(item)}
-              >
-                Ver ficha completa
-              </Button>
+      <Box sx={{ display: 'flex', gap: 2, mb: 3, flexWrap: 'wrap', alignItems: 'center' }}>
+        <TextField
+          size="small"
+          placeholder="Buscar vehículo o placas..."
+          value={busqueda}
+          onChange={e => setBusqueda(e.target.value)}
+          sx={{ minWidth: 240 }}
+        />
+        <Button variant="contained" color="primary">Buscar</Button>
+        <Button variant="contained" color="primary" sx={{ ml: 2 }} onClick={handleOpen}>
+          + Nuevo Servicio
+        </Button>
+        <Dialog open={open} onClose={handleClose}>
+          <DialogTitle>Nuevo Servicio</DialogTitle>
+          <form onSubmit={handleSubmit}>
+            <DialogContent sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
+              <TextField label="Vehículo" name="vehiculo" value={form.vehiculo} onChange={handleChange} required />
+              <TextField label="Placas" name="placas" value={form.placas} onChange={handleChange} />
+              <TextField label="Cliente" name="cliente" value={form.cliente} onChange={handleChange} />
+              <TextField label="Fecha" name="fecha" value={form.fecha} onChange={handleChange} placeholder="2024-07-27" />
+              <TextField label="Servicio" name="servicio" value={form.servicio} onChange={handleChange} />
+              <TextField label="Taller" name="taller" value={form.taller} onChange={handleChange} />
+            </DialogContent>
+            <DialogActions>
+              <Button onClick={handleClose}>Cancelar</Button>
+              <Button type="submit" variant="contained">Guardar</Button>
+            </DialogActions>
+          </form>
+        </Dialog>
+      </Box>
+      <Grid container spacing={2}>
+        {resultados.map((h, i) => (
+          <Grid item xs={12} md={6} key={h.id || i}>
+            <Paper elevation={2} sx={{ p: 2 }}>
+              <Typography variant="h6" fontWeight={600}>{h.vehiculo}</Typography>
+              <Typography variant="body2" color="text.secondary">Placas: {h.placas}</Typography>
+              <Typography variant="body2">Cliente: {h.cliente}</Typography>
+              <Typography variant="body2">Servicio: {h.servicio}</Typography>
+              <Typography variant="body2">Taller: {h.taller}</Typography>
+              <Typography variant="body2" mb={1}>Fecha: {h.fecha}</Typography>
+              <Button variant="contained" size="small" sx={{ mr: 1 }}>Ver Detalle</Button>
+              <Button variant="outlined" size="small" color="error" onClick={() => handleDelete(h.id)}>Eliminar</Button>
             </Paper>
           </Grid>
         ))}
       </Grid>
-      {fichaActual && (
-        <FichaReparacionModal
-          open={fichaOpen}
-          onClose={handleCloseFicha}
-          reparacion={fichaActual}
-          modoHistorial={true}
-        />
-      )}
     </Box>
   );
 }
