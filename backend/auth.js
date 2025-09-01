@@ -41,12 +41,11 @@ router.post('/google', async (req, res) => {
     if (!user) {
       const role = adminEmails.includes(email) ? 'admin' : 'cliente';
       const [result] = await pool.query(
-        'INSERT INTO users (email, name, picture, role) VALUES (?, ?, ?, ?)',
-        [email, name, picture, role]
+        'INSERT INTO users (email, name, picture, role, provider) VALUES (?, ?, ?, ?, ?)',
+        [email, name, picture, role, 'google']
       );
       user = { id: result.insertId, email, name, picture, role };
     } else {
-      // Opcional: actualizar nombre/foto y elevar a admin si está en la lista
       const newRole = adminEmails.includes(email) ? 'admin' : user.role;
       if (user.name !== name || user.picture !== picture || user.role !== newRole) {
         await pool.query('UPDATE users SET name=?, picture=?, role=? WHERE id=?', [
@@ -63,6 +62,74 @@ router.post('/google', async (req, res) => {
   } catch (e) {
     console.error('Google auth error:', e.code || e.name, e.sqlMessage || e.message);
     return res.status(401).json({ error: 'Token de Google inválido' });
+  }
+});
+
+// POST /api/auth/register { email, password, name? }
+router.post('/register', async (req, res) => {
+  try {
+    const { email, password, name = '' } = req.body || {};
+    if (!email || !password) return res.status(400).json({ error: 'Email y contraseña son requeridos' });
+
+    const normEmail = String(email).trim().toLowerCase();
+    if (password.length < 8) return res.status(400).json({ error: 'La contraseña debe tener al menos 8 caracteres' });
+
+    const [rows] = await pool.query('SELECT * FROM users WHERE email = ?', [normEmail]);
+    const existing = rows[0];
+
+    if (existing && existing.password_hash) {
+      return res.status(409).json({ error: 'El correo ya está registrado' });
+    }
+
+    const hash = await bcrypt.hash(password, 10);
+    const role = adminEmails.includes(normEmail) ? 'admin' : 'cliente';
+
+    let userId;
+    if (!existing) {
+      const [result] = await pool.query(
+        'INSERT INTO users (email, name, password_hash, role, provider) VALUES (?, ?, ?, ?, ?)',
+        [normEmail, name, hash, role, 'local']
+      );
+      userId = result.insertId;
+    } else {
+      await pool.query(
+        'UPDATE users SET name = COALESCE(?, name), password_hash = ?, provider = COALESCE(provider, ?) WHERE id = ?',
+        [name || existing.name, hash, 'local', existing.id]
+      );
+      userId = existing.id;
+    }
+
+    const user = { id: userId, email: normEmail, name, role };
+    const token = signToken(user);
+    return res.status(201).json({ token, user: { id: user.id, email: user.email, name: user.name, role: user.role } });
+  } catch (e) {
+    console.error('Register error:', e.code || e.name, e.sqlMessage || e.message);
+    return res.status(500).json({ error: 'Error registrando usuario' });
+  }
+});
+
+// POST /api/auth/login { email, password }
+router.post('/login', async (req, res) => {
+  try {
+    const { email, password } = req.body || {};
+    if (!email || !password) return res.status(400).json({ error: 'Email y contraseña son requeridos' });
+
+    const normEmail = String(email).trim().toLowerCase();
+
+    const [rows] = await pool.query('SELECT * FROM users WHERE email = ?', [normEmail]);
+    const user = rows[0];
+    if (!user || !user.password_hash) {
+      return res.status(401).json({ error: 'Credenciales inválidas' });
+    }
+
+    const ok = await bcrypt.compare(password, user.password_hash);
+    if (!ok) return res.status(401).json({ error: 'Credenciales inválidas' });
+
+    const token = signToken(user);
+    return res.json({ token, user: { id: user.id, email: user.email, name: user.name, role: user.role } });
+  } catch (e) {
+    console.error('Login error:', e.code || e.name, e.sqlMessage || e.message);
+    return res.status(500).json({ error: 'Error iniciando sesión' });
   }
 });
 
