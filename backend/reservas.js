@@ -17,13 +17,14 @@ router.get('/', async (req, res) => {
 // Crear nueva reserva
 router.post('/', async (req, res) => {
   try {
-    const { cliente, servicio, vehiculo, fecha, hora } = req.body;
+    const { cliente, servicio, vehiculo, patente, fecha, hora, motivo } = req.body;
     const [result] = await pool.query(
-      'INSERT INTO reservas (cliente, servicio, vehiculo, fecha, hora) VALUES (?, ?, ?, ?, ?)',
-      [cliente, servicio, vehiculo, fecha, hora]
+      'INSERT INTO reservas (cliente, servicio, vehiculo, patente, fecha, hora, motivo) VALUES (?, ?, ?, ?, ?, ?, ?)',
+      [cliente, servicio, vehiculo, patente, fecha, hora, motivo]
     );
-    res.status(201).json({ id: result.insertId, cliente, servicio, vehiculo, fecha, hora });
+    res.status(201).json({ id: result.insertId, cliente, servicio, vehiculo, patente, fecha, hora, motivo });
   } catch (e) {
+    console.error('Error creando reserva:', e.code || e.message, e.sqlMessage || '');
     res.status(500).json({ error: 'Error creando reserva' });
   }
 });
