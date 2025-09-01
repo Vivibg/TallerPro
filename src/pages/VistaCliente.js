@@ -45,7 +45,7 @@ function VistaCliente() {
       return;
     }
     try {
-      const res = await fetch(`${process.env.REACT_APP_API_URL}/api/reparaciones/por-patente/${patente}`);
+      const res = await fetch(`${process.env.REACT_APP_API_URL}/api/reparaciones/por-patente/${encodeURIComponent(patente)}`);
       const data = await res.json();
       if (!Array.isArray(data) || data.length === 0) {
         setError('No se encontraron reparaciones para esa patente');
@@ -90,7 +90,7 @@ function VistaCliente() {
                 <TableCell>{r.diagnostico || '-'}</TableCell>
                 <TableCell>{r.trabajos || '-'}</TableCell>
                 <TableCell>{estadoEnEsp(r.estado)}</TableCell>
-                <TableCell>${Number(r.costo).toLocaleString()}</TableCell>
+                <TableCell>${Number(r.costo ?? 0).toLocaleString()}</TableCell>
                 <TableCell>{r.taller || '-'}</TableCell>
                 <TableCell>{r.mecanico || '-'}</TableCell>
               </TableRow>
