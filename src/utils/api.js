@@ -24,8 +24,11 @@ export async function apiFetch(path, options = {}) {
       localStorage.removeItem('token');
       localStorage.removeItem('user');
     } catch {}
-    if (typeof window !== 'undefined' && !window.location.pathname.startsWith('/login')) {
-      window.location.assign('/login');
+    // Redirigir salvo que se suprima explícitamente (p.ej. chequeo /auth/me)
+    if (!options.noRedirectOn401) {
+      if (typeof window !== 'undefined' && !window.location.pathname.startsWith('/login')) {
+        window.location.assign('/login');
+      }
     }
     const msg = data?.error || data?.message || 'No autorizado';
     throw new Error(msg);
