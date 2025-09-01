@@ -178,15 +178,15 @@ function Reparaciones() {
                 <TableCell>
                   <Select
                     size="small"
-                    value={row.estado === 'open' ? 'pending' : row.estado}
-                    onChange={(e) => handleEstadoChange(row.id, e.target.value)}
+                    value={row.estado === 'open' ? 'pending' : (row.estado || 'pending')}
+                    onChange={(e) => handleEstadoChange(row.id, e.target.value || 'pending')}
                   >
                     <MenuItem value="pending">Pendiente</MenuItem>
                     <MenuItem value="progress">En progreso</MenuItem>
                     <MenuItem value="done">Completado</MenuItem>
                   </Select>
                 </TableCell>
-                <TableCell>${row.costo.toLocaleString()}</TableCell>
+                <TableCell>${Number(row?.costo ?? 0).toLocaleString()}</TableCell>
                 <TableCell>
                   <Button variant="contained" size="small" onClick={() => abrirFicha(row)}>VER</Button>
                   &nbsp;
