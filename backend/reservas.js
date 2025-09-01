@@ -53,7 +53,7 @@ router.put('/:id/asistencia', async (req, res) => {
       // Crear reparación usando datos de la reserva
       const [result] = await pool.query(
         'INSERT INTO reparaciones (cliente, vehiculo, problema, estado, costo, fecha) VALUES (?, ?, ?, ?, ?, NOW())',
-        [r.cliente, r.vehiculo, r.servicio || r.motivo || 'Servicio', 'open', 0]
+        [r.cliente, r.vehiculo, r.servicio || r.motivo || 'Servicio', 'pending', 0]
       );
       reparacionId = result.insertId;
     }
