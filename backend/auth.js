@@ -3,6 +3,7 @@ import jwt from 'jsonwebtoken';
 import { OAuth2Client } from 'google-auth-library';
 import bcrypt from 'bcryptjs';
 import { pool } from './db.js';
+import { authRequired } from './middleware/auth.js';
 
 const router = express.Router();
 const client = new OAuth2Client(process.env.GOOGLE_CLIENT_ID);
@@ -134,16 +135,9 @@ router.post('/login', async (req, res) => {
 });
 
 // GET /api/auth/me
-router.get('/me', (req, res) => {
-  const header = req.headers.authorization || '';
-  const token = header.startsWith('Bearer ') ? header.slice(7) : null;
-  if (!token) return res.status(200).json({ user: null });
-  try {
-    const u = jwt.verify(token, process.env.JWT_SECRET);
-    return res.json({ user: { id: u.id, email: u.email, name: u.name, role: u.role } });
-  } catch {
-    return res.status(200).json({ user: null });
-  }
+router.get('/me', authRequired, (req, res) => {
+  const u = req.user;
+  return res.json({ user: { id: u.id, email: u.email, name: u.name, role: u.role } });
 });
 
 export default router;
