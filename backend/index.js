@@ -50,6 +50,33 @@ app.get('/health/db', async (req, res) => {
 // Rutas de autenticación (Google, register, login, me)
 app.use('/api/auth', authRouter);
 
+// Inspector temporal de rutas (diagnóstico)
+app.get('/routes', (req, res) => {
+  const collect = (stack, base = '') => {
+    const out = [];
+    stack.forEach(layer => {
+      if (layer.route && layer.route.path) {
+        const methods = Object.keys(layer.route.methods)
+          .filter(k => layer.route.methods[k])
+          .map(m => m.toUpperCase())
+          .join(',');
+        out.push(`${methods} ${base}${layer.route.path}`);
+      } else if (layer.name === 'router' && layer.handle?.stack) {
+        const prefix = layer.regexp && layer.regexp.source
+          ? layer.regexp.source
+              .replace('^\\', '/')
+              .replace('\\/?(?=\\/|$)', '')
+              .replace('(?=\\/|$)', '')
+              .replace('$/i', '')
+          : '';
+        out.push(...collect(layer.handle.stack, prefix));
+      }
+    });
+    return out;
+  };
+  res.json({ routes: collect(app._router.stack) });
+});
+
 // Rutas protegidas
 // Cliente (y admin) pueden acceder
 app.use('/api/reservas', authRequired, reservasRouter);
