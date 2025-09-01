@@ -36,6 +36,17 @@ app.use(express.json());
 // Salud pública para verificación de despliegue
 app.get('/health', (req, res) => res.json({ ok: true }));
 
+// Salud de base de datos (diagnóstico)
+app.get('/health/db', async (req, res) => {
+  try {
+    const [rows] = await pool.query('SELECT 1 AS ok');
+    res.json({ db: 'up', result: rows[0] });
+  } catch (e) {
+    console.error('DB health error:', e.code, e.sqlMessage || e.message);
+    res.status(500).json({ db: 'down' });
+  }
+});
+
 // Rutas de autenticación (Google, register, login, me)
 app.use('/api/auth', authRouter);
 
