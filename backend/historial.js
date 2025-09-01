@@ -9,12 +9,12 @@ router.get('/', async (req, res) => {
     const [rows] = await pool.query('SELECT * FROM historial_vehiculos');
     res.json(rows);
   } catch (e) {
-    console.error(e);
+    console.error(e); // <--- Esto imprime el error en los logs de Render
     res.status(500).json({ error: 'Error consultando historial' });
   }
 });
 
-// Listar historial con resumen de ficha de reparación 
+// Listar historial con resumen de ficha de reparación (JOIN robusto solo por fecha)
 router.get('/con-ficha', async (req, res) => {
   try {
     const [rows] = await pool.query(`
@@ -27,6 +27,7 @@ router.get('/con-ficha', async (req, res) => {
         AND DATE(h.fecha) = DATE(r.fecha)
       ORDER BY h.fecha DESC
     `);
+    // Log para depuración
     console.log('Historial con ficha:', rows.length, 'resultados');
     res.json(rows);
   } catch (e) {
@@ -38,33 +39,13 @@ router.get('/con-ficha', async (req, res) => {
 // Crear registro de historial
 router.post('/', async (req, res) => {
   try {
-    // Log de depuración para ver los datos recibidos
-    console.log('POST /api/historial body:', req.body);
-    // Función de seguridad para evitar undefined/null
-    const safe = (v) => (v === undefined || v === null ? '' : v);
     const { vehiculo, patente, cliente, fecha, servicio, taller } = req.body;
     const [result] = await pool.query(
       'INSERT INTO historial_vehiculos (vehiculo, patente, cliente, fecha, servicio, taller) VALUES (?, ?, ?, ?, ?, ?)',
-      [
-        safe(vehiculo),
-        safe(patente),
-        safe(cliente),
-        safe(fecha),
-        safe(servicio),
-        safe(taller)
-      ]
+      [vehiculo, patente, cliente, fecha, servicio, taller]
     );
-    res.status(201).json({
-      id: result.insertId,
-      vehiculo: safe(vehiculo),
-      patente: safe(patente),
-      cliente: safe(cliente),
-      fecha: safe(fecha),
-      servicio: safe(servicio),
-      taller: safe(taller)
-    });
+    res.status(201).json({ id: result.insertId, vehiculo, patente, cliente, fecha, servicio, taller });
   } catch (e) {
-    console.error('Error creando historial:', e);
     res.status(500).json({ error: 'Error creando historial' });
   }
 });
@@ -76,7 +57,6 @@ router.delete('/:id', async (req, res) => {
     await pool.query('DELETE FROM historial_vehiculos WHERE id = ?', [id]);
     res.json({ ok: true });
   } catch (e) {
-    console.error(e);
     res.status(500).json({ error: 'Error eliminando historial' });
   }
 });
