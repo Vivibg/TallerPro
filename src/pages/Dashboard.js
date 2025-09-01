@@ -28,9 +28,9 @@ function Dashboard() {
   const [actividad, setActividad] = useState([]);
 
   useEffect(() => {
+    // RESERVAS (independiente)
     (async () => {
       try {
-        // RESERVAS
         const reservas = await apiFetch('/api/reservas');
         const reservasArr = Array.isArray(reservas) ? reservas : [];
         setStats(s => s.map(stat =>
@@ -46,8 +46,14 @@ function Dashboard() {
             icon: <EventNoteIcon sx={{ color: '#2258e6' }} />
           }));
         setActividad(a => [...ultimasRes, ...a]);
+      } catch (err) {
+        // Silenciar 401/403 aquí para no romper el dashboard
+      }
+    })();
 
-        // CLIENTES
+    // CLIENTES (independiente, puede requerir admin)
+    (async () => {
+      try {
         const clientes = await apiFetch('/api/clientes');
         const clientesArr = Array.isArray(clientes) ? clientes : [];
         setStats(s => s.map(stat =>
@@ -56,13 +62,19 @@ function Dashboard() {
         if (clientesArr.length > 0) {
           const ultimo = clientesArr[clientesArr.length - 1];
           setActividad(a => [{
-            texto: `Nuevo cliente - ${ultimo.nombre}`,
+            texto: `Nuevo cliente - ${ultimo?.nombre ?? 'Cliente'}`,
             tiempo: 'Reciente',
             icon: <GroupIcon sx={{ color: '#3bb54a' }} />
           }, ...a]);
         }
+      } catch (err) {
+        // Es común 403 si el usuario no es admin
+      }
+    })();
 
-        // INVENTARIO
+    // INVENTARIO (independiente, puede requerir admin)
+    (async () => {
+      try {
         const inventario = await apiFetch('/api/inventario');
         const inventarioArr = Array.isArray(inventario) ? inventario : [];
         setStats(s => s.map(stat => {
@@ -80,8 +92,7 @@ function Dashboard() {
           }));
         setActividad(a => [...ultimosStock, ...a]);
       } catch (err) {
-        // apiFetch ya maneja 401 globalmente; aquí solo evitamos romper la UI
-        console.error('Dashboard load error:', err?.message || err);
+        // Es común 403 si el usuario no es admin
       }
     })();
 
