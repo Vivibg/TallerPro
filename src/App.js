@@ -17,7 +17,7 @@ function App() {
   const [user, setUser] = useState(null);
   const [checking, setChecking] = useState(true);
 
-  // Restore session from localStorage and verify token
+  
   useEffect(() => {
     const storedUser = (() => {
       try { return JSON.parse(localStorage.getItem('user')); } catch { return null; }
@@ -29,7 +29,7 @@ function App() {
     }
     (async () => {
       try {
-        // Timeout de 3s para evitar quedar colgado si hay problemas de red/CORS
+       
         const controller = new AbortController();
         const t = setTimeout(() => controller.abort(), 3000);
         // Evita redirección automática en 401 para poder mostrar <Login/>
