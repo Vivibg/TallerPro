@@ -150,4 +150,3 @@ function HistorialVehiculos() {
 }
 
 export default HistorialVehiculos;
- 
