@@ -11,6 +11,15 @@ import { apiFetch } from '../utils/api';
 const CLP = new Intl.NumberFormat('es-CL', { style: 'currency', currency: 'CLP', maximumFractionDigits: 0 });
 
 function FichaReparacionModal({ open, onClose, reparacion, onSaved }) {
+  // Normalizar repuestos que vengan como string JSON desde backend
+  const repuestosInit = (() => {
+    const r = reparacion?.repuestos;
+    if (Array.isArray(r)) return r;
+    if (typeof r === 'string') {
+      try { const parsed = JSON.parse(r); return Array.isArray(parsed) ? parsed : []; } catch { return []; }
+    }
+    return [];
+  })();
 
   // Estado local para cada campo de la ficha
   const [ficha, setFicha] = useState({
@@ -25,7 +34,7 @@ function FichaReparacionModal({ open, onClose, reparacion, onSaved }) {
     fallaReportada: reparacion.fallaReportada || '',
     diagnostico: reparacion.diagnostico || '',
     trabajos: reparacion.trabajos || '',
-    repuestos: reparacion.repuestos || [],
+    repuestos: repuestosInit,
     observaciones: reparacion.observaciones || '',
     garantiaPeriodo: reparacion.garantiaPeriodo || '',
     garantiaCondiciones: reparacion.garantiaCondiciones || '',
