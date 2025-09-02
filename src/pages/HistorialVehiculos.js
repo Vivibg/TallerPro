@@ -60,10 +60,16 @@ function HistorialVehiculos() {
   // Ficha unificada de reparación
   const [fichaOpen, setFichaOpen] = useState(false);
   const [fichaData, setFichaData] = useState(null);
-  const openFicha = (h) => {
+  const openFicha = async (h) => {
     if (!h?.reparacion_id) return;
-    setFichaData({ id: h.reparacion_id, cliente: h.cliente, vehiculo: h.vehiculo, patente: h.patente, problema: h.servicio });
-    setFichaOpen(true);
+    try {
+      const detalle = await apiFetch(`/api/reparaciones/${h.reparacion_id}`);
+      setFichaData(detalle || { id: h.reparacion_id, cliente: h.cliente, vehiculo: h.vehiculo, patente: h.patente, problema: h.servicio });
+    } catch {
+      setFichaData({ id: h.reparacion_id, cliente: h.cliente, vehiculo: h.vehiculo, patente: h.patente, problema: h.servicio });
+    } finally {
+      setFichaOpen(true);
+    }
   };
 
   const [form, setForm] = useState({
