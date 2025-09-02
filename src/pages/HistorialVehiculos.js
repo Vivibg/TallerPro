@@ -21,7 +21,7 @@ function HistorialVehiculos() {
 
   const [form, setForm] = useState({
     vehiculo: '',
-    placas: '',
+    patente: '',
     cliente: '',
     fecha: '',
     servicio: '',
@@ -40,7 +40,7 @@ function HistorialVehiculos() {
         body: JSON.stringify(form)
       });
       setHistoriales([...(Array.isArray(historiales) ? historiales : []), nuevo]);
-      setForm({ vehiculo: '', placas: '', cliente: '', fecha: '', servicio: '', taller: '' });
+      setForm({ vehiculo: '', patente: '', cliente: '', fecha: '', servicio: '', taller: '' });
       handleClose();
     } catch {
       alert('Error al guardar historial');
@@ -68,7 +68,7 @@ function HistorialVehiculos() {
       <Box sx={{ display: 'flex', gap: 2, mb: 3, flexWrap: 'wrap', alignItems: 'center' }}>
         <TextField
           size="small"
-          placeholder="Buscar vehículo o placas..."
+          placeholder="Buscar vehículo o patente..."
           value={busqueda}
           onChange={e => setBusqueda(e.target.value)}
           sx={{ minWidth: 240 }}
@@ -82,7 +82,7 @@ function HistorialVehiculos() {
           <form onSubmit={handleSubmit}>
             <DialogContent sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
               <TextField label="Vehículo" name="vehiculo" value={form.vehiculo} onChange={handleChange} required />
-              <TextField label="Placas" name="placas" value={form.placas} onChange={handleChange} />
+              <TextField label="Patente" name="patente" value={form.patente || ''} onChange={handleChange} />
               <TextField label="Cliente" name="cliente" value={form.cliente} onChange={handleChange} />
               <TextField label="Fecha" name="fecha" value={form.fecha} onChange={handleChange} placeholder="2024-07-27" />
               <TextField label="Servicio" name="servicio" value={form.servicio} onChange={handleChange} />
@@ -100,7 +100,7 @@ function HistorialVehiculos() {
           <Grid item xs={12} md={6} key={h.id || i}>
             <Paper elevation={2} sx={{ p: 2 }}>
               <Typography variant="h6" fontWeight={600}>{h.vehiculo}</Typography>
-              <Typography variant="body2" color="text.secondary">Placas: {h.placas}</Typography>
+              <Typography variant="body2" color="text.secondary">Patente: {h.placas}</Typography>
               <Typography variant="body2">Cliente: {h.cliente}</Typography>
               <Typography variant="body2">Servicio: {h.servicio}</Typography>
               <Typography variant="body2">Taller: {h.taller}</Typography>
@@ -116,4 +116,3 @@ function HistorialVehiculos() {
 }
 
 export default HistorialVehiculos;
- 
