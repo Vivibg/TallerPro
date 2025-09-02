@@ -13,6 +13,18 @@ import {
 } from '@mui/material';
 
 const CLP = new Intl.NumberFormat('es-CL', { style: 'currency', currency: 'CLP', maximumFractionDigits: 0 });
+const formatoFecha = (val) => {
+  if (!val) return '';
+  try {
+    const d = new Date(val);
+    if (isNaN(d.getTime())) return String(val);
+    const dd = String(d.getDate()).padStart(2,'0');
+    const mm = String(d.getMonth()+1).padStart(2,'0');
+    const yyyy = d.getFullYear();
+    return `${dd}-${mm}-${yyyy}`;
+  } catch { return String(val); }
+};
+const normPatente = (p) => (p || '').toString().trim().toUpperCase();
 
 function VistaCliente() {
   const [patente, setPatente] = useState('');
@@ -42,15 +54,27 @@ function VistaCliente() {
   const handleBuscar = async () => {
     setError('');
     setResultados([]);
-    if (!patente) {
+    const p = normPatente(patente);
+    setPatente(p);
+    if (!p) {
       setError('Debe ingresar una patente');
       return;
     }
     try {
-      const res = await fetch(`${process.env.REACT_APP_API_URL}/api/reparaciones/por-patente/${encodeURIComponent(patente)}`);
-      const data = await res.json();
+      // Intento 1: endpoint dedicado de reparaciones por patente
+      const res = await fetch(`${process.env.REACT_APP_API_URL}/api/reparaciones/por-patente/${encodeURIComponent(p)}`);
+      let data = [];
+      try { data = await res.json(); } catch { data = []; }
       if (!Array.isArray(data) || data.length === 0) {
-        setError('No se encontraron reparaciones para esa patente');
+        // Intento 2: historial completo filtrado por patente
+        const res2 = await fetch(`${process.env.REACT_APP_API_URL}/api/historial`);
+        const allHist = await res2.json();
+        if (Array.isArray(allHist)) {
+          data = allHist.filter(r => normPatente(r?.patente) === p);
+        }
+      }
+      if (!Array.isArray(data) || data.length === 0) {
+        setError('No se encontraron registros para esa patente');
         return;
       }
       // 1) quedarnos solo con las que están "en proceso"
@@ -123,7 +147,7 @@ function VistaCliente() {
           <TableBody>
             {resultados.map((r, i) => (
               <TableRow key={r?.id ?? `${r?.patente || ''}-${r?.fecha || ''}-${i}` }>
-                <TableCell>{r.fecha ? new Date(r.fecha).toLocaleDateString() : ''}</TableCell>
+                <TableCell>{formatoFecha(r.fecha)}</TableCell>
                 <TableCell>{r.diagnostico || '-'}</TableCell>
                 <TableCell>{r.trabajos || '-'}</TableCell>
                 <TableCell>{estadoEnEsp(r.estado)}</TableCell>
