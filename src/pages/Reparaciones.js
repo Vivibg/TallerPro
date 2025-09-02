@@ -159,7 +159,7 @@ function Reparaciones() {
         <Table>
           <TableHead>
             <TableRow>
-              <TableCell>ID</TableCell>
+              <TableCell>Patente</TableCell>
               <TableCell>Cliente</TableCell>
               <TableCell>Vehículo</TableCell>
               <TableCell>Problema</TableCell>
@@ -171,7 +171,7 @@ function Reparaciones() {
           <TableBody>
             {(Array.isArray(DATA) ? DATA : []).filter(filtrar).map((row) => (
               <TableRow key={row.id}>
-                <TableCell>#{row.id}</TableCell>
+                <TableCell>{row.patente || ''}</TableCell>
                 <TableCell sx={{ fontWeight: 600 }}>{row.cliente}</TableCell>
                 <TableCell>{row.vehiculo}</TableCell>
                 <TableCell>{row.problema}</TableCell>
@@ -211,4 +211,3 @@ function Reparaciones() {
 }
 
 export default Reparaciones;
- 
