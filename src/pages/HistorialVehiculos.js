@@ -9,10 +9,19 @@ import { apiFetch } from '../utils/api';
 function HistorialVehiculos() {
   const [historiales, setHistoriales] = useState([]);
   const [busqueda, setBusqueda] = useState('');
+  const [repEstados, setRepEstados] = useState(new Map());
 
   const cargarHistorial = () => {
-    apiFetch('/api/historial')
-      .then(data => {
+    Promise.all([
+      apiFetch('/api/historial').catch(() => []),
+      apiFetch('/api/reparaciones').catch(() => [])
+    ]).then(([data, reps]) => {
+        // construir mapa id -> estado desde reparaciones
+        try {
+          const m = new Map();
+          (Array.isArray(reps) ? reps : []).forEach(r => { if (r?.id != null) m.set(Number(r.id), r.estado); });
+          setRepEstados(m);
+        } catch { setRepEstados(new Map()); }
         if (!Array.isArray(data)) { setHistoriales([]); return; }
         // 1) Solo "en proceso" SI existe campo estado; si no existe, incluir (historial puede no tenerlo)
         const inProgress = data.filter(h => {
@@ -46,7 +55,7 @@ function HistorialVehiculos() {
         }
         setHistoriales(deduped);
       })
-      .catch(() => setHistoriales([]));
+      .catch(() => { setHistoriales([]); setRepEstados(new Map()); });
   };
 
   // Formateador CLP y cálculo de total con tolerancia a strings/camelCase
@@ -204,7 +213,7 @@ function HistorialVehiculos() {
               <Typography variant="body2">Cliente: {h.cliente}</Typography>
               <Typography variant="body2">Servicio: {h.servicio}</Typography>
               <Typography variant="body2">Taller: {h.taller}</Typography>
-              <Typography variant="body2">Estado: {labelEstado(h.estado)}</Typography>
+              <Typography variant="body2">Estado: {labelEstado(repEstados.get(Number(h.reparacion_id)) ?? h.estado)}</Typography>
               <Typography variant="body2" mb={1}>Fecha: {formatoFecha(h.fecha)}</Typography>
               {/* Costos si están presentes */}
               { (totalHist(h) != null) && (
