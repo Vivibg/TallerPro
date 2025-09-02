@@ -21,7 +21,7 @@ function FichaReparacionModal({ open, onClose, reparacion, onSaved }) {
     return [];
   })();
 
-  // Estado local para cada campo de la ficha
+
   const [ficha, setFicha] = useState({
     nombre: reparacion.cliente || '',
     telefono: reparacion.telefono || '',
@@ -45,7 +45,7 @@ function FichaReparacionModal({ open, onClose, reparacion, onSaved }) {
   const [estado, setEstado] = useState(reparacion.estado || 'pending');
   const [tipoServicio, setTipoServicio] = useState(reparacion.servicio || reparacion.tipo_servicio || '');
 
-  // Sincronizar estado interno cuando cambia la reparación abierta
+ 
   useEffect(() => {
     const r = reparacion || {};
     // Normalizar repuestos nuevamente
@@ -108,9 +108,9 @@ function FichaReparacionModal({ open, onClose, reparacion, onSaved }) {
   const handleGuardar = async () => {
     try {
       if (!reparacion?.id) return onClose?.();
-      // Componer payload alineado a columnas de 'reparaciones'
+  
       const composedVehiculo = [ficha.marca, ficha.modelo, ficha.anio].filter(Boolean).join(' ').trim();
-      // Preparar payload extendido (para backend actualizado - Opción A)
+      
       const payload = {
         // claves actuales
         problema: ficha.fallaReportada || reparacion.problema || '',
@@ -118,10 +118,10 @@ function FichaReparacionModal({ open, onClose, reparacion, onSaved }) {
         costo: Number(costoTotalCalc) || 0,
         diagnostico: ficha.diagnostico || '',
         trabajos: ficha.trabajos || '',
-        // desglose de costos (si existen columnas en backend se guardan)
+        
         costo_mano_obra: isNaN(costoManoObraNum) ? 0 : Number(costoManoObraNum),
         costo_insumos: isNaN(costoInsumosCalc) ? 0 : Number(costoInsumosCalc),
-        // guardar detalle de repuestos (para costos unitarios)
+        
         repuestos: Array.isArray(ficha.repuestos) ? ficha.repuestos.map(r => ({
           cantidad: Number(r?.cantidad || 0),
           descripcion: r?.descripcion || '',
@@ -317,3 +317,4 @@ function FichaReparacionModal({ open, onClose, reparacion, onSaved }) {
 }
 
 export default FichaReparacionModal;
+
