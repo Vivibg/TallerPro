@@ -12,8 +12,9 @@ import {
   Stack
 } from '@mui/material';
 import { apiFetch } from '../utils/api';
+import { useNavigate } from 'react-router-dom';
 
-
+// CRA env variables
 const API_URL = process.env.REACT_APP_API_URL || '';
 const GOOGLE_CLIENT_ID = process.env.REACT_APP_GOOGLE_CLIENT_ID || '';
 
@@ -27,8 +28,9 @@ function Login({ onLogin }) {
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
   const googleDivRef = useRef(null);
+  const navigate = useNavigate();
 
- 
+  // Helper: parse JSON safe
   const parseJsonSafe = async (res) => {
     const txt = await res.text();
     try { return JSON.parse(txt); } catch { return {}; }
@@ -126,6 +128,11 @@ function Login({ onLogin }) {
         <div ref={googleDivRef} style={{ display: 'flex', justifyContent: 'center', marginBottom: 12 }} />
 
         <Divider sx={{ my: 2 }}>o</Divider>
+
+        {/* Acceso público a Vista Cliente */}
+        <Button variant="outlined" color="primary" fullWidth sx={{ mb: 2 }} onClick={() => navigate('/vista-cliente')}>
+          Ver como cliente (sin iniciar sesión)
+        </Button>
 
         <Tabs value={tab} onChange={(_, v) => setTab(v)} variant="fullWidth" sx={{ mb: 2 }}>
           <Tab label="Entrar" />
