@@ -89,6 +89,9 @@ router.put('/:id', async (req, res) => {
     addIfCol('problema', problema);
     addIfCol('estado', estado);
     addIfCol('costo', costo);
+    // desglose de costos si existen las columnas
+    addIfCol('costo_mano_obra', req.body?.costo_mano_obra);
+    addIfCol('costo_insumos', req.body?.costo_insumos);
     addIfCol('fecha', normalizeFecha(fecha));
     // extendidos
     addIfCol('cliente', cliente);
@@ -128,12 +131,12 @@ router.put('/:id', async (req, res) => {
         const [cols] = await pool.query('SHOW COLUMNS FROM historial_vehiculos');
         const names = cols.map(c => c.Field);
 
-        // Valores base
-        const safeVehiculo = current.vehiculo || 'Vehículo';
-        const safeCliente = current.cliente || 'Cliente';
-        const safeServicio = (problema !== undefined ? problema : current.problema) || 'Servicio';
-        const safeTaller = process.env.TALLER_NOMBRE || 'Taller';
-        const safePatente = current.patente || '';
+        // Valores base: preferir valores llegados en este PUT, luego los actuales en DB
+        const safeVehiculo = (req.body?.vehiculo ?? current.vehiculo ?? 'Vehículo');
+        const safeCliente = (req.body?.cliente ?? current.cliente ?? 'Cliente');
+        const safeServicio = (req.body?.problema ?? current.problema ?? req.body?.servicio ?? 'Servicio');
+        const safeTaller = (req.body?.taller ?? current.taller ?? process.env.TALLER_NOMBRE ?? 'Taller');
+        const safePatente = (req.body?.patente ?? current.patente ?? '');
         const safeMecanico = (req.body?.mecanico ?? current.mecanico ?? '').toString();
 
         // Decidir valores por columna, cubriendo NOT NULL sin default
@@ -149,6 +152,9 @@ router.put('/:id', async (req, res) => {
           if (name === 'taller') return { val: safeTaller };
           if (name === 'mecanico') return { val: safeMecanico };
           if (name === 'patente') return { val: safePatente };
+          if (name === 'costo_total') return { val: (req.body?.costo ?? current.costo ?? 0) };
+          if (name === 'costo_mano_obra') return { val: (req.body?.costo_mano_obra ?? 0) };
+          if (name === 'costo_insumos') return { val: (req.body?.costo_insumos ?? 0) };
           if (name === 'placas') return { skip: true };
           if (name === 'fecha' || name === 'created_at' || name === 'updated_at') return { now: true };
           // Para otras columnas, si son NOT NULL sin default, proveer por tipo
@@ -194,6 +200,10 @@ router.put('/:id', async (req, res) => {
               addIf('servicio', safeServicio);
               addIf('taller', safeTaller);
               addIf('mecanico', safeMecanico);
+              // Costos si existen
+              addIf('costo_total', (req.body?.costo ?? current.costo ?? 0));
+              addIf('costo_mano_obra', (req.body?.costo_mano_obra ?? 0));
+              addIf('costo_insumos', (req.body?.costo_insumos ?? 0));
               if (common.length > 0) {
                 const placeholders2 = common.map(f => f === 'fecha' ? 'NOW()' : '?');
                 const sql2 = `INSERT INTO historial_vehiculos (${common.join(', ')}) VALUES (${placeholders2.join(', ')})`;
@@ -210,6 +220,95 @@ router.put('/:id', async (req, res) => {
         // No bloquear la respuesta si historial falla
         console.error('No se pudo registrar en historial:', e.code || e.message, e.sqlMessage || '', {fields: 'computed dynamically'});
       }
+    }
+
+    // Sincronizar tabla 'clientes' (upsert por patente si existe, si no por nombre)
+    try {
+      const [cliCols] = await pool.query('SHOW COLUMNS FROM clientes');
+      const cliNames = new Set(cliCols.map(c => c.Field));
+      const useCols = (...names) => names.filter(n => cliNames.has(n));
+
+      const cNombre = req.body?.cliente ?? current.cliente ?? null;
+      const cTelefono = req.body?.telefono ?? current.telefono ?? null;
+      const cEmail = req.body?.email ?? current.email ?? null;
+      const cVehiculo = req.body?.vehiculo ?? current.vehiculo ?? null;
+      const cPatente = req.body?.patente ?? current.patente ?? null;
+
+      if (cNombre || cPatente) {
+        let existing = null;
+        if (cPatente && cliNames.has('patente')) {
+          const [rows] = await pool.query('SELECT * FROM clientes WHERE patente = ? LIMIT 1', [cPatente]);
+          existing = rows[0] || null;
+        }
+        if (!existing && cNombre) {
+          const [rows] = await pool.query('SELECT * FROM clientes WHERE nombre = ? LIMIT 1', [cNombre]);
+          existing = rows[0] || null;
+        }
+
+        const colsToSet = useCols('nombre','telefono','email','vehiculo','patente');
+        const valsToSet = [];
+        const pushIf = (name, val) => { if (colsToSet.includes(name)) valsToSet.push(val ?? null); };
+        // Build SET for insert/update
+        pushIf('nombre', cNombre);
+        pushIf('telefono', cTelefono);
+        pushIf('email', cEmail);
+        pushIf('vehiculo', cVehiculo);
+        pushIf('patente', cPatente);
+
+        if (existing) {
+          const setPairs = colsToSet.map(c => `${c} = ?`).join(', ');
+          const ultima = cliNames.has('ultimaVisita') ? ', ultimaVisita = NOW()' : '';
+          await pool.query(`UPDATE clientes SET ${setPairs}${ultima} WHERE id = ?`, [...valsToSet, existing.id]);
+        } else {
+          const cols = [...colsToSet];
+          const placeholders = cols.map(() => '?');
+          let sql = `INSERT INTO clientes (${cols.join(', ')}`;
+          let placeholdersSql = `VALUES (${placeholders.join(', ')}`;
+          if (cliNames.has('ultimaVisita')) { sql += ', ultimaVisita'; placeholdersSql += ', NOW()'; }
+          sql += ') '; placeholdersSql += ')';
+          await pool.query(sql + placeholdersSql, valsToSet);
+        }
+      }
+    } catch (e) {
+      console.error('No se pudo sincronizar clientes:', e.code || e.message);
+    }
+
+    // Sincronizar tabla 'reservas': insertar si no existe una para misma patente+fecha
+    try {
+      const [resCols] = await pool.query('SHOW COLUMNS FROM reservas');
+      const resNames = new Set(resCols.map(c => c.Field));
+      const rCliente = req.body?.cliente ?? current.cliente ?? null;
+      const rVehiculo = req.body?.vehiculo ?? current.vehiculo ?? null;
+      const rPatente = req.body?.patente ?? current.patente ?? null;
+      const rServicio = req.body?.problema ?? current.problema ?? null;
+      const rFechaNorm = normalizeFecha(req.body?.fecha ?? current.fecha ?? new Date());
+      const rHora = (() => { try { const d = new Date(req.body?.fecha ?? current.fecha ?? Date.now()); return `${String(d.getHours()).padStart(2,'0')}:${String(d.getMinutes()).padStart(2,'0')}:00`; } catch { return null; } })();
+      if (resNames.size && (rCliente || rPatente || rVehiculo)) {
+        let exists = false;
+        if (rPatente && rFechaNorm && resNames.has('patente') && resNames.has('fecha')) {
+          const [rows] = await pool.query('SELECT id FROM reservas WHERE patente = ? AND DATE(fecha) = DATE(?) LIMIT 1', [rPatente, rFechaNorm]);
+          exists = !!rows[0];
+        }
+        if (!exists) {
+          // Build dynamic insert
+          const cols = [];
+          const vals = [];
+          const pushIf = (name, val) => { if (val !== null && val !== undefined && resNames.has(name)) { cols.push(name); vals.push(val); } };
+          pushIf('cliente', rCliente);
+          pushIf('vehiculo', rVehiculo);
+          pushIf('patente', rPatente);
+          pushIf('servicio', rServicio);
+          pushIf('fecha', rFechaNorm);
+          pushIf('hora', rHora);
+          if (cols.length > 0) {
+            const placeholders = cols.map(() => '?').join(', ');
+            const sql = `INSERT INTO reservas (${cols.join(', ')}) VALUES (${placeholders})`;
+            await pool.query(sql, vals);
+          }
+        }
+      }
+    } catch (e) {
+      console.error('No se pudo sincronizar reservas:', e.code || e.message);
     }
 
     res.json({ ok: true });
