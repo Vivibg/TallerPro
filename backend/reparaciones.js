@@ -61,6 +61,23 @@ router.put('/:id', async (req, res) => {
     // Descubrir columnas existentes para evitar errores por columnas faltantes
     const [repCols] = await pool.query('SHOW COLUMNS FROM reparaciones');
     const repNames = new Set(repCols.map(c => c.Field));
+    const fechaCol = repCols.find(c => c.Field === 'fecha');
+
+    const pad2 = (n) => String(n).padStart(2, '0');
+    const toMySQLDate = (d) => `${d.getFullYear()}-${pad2(d.getMonth()+1)}-${pad2(d.getDate())}`;
+    const toMySQLDateTime = (d) => `${toMySQLDate(d)} ${pad2(d.getHours())}:${pad2(d.getMinutes())}:${pad2(d.getSeconds())}`;
+    const normalizeFecha = (val) => {
+      if (val === undefined || val === null || !repNames.has('fecha')) return undefined;
+      try {
+        // Parse admite string ISO o número timestamp
+        const d = new Date(val);
+        if (isNaN(d.getTime())) return undefined;
+        const t = (fechaCol?.Type || '').toLowerCase();
+        if (t.includes('datetime') || t.includes('timestamp')) return toMySQLDateTime(d);
+        // por defecto DATE
+        return toMySQLDate(d);
+      } catch { return undefined; }
+    };
 
     // Helper para añadir solo si existe la columna
     const fields = [];
@@ -72,7 +89,7 @@ router.put('/:id', async (req, res) => {
     addIfCol('problema', problema);
     addIfCol('estado', estado);
     addIfCol('costo', costo);
-    addIfCol('fecha', fecha);
+    addIfCol('fecha', normalizeFecha(fecha));
     // extendidos
     addIfCol('cliente', cliente);
     addIfCol('telefono', telefono);
