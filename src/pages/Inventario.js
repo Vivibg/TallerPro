@@ -74,6 +74,7 @@ const Inventario = () => {
     return acc + (isNaN(total) ? 0 : total);
   }, 0);
   const productosCriticos = (Array.isArray(insumos) ? insumos : []).filter(i => Number(i?.stock || 0) < Number(i?.minimo || 0)).length;
+  const productosOk = (Array.isArray(insumos) ? insumos : []).filter(i => Number(i?.stock || 0) >= Number(i?.minimo || 0)).length;
 
   const handleOpen = () => setOpen(true);
   const handleClose = () => setOpen(false);
@@ -151,6 +152,15 @@ const Inventario = () => {
           <Paper elevation={2} sx={{ p: 2, display: 'flex', alignItems: 'center', gap: 2 }}>
             <Typography variant="subtitle2" color="text.secondary">Productos Críticos</Typography>
             <Typography variant="h5" fontWeight={600} color="#ff4d4f">{productosCriticos}</Typography>
+          </Paper>
+        </Grid>
+        <Grid item xs={12} sm={4}>
+          <Paper elevation={2} sx={{ p: 2, display: 'flex', alignItems: 'center', gap: 2, justifyContent: 'space-between' }}>
+            <Typography variant="subtitle2" color="text.secondary">Estado de productos</Typography>
+            <Box sx={{ display: 'flex', gap: 1 }}>
+              <Chip color="success" label={`OK: ${productosOk}`} size="small" />
+              <Chip color="error" label={`Bajo: ${productosCriticos}`} size="small" />
+            </Box>
           </Paper>
         </Grid>
       </Grid>
