@@ -221,6 +221,7 @@ function Reparaciones() {
       {/* Ficha de reparación */}
       {fichaItem && (
         <FichaReparacionModal
+          key={fichaItem.id}
           open={fichaOpen}
           onClose={() => setFichaOpen(false)}
           reparacion={fichaItem}
@@ -232,4 +233,3 @@ function Reparaciones() {
 }
 
 export default Reparaciones;
- 
