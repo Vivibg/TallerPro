@@ -49,6 +49,17 @@ function HistorialVehiculos() {
       .catch(() => setHistoriales([]));
   };
 
+  // Formateador CLP y cálculo de total con tolerancia a strings/camelCase
+  const CLP = new Intl.NumberFormat('es-CL', { style: 'currency', currency: 'CLP', maximumFractionDigits: 0 });
+  const totalHist = (h) => {
+    if (!h) return null;
+    const mano = Number(h?.costo_mano_obra ?? h?.costoManoObra ?? 0);
+    const insumos = Number(h?.costo_insumos ?? h?.costoInsumos ?? 0);
+    const prefer = h?.costo_total ?? h?.costoTotal ?? (mano + insumos);
+    const n = Number(prefer);
+    return isNaN(n) ? null : n;
+  };
+
   useEffect(() => {
     cargarHistorial();
   }, []);
@@ -184,9 +195,9 @@ function HistorialVehiculos() {
               <Typography variant="body2">Taller: {h.taller}</Typography>
               <Typography variant="body2" mb={1}>Fecha: {formatoFecha(h.fecha)}</Typography>
               {/* Costos si están presentes */}
-              { (h.costo_total != null) && (
+              { (totalHist(h) != null) && (
                 <Box sx={{ mb: 1 }}>
-                  <Typography variant="body2"><strong>Total:</strong> {typeof h.costo_total === 'number' ? new Intl.NumberFormat('es-CL', { style: 'currency', currency: 'CLP', maximumFractionDigits: 0 }).format(h.costo_total) : '-'}</Typography>
+                  <Typography variant="body2"><strong>Total:</strong> {CLP.format(totalHist(h) || 0)}</Typography>
                 </Box>
               )}
               {h.reparacion_id ? (
