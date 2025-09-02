@@ -8,6 +8,8 @@ import AddIcon from '@mui/icons-material/Add';
 import DeleteIcon from '@mui/icons-material/Delete';
 import { apiFetch } from '../utils/api';
 
+const CLP = new Intl.NumberFormat('es-CL', { style: 'currency', currency: 'CLP', maximumFractionDigits: 0 });
+
 function FichaReparacionModal({ open, onClose, reparacion, onSaved }) {
 
   // Estado local para cada campo de la ficha
@@ -52,7 +54,7 @@ function FichaReparacionModal({ open, onClose, reparacion, onSaved }) {
   const costoInsumosCalc = (Array.isArray(ficha.repuestos) ? ficha.repuestos : []).reduce((acc, r) => {
     const cantidad = Number(r?.cantidad || 0);
     const precio = Number(r?.precio || 0);
-    const total = r?.total !== undefined && r?.total !== '' ? Number(r.total) : (cantidad * precio);
+    const total = cantidad * precio;
     return acc + (isNaN(total) ? 0 : total);
   }, 0);
   const costoManoObraNum = Number(ficha.costoManoObra || 0);
@@ -176,7 +178,13 @@ function FichaReparacionModal({ open, onClose, reparacion, onSaved }) {
                 <TableCell><TextField value={rep.descripcion} onChange={e => handleRepuestoChange(idx, 'descripcion', e.target.value)} size="small" /></TableCell>
                 <TableCell><TextField value={rep.marca} onChange={e => handleRepuestoChange(idx, 'marca', e.target.value)} size="small" /></TableCell>
                 <TableCell><TextField value={rep.precio} onChange={e => handleRepuestoChange(idx, 'precio', e.target.value)} size="small" /></TableCell>
-                <TableCell><TextField value={rep.total} onChange={e => handleRepuestoChange(idx, 'total', e.target.value)} size="small" /></TableCell>
+                <TableCell>
+                  <TextField
+                    value={CLP.format((Number(rep.cantidad || 0) * Number(rep.precio || 0)) || 0)}
+                    size="small"
+                    InputProps={{ readOnly: true }}
+                  />
+                </TableCell>
                 <TableCell>
                   <IconButton onClick={() => handleRemoveRepuesto(idx)} size="small"><DeleteIcon fontSize="small" /></IconButton>
                 </TableCell>
@@ -194,10 +202,10 @@ function FichaReparacionModal({ open, onClose, reparacion, onSaved }) {
             <TextField label="Costo mano de obra" name="costoManoObra" type="number" value={ficha.costoManoObra} onChange={e => setFicha({ ...ficha, costoManoObra: e.target.value })} fullWidth />
           </Grid>
           <Grid item xs={12} sm={4}>
-            <TextField label="Costo insumos (auto)" value={costoInsumosCalc} InputProps={{ readOnly: true }} fullWidth />
+            <TextField label="Costo insumos (auto)" value={CLP.format(costoInsumosCalc || 0)} InputProps={{ readOnly: true }} fullWidth />
           </Grid>
           <Grid item xs={12} sm={4}>
-            <TextField label="Costo total (auto)" value={costoTotalCalc} InputProps={{ readOnly: true }} fullWidth />
+            <TextField label="Costo total (auto)" value={CLP.format(costoTotalCalc || 0)} InputProps={{ readOnly: true }} fullWidth />
           </Grid>
         </Grid>
         <TextField
