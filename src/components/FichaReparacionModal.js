@@ -29,7 +29,9 @@ function FichaReparacionModal({ open, onClose, reparacion, onSaved }) {
     observaciones: reparacion.observaciones || '',
     garantiaPeriodo: reparacion.garantiaPeriodo || '',
     garantiaCondiciones: reparacion.garantiaCondiciones || '',
-    costoManoObra: reparacion.costoManoObra || reparacion.costo_mano_obra || ''
+    costoManoObra: reparacion.costoManoObra || reparacion.costo_mano_obra || '',
+    taller: reparacion.taller || '',
+    mecanicoAsignado: reparacion.mecanicoAsignado || reparacion.mecanico_asignado || reparacion.mecanico || ''
   });
   const [estado, setEstado] = useState(reparacion.estado || 'pending');
   const [tipoServicio, setTipoServicio] = useState(reparacion.servicio || reparacion.tipo_servicio || '');
@@ -74,6 +76,21 @@ function FichaReparacionModal({ open, onClose, reparacion, onSaved }) {
       if (ficha.patente) payload.patente = ficha.patente;
       if (ficha.nombre) payload.cliente = ficha.nombre;
       if (composedVehiculo) payload.vehiculo = composedVehiculo;
+      if (ficha.taller) payload.taller = ficha.taller;
+      if (ficha.mecanicoAsignado) {
+        payload.mecanicoAsignado = ficha.mecanicoAsignado;
+        payload.mecanico_asignado = ficha.mecanicoAsignado;
+        payload.mecanico = ficha.mecanicoAsignado;
+      }
+      // repuestos normalizados
+      if (Array.isArray(ficha.repuestos)) {
+        payload.repuestos = ficha.repuestos.map(r => ({
+          cantidad: Number(r?.cantidad || 0),
+          descripcion: r?.descripcion || '',
+          marca: r?.marca || '',
+          precio: Number(r?.precio || 0),
+        }));
+      }
       // costos
       payload.costoInsumos = costoInsumosCalc;
       payload.costo_insumos = costoInsumosCalc;
@@ -102,6 +119,10 @@ function FichaReparacionModal({ open, onClose, reparacion, onSaved }) {
           <Grid item xs={4}><TextField label="Nombre" name="nombre" value={ficha.nombre} onChange={handleChange} fullWidth /></Grid>
           <Grid item xs={4}><TextField label="Teléfono" name="telefono" value={ficha.telefono} onChange={handleChange} fullWidth /></Grid>
           <Grid item xs={4}><TextField label="Correo electrónico" name="email" value={ficha.email} onChange={handleChange} fullWidth /></Grid>
+        </Grid>
+        <Grid container spacing={2} sx={{ mt: 1 }}>
+          <Grid item xs={6}><TextField label="Taller" name="taller" value={ficha.taller} onChange={handleChange} fullWidth /></Grid>
+          <Grid item xs={6}><TextField label="Mecánico asignado" name="mecanicoAsignado" value={ficha.mecanicoAsignado} onChange={handleChange} fullWidth /></Grid>
         </Grid>
         <Grid container spacing={2} sx={{ mt: 1 }}>
           <Grid item xs={4}>
