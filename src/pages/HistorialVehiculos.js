@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { Box, Typography, TextField, Paper, Grid, Button, List, ListItem, ListItemText, Dialog, DialogTitle, DialogContent, DialogActions } from '@mui/material';
+import FichaReparacionModal from '../components/FichaReparacionModal';
 
 import { useEffect } from 'react';
 import { apiFetch } from '../utils/api';
@@ -22,6 +23,15 @@ function HistorialVehiculos() {
   const [open, setOpen] = useState(false);
   const handleOpen = () => setOpen(true);
   const handleClose = () => setOpen(false);
+
+  // Ficha unificada de reparación
+  const [fichaOpen, setFichaOpen] = useState(false);
+  const [fichaData, setFichaData] = useState(null);
+  const openFicha = (h) => {
+    if (!h?.reparacion_id) return;
+    setFichaData({ id: h.reparacion_id, cliente: h.cliente, vehiculo: h.vehiculo, patente: h.patente, problema: h.servicio });
+    setFichaOpen(true);
+  };
 
   const [form, setForm] = useState({
     vehiculo: '',
@@ -101,6 +111,15 @@ function HistorialVehiculos() {
             </DialogActions>
           </form>
         </Dialog>
+        {/* Ficha unificada */}
+        {fichaData && (
+          <FichaReparacionModal
+            open={fichaOpen}
+            onClose={() => setFichaOpen(false)}
+            reparacion={fichaData}
+            onSaved={() => cargarHistorial()}
+          />
+        )}
       </Box>
       <Grid container spacing={2}>
         {resultados.map((h, i) => (
@@ -112,7 +131,15 @@ function HistorialVehiculos() {
               <Typography variant="body2">Servicio: {h.servicio}</Typography>
               <Typography variant="body2">Taller: {h.taller}</Typography>
               <Typography variant="body2" mb={1}>Fecha: {h.fecha}</Typography>
-              <Button variant="contained" size="small" sx={{ mr: 1 }}>Ver Detalle</Button>
+              {h.reparacion_id ? (
+                <Button variant="contained" size="small" sx={{ mr: 1 }} onClick={() => openFicha(h)}>
+                  Editar reparación
+                </Button>
+              ) : (
+                <Button variant="contained" size="small" sx={{ mr: 1 }} disabled>
+                  Sin reparación vinculada
+                </Button>
+              )}
               <Button variant="outlined" size="small" color="error" onClick={() => handleDelete(h.id)}>Eliminar</Button>
             </Paper>
           </Grid>
