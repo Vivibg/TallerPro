@@ -165,9 +165,9 @@ function Reparaciones() {
               <TableCell>Cliente</TableCell>
               <TableCell>Vehículo</TableCell>
               <TableCell>Problema</TableCell>
-              <TableCell>Estado</TableCell>
-              <TableCell>Costo</TableCell>
               <TableCell>Acciones</TableCell>
+              <TableCell>Costo total</TableCell>
+              <TableCell>Estado</TableCell>
             </TableRow>
           </TableHead>
           <TableBody>
@@ -178,15 +178,9 @@ function Reparaciones() {
                 <TableCell>{row.vehiculo}</TableCell>
                 <TableCell>{row.problema}</TableCell>
                 <TableCell>
-                  <Select
-                    size="small"
-                    value={row.estado === 'open' ? 'pending' : (row.estado || 'pending')}
-                    onChange={(e) => handleEstadoChange(row.id, e.target.value || 'pending')}
-                  >
-                    <MenuItem value="pending">Pendiente</MenuItem>
-                    <MenuItem value="progress">En progreso</MenuItem>
-                    <MenuItem value="done">Completado</MenuItem>
-                  </Select>
+                  <Button variant="contained" size="small" onClick={() => abrirFicha(row)}>VER</Button>
+                  &nbsp;
+                  <Button variant="outlined" color="error" size="small" onClick={() => handleDelete(row.id)}>ELIMINAR</Button>
                 </TableCell>
                 <TableCell>{(() => {
                   const mano = Number(row?.costo_mano_obra ?? row?.costoManoObra ?? 0);
@@ -204,9 +198,15 @@ function Reparaciones() {
                   return CLP.format(Number(total || 0));
                 })()}</TableCell>
                 <TableCell>
-                  <Button variant="contained" size="small" onClick={() => abrirFicha(row)}>VER</Button>
-                  &nbsp;
-                  <Button variant="outlined" color="error" size="small" onClick={() => handleDelete(row.id)}>ELIMINAR</Button>
+                  <Select
+                    size="small"
+                    value={row.estado === 'open' ? 'pending' : (row.estado || 'pending')}
+                    onChange={(e) => handleEstadoChange(row.id, e.target.value || 'pending')}
+                  >
+                    <MenuItem value="pending">Pendiente</MenuItem>
+                    <MenuItem value="progress">En progreso</MenuItem>
+                    <MenuItem value="done">Completado</MenuItem>
+                  </Select>
                 </TableCell>
               </TableRow>
             ))}
