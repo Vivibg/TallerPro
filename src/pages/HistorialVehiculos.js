@@ -53,6 +53,19 @@ function HistorialVehiculos() {
     cargarHistorial();
   }, []);
 
+  // Formato de fecha DD-MM-YYYY
+  const formatoFecha = (val) => {
+    if (!val) return '';
+    try {
+      const d = new Date(val);
+      if (isNaN(d.getTime())) return String(val);
+      const dd = String(d.getDate()).padStart(2,'0');
+      const mm = String(d.getMonth()+1).padStart(2,'0');
+      const yyyy = d.getFullYear();
+      return `${dd}-${mm}-${yyyy}`;
+    } catch { return String(val); }
+  };
+
   const [open, setOpen] = useState(false);
   const handleOpen = () => setOpen(true);
   const handleClose = () => setOpen(false);
@@ -169,13 +182,11 @@ function HistorialVehiculos() {
               <Typography variant="body2">Cliente: {h.cliente}</Typography>
               <Typography variant="body2">Servicio: {h.servicio}</Typography>
               <Typography variant="body2">Taller: {h.taller}</Typography>
-              <Typography variant="body2" mb={1}>Fecha: {h.fecha}</Typography>
+              <Typography variant="body2" mb={1}>Fecha: {formatoFecha(h.fecha)}</Typography>
               {/* Costos si están presentes */}
-              { (h.costo_total != null || h.costo_mano_obra != null || h.costo_insumos != null) && (
+              { (h.costo_total != null) && (
                 <Box sx={{ mb: 1 }}>
                   <Typography variant="body2"><strong>Total:</strong> {typeof h.costo_total === 'number' ? new Intl.NumberFormat('es-CL', { style: 'currency', currency: 'CLP', maximumFractionDigits: 0 }).format(h.costo_total) : '-'}</Typography>
-                  <Typography variant="body2"><strong>Mano de obra:</strong> {typeof h.costo_mano_obra === 'number' ? new Intl.NumberFormat('es-CL', { style: 'currency', currency: 'CLP', maximumFractionDigits: 0 }).format(h.costo_mano_obra) : '-'}</Typography>
-                  <Typography variant="body2"><strong>Insumos:</strong> {typeof h.costo_insumos === 'number' ? new Intl.NumberFormat('es-CL', { style: 'currency', currency: 'CLP', maximumFractionDigits: 0 }).format(h.costo_insumos) : '-'}</Typography>
                 </Box>
               )}
               {h.reparacion_id ? (
