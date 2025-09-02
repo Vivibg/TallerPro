@@ -37,7 +37,7 @@ function FichaReparacionModal({ open, onClose, reparacion, onSaved }) {
 
   // Manejo de repuestos
   const handleAddRepuesto = () => {
-    setFicha({ ...ficha, repuestos: [...(ficha.repuestos || []), { cantidad: '', descripcion: '', marca: '', codigo: '', precio: '', total: '' }] });
+    setFicha({ ...ficha, repuestos: [...(ficha.repuestos || []), { cantidad: '', descripcion: '', marca: '', precio: '', total: '' }] });
   };
   const handleRemoveRepuesto = idx => {
     const nuevos = ficha.repuestos.filter((_, i) => i !== idx);
@@ -164,7 +164,6 @@ function FichaReparacionModal({ open, onClose, reparacion, onSaved }) {
               <TableCell>Cantidad</TableCell>
               <TableCell>Descripción</TableCell>
               <TableCell>Marca</TableCell>
-              <TableCell>Código</TableCell>
               <TableCell>Precio unitario</TableCell>
               <TableCell>Total</TableCell>
               <TableCell></TableCell>
@@ -176,7 +175,6 @@ function FichaReparacionModal({ open, onClose, reparacion, onSaved }) {
                 <TableCell><TextField value={rep.cantidad} onChange={e => handleRepuestoChange(idx, 'cantidad', e.target.value)} size="small" /></TableCell>
                 <TableCell><TextField value={rep.descripcion} onChange={e => handleRepuestoChange(idx, 'descripcion', e.target.value)} size="small" /></TableCell>
                 <TableCell><TextField value={rep.marca} onChange={e => handleRepuestoChange(idx, 'marca', e.target.value)} size="small" /></TableCell>
-                <TableCell><TextField value={rep.codigo} onChange={e => handleRepuestoChange(idx, 'codigo', e.target.value)} size="small" /></TableCell>
                 <TableCell><TextField value={rep.precio} onChange={e => handleRepuestoChange(idx, 'precio', e.target.value)} size="small" /></TableCell>
                 <TableCell><TextField value={rep.total} onChange={e => handleRepuestoChange(idx, 'total', e.target.value)} size="small" /></TableCell>
                 <TableCell>
