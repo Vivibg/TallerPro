@@ -60,6 +60,17 @@ function HistorialVehiculos() {
     return isNaN(n) ? null : n;
   };
 
+  // Normalizar estado a etiqueta legible
+  const labelEstado = (val) => {
+    const v = (val || '').toString().toLowerCase().trim();
+    if (!v) return '-';
+    if (v === 'pending' || v === 'pendiente' || v === 'open') return 'Pendiente';
+    if (v === 'progress' || v === 'en proceso' || v === 'en progreso' || v === 'process') return 'En progreso';
+    if (v === 'done' || v === 'completado' || v === 'completed') return 'Completado';
+    if (v === 'cancelled' || v === 'cancelado') return 'Cancelado';
+    return val;
+  };
+
   useEffect(() => {
     cargarHistorial();
   }, []);
@@ -193,6 +204,7 @@ function HistorialVehiculos() {
               <Typography variant="body2">Cliente: {h.cliente}</Typography>
               <Typography variant="body2">Servicio: {h.servicio}</Typography>
               <Typography variant="body2">Taller: {h.taller}</Typography>
+              <Typography variant="body2">Estado: {labelEstado(h.estado)}</Typography>
               <Typography variant="body2" mb={1}>Fecha: {formatoFecha(h.fecha)}</Typography>
               {/* Costos si están presentes */}
               { (totalHist(h) != null) && (
