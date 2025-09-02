@@ -11,7 +11,18 @@ const Inventario = () => {
 
   const [insumos, setInsumos] = useState([]);
   const [open, setOpen] = useState(false);
-  const [form, setForm] = useState({ producto: '', categoria: '', stock: '', minimo: '', precio: '', estado: 'ok' });
+  const [form, setForm] = useState({
+    producto: '',
+    categoria: '',
+    unidad: '',
+    stock: '',
+    minimo: '',
+    maximo: '',
+    precio: '',
+    costo_unitario: '',
+    total: '',
+    estado: 'ok'
+  });
 
   const fetchInsumos = () => {
     apiFetch('/api/inventario')
@@ -25,15 +36,34 @@ const Inventario = () => {
 
   const handleOpen = () => setOpen(true);
   const handleClose = () => setOpen(false);
-  const handleChange = e => setForm({ ...form, [e.target.name]: e.target.value });
+  const handleChange = e => {
+    const next = { ...form, [e.target.name]: e.target.value };
+    // recalcular total y estado
+    const stockNum = Number(next.stock || 0);
+    const costoNum = Number(next.costo_unitario || 0);
+    next.total = String(stockNum * costoNum);
+    const minimoNum = Number(next.minimo || 0);
+    next.estado = stockNum < minimoNum ? 'bajo' : 'ok';
+    setForm(next);
+  };
 
   const handleSubmit = async e => {
     e.preventDefault();
+    // normalizar numéricos
+    const payload = {
+      ...form,
+      stock: Number(form.stock || 0),
+      minimo: Number(form.minimo || 0),
+      maximo: Number(form.maximo || 0),
+      precio: Number(form.precio || 0),
+      costo_unitario: Number(form.costo_unitario || 0),
+      total: Number(form.total || 0)
+    };
     await apiFetch('/api/inventario', {
       method: 'POST',
-      body: JSON.stringify(form)
+      body: JSON.stringify(payload)
     });
-    setForm({ producto: '', categoria: '', stock: '', minimo: '', precio: '', estado: 'ok' });
+    setForm({ producto: '', categoria: '', unidad: '', stock: '', minimo: '', maximo: '', precio: '', costo_unitario: '', total: '', estado: 'ok' });
     setOpen(false);
     fetchInsumos();
   };
@@ -66,13 +96,25 @@ const Inventario = () => {
             <DialogContent sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
               <TextField label="Producto" name="producto" value={form.producto} onChange={handleChange} required />
               <TextField label="Categoría" name="categoria" value={form.categoria} onChange={handleChange} />
-              <TextField label="Stock" name="stock" value={form.stock} onChange={handleChange} type="number" />
-              <TextField label="Mínimo" name="minimo" value={form.minimo} onChange={handleChange} type="number" />
-              <TextField label="Precio" name="precio" value={form.precio} onChange={handleChange} type="number" />
-              <TextField label="Estado" name="estado" value={form.estado} onChange={handleChange} select SelectProps={{ native: true }}>
-                <option value="ok">OK</option>
-                <option value="bajo">Bajo</option>
+              <TextField label="Unidad de medida" name="unidad" value={form.unidad} onChange={handleChange} select SelectProps={{ native: true }}>
+                <option value=""></option>
+                <option value="unidad">Unidad</option>
+                <option value="litro">Litro</option>
+                <option value="kilo">Kilo</option>
+                <option value="caja">Caja</option>
+                <option value="paquete">Paquete</option>
+                <option value="par">Par</option>
+                <option value="juego">Juego</option>
               </TextField>
+              <Grid container spacing={2}>
+                <Grid item xs={6}><TextField label="Stock" name="stock" value={form.stock} onChange={handleChange} type="number" /></Grid>
+                <Grid item xs={6}><TextField label="Mínimo" name="minimo" value={form.minimo} onChange={handleChange} type="number" /></Grid>
+                <Grid item xs={6}><TextField label="Máximo" name="maximo" value={form.maximo} onChange={handleChange} type="number" /></Grid>
+                <Grid item xs={6}><TextField label="Costo unitario" name="costo_unitario" value={form.costo_unitario} onChange={handleChange} type="number" /></Grid>
+                <Grid item xs={6}><TextField label="Precio (venta)" name="precio" value={form.precio} onChange={handleChange} type="number" /></Grid>
+                <Grid item xs={6}><TextField label="Total (auto)" name="total" value={form.total} InputProps={{ readOnly: true }} /></Grid>
+              </Grid>
+              <TextField label="Estado" name="estado" value={form.estado} disabled helperText="Se calcula según stock vs mínimo" />
             </DialogContent>
             <DialogActions>
               <Button onClick={handleClose}>Cancelar</Button>
@@ -86,9 +128,13 @@ const Inventario = () => {
               <TableRow>
                 <TableCell>Producto</TableCell>
                 <TableCell>Categoría</TableCell>
+                <TableCell>Unidad</TableCell>
                 <TableCell>Stock</TableCell>
                 <TableCell>Mínimo</TableCell>
+                <TableCell>Máximo</TableCell>
                 <TableCell>Precio</TableCell>
+                <TableCell>Costo Unitario</TableCell>
+                <TableCell>Total</TableCell>
                 <TableCell>Estado</TableCell>
                 <TableCell>Acciones</TableCell>
               </TableRow>
@@ -98,9 +144,13 @@ const Inventario = () => {
                 <TableRow key={i}>
                   <TableCell>{insumo.producto}</TableCell>
                   <TableCell>{insumo.categoria}</TableCell>
+                  <TableCell>{insumo.unidad}</TableCell>
                   <TableCell>{insumo.stock}</TableCell>
                   <TableCell>{insumo.minimo}</TableCell>
+                  <TableCell>{insumo.maximo}</TableCell>
                   <TableCell>${insumo.precio}</TableCell>
+                  <TableCell>${insumo.costo_unitario}</TableCell>
+                  <TableCell>${insumo.total}</TableCell>
                   <TableCell>
                     {insumo.estado === 'bajo' && <Chip label="Stock bajo" color="error" size="small" />}
                     {insumo.estado === 'ok' && <Chip label="Disponible" color="success" size="small" />}
