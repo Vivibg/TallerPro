@@ -64,12 +64,25 @@ function VistaCliente() {
         const db = b?.fecha ? new Date(b.fecha).getTime() : 0;
         return db - da;
       });
-      // 3) deduplicar por id; si no hay id, usar clave compuesta estable
-      const seen = new Set();
-      const deduped = [];
-      for (const r of sorted) {
-        const key = (r?.id != null) ? `id:${r.id}` : `p:${r?.patente || ''}|f:${(r?.fecha ? new Date(r.fecha).toISOString().slice(0,10) : '')}|s:${r?.problema || ''}`;
-        if (!seen.has(key)) { seen.add(key); deduped.push(r); }
+      // 3) deduplicar manteniendo SOLO el registro más reciente por reparación
+      // Usar ESTRICTAMENTE reparacion_id cuando exista
+      const withRid = sorted.filter(r => r?.reparacion_id != null);
+      let deduped = [];
+      if (withRid.length > 0) {
+        const latestByRid = new Map();
+        for (const r of withRid) {
+          const key = String(r.reparacion_id);
+          if (!latestByRid.has(key)) latestByRid.set(key, r); // más reciente primero por sort desc
+        }
+        deduped = Array.from(latestByRid.values());
+      } else {
+        // Fallback: agrupar por id si no hay reparacion_id
+        const latestById = new Map();
+        for (const r of sorted) {
+          const key = r?.id != null ? String(r.id) : `p:${r?.patente || ''}|progress`;
+          if (!latestById.has(key)) latestById.set(key, r);
+        }
+        deduped = Array.from(latestById.values());
       }
       if (deduped.length === 0) {
         setError('No hay registros en proceso para esa patente');
