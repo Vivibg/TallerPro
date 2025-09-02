@@ -80,6 +80,16 @@ function HistorialVehiculos() {
     return val;
   };
 
+  // Extraer año del campo vehiculo si viene como "Marca Modelo 2002"
+  const splitVehiculo = (veh) => {
+    const s = (veh || '').toString().trim();
+    const m = s.match(/^(.*?)(?:\s+(\d{4}))?$/);
+    if (!m) return { nombre: s, anio: '' };
+    const nombre = (m[1] || '').trim();
+    const anio = (m[2] || '').trim();
+    return { nombre: nombre || s, anio };
+  };
+
   useEffect(() => {
     cargarHistorial();
   }, []);
@@ -208,8 +218,12 @@ function HistorialVehiculos() {
         {resultados.map((h, i) => (
           <Grid item xs={12} md={6} key={h?.reparacion_id ?? h?.id ?? `${h?.patente || ''}-${i}`}>
             <Paper elevation={2} sx={{ p: 2 }}>
-              <Typography variant="h6" fontWeight={600}>{h.vehiculo}</Typography>
-              <Typography variant="body2" color="text.secondary">Patente: {h.patente}</Typography>
+              {(() => { const { nombre, anio } = splitVehiculo(h.vehiculo); return (
+                <>
+                  <Typography variant="h6" fontWeight={600}>{`${nombre}${h.patente ? ` - ${h.patente}` : ''}`}</Typography>
+                  {anio && (<Typography variant="body2" color="text.secondary">Año: {anio}</Typography>)}
+                </>
+              ); })()}
               <Typography variant="body2">Cliente: {h.cliente}</Typography>
               <Typography variant="body2">Servicio: {h.servicio}</Typography>
               <Typography variant="body2">Taller: {h.taller}</Typography>
