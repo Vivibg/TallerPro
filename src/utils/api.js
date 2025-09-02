@@ -15,7 +15,7 @@ export async function apiFetch(path, options = {}) {
   try {
     data = await res.json();
   } catch {
-    // sin cuerpo JSON
+  
   }
 
   if (res.status === 401) {
@@ -41,3 +41,4 @@ export async function apiFetch(path, options = {}) {
 
   return data;
 }
+
