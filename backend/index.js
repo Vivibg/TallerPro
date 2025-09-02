@@ -39,10 +39,10 @@ app.options('*', cors(corsOptions));
 
 app.use(express.json());
 
-// Salud pública para verificación de despliegue
+
 app.get('/health', (req, res) => res.json({ ok: true }));
 
-// Consulta pública por patente para Vista Cliente
+
 app.get('/api/reparaciones/por-patente/:patente', async (req, res) => {
   try {
     const { patente } = req.params;
@@ -65,7 +65,7 @@ app.get('/api/reparaciones/por-patente/:patente', async (req, res) => {
   }
 });
 
-// Salud de base de datos (diagnóstico)
+
 app.get('/health/db', async (req, res) => {
   try {
     const [rows] = await pool.query('SELECT 1 AS ok');
@@ -76,7 +76,7 @@ app.get('/health/db', async (req, res) => {
   }
 });
 
-// Rutas de autenticación (Google, register, login, me)
+
 app.use('/api/auth', authRouter);
 
 // Inspector temporal de rutas (diagnóstico)
