@@ -305,8 +305,9 @@ const Inventario = () => {
                   <TableCell>${insumo.costo_unitario}</TableCell>
                   <TableCell>${insumo.total}</TableCell>
                   <TableCell>
-                    {insumo.estado === 'bajo' && <Chip label="Stock bajo" color="error" size="small" />}
-                    {insumo.estado === 'ok' && <Chip label="Disponible" color="success" size="small" />}
+                    {Number(insumo?.stock || 0) < Number(insumo?.minimo || 0)
+                      ? <Chip label="Stock bajo" color="error" size="small" />
+                      : <Chip label="Disponible" color="success" size="small" />}
                   </TableCell>
                   <TableCell>
                     <Button variant="contained" size="small" sx={{ mr: 1 }} onClick={() => handleEditOpen(insumo)}>Editar</Button>
