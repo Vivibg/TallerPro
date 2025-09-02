@@ -29,6 +29,7 @@ function FichaReparacionModal({ open, onClose, reparacion, onSaved }) {
     garantiaCondiciones: reparacion.garantiaCondiciones || ''
   });
   const [estado, setEstado] = useState(reparacion.estado || 'pending');
+  const [tipoServicio, setTipoServicio] = useState(reparacion.servicio || reparacion.tipo_servicio || '');
 
   // Manejo de cambios en los campos
   const handleChange = e => setFicha({ ...ficha, [e.target.name]: e.target.value });
@@ -55,6 +56,7 @@ function FichaReparacionModal({ open, onClose, reparacion, onSaved }) {
         // problema toma prioridad por trabajos, luego diagnóstico, luego falla reportada
         problema: ficha.trabajos || ficha.diagnostico || ficha.fallaReportada || reparacion.problema || '',
       };
+      if (tipoServicio) { payload.servicio = tipoServicio; payload.tipo_servicio = tipoServicio; }
       if (estado) payload.estado = estado;
       if (ficha.patente) payload.patente = ficha.patente;
       if (ficha.nombre) payload.cliente = ficha.nombre;
@@ -89,6 +91,16 @@ function FichaReparacionModal({ open, onClose, reparacion, onSaved }) {
               <MenuItem value="progress">En progreso</MenuItem>
               <MenuItem value="done">Completado</MenuItem>
               <MenuItem value="cancelled">Cancelado</MenuItem>
+            </Select>
+          </Grid>
+          <Grid item xs={8}>
+            <Typography variant="subtitle2" sx={{ mb: 0.5 }}>Tipo de servicio</Typography>
+            <Select fullWidth size="small" displayEmpty value={tipoServicio} onChange={e => setTipoServicio(e.target.value)}>
+              <MenuItem value=""><em>Seleccionar</em></MenuItem>
+              <MenuItem value="Servicios básicos">Servicios básicos</MenuItem>
+              <MenuItem value="Mantenimiento preventivo">Mantenimiento preventivo</MenuItem>
+              <MenuItem value="Reparaciones">Reparaciones</MenuItem>
+              <MenuItem value="Servicios especializados">Servicios especializados</MenuItem>
             </Select>
           </Grid>
         </Grid>
