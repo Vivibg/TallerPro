@@ -19,7 +19,7 @@ function Reservas() {
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
 
-  // Ahora aceptamos fecha en formato DD-MM-YYYY en el formulario
+  
   const isValidDate = (date) => /^\d{2}-\d{2}-\d{4}$/.test(date);
   const isValidTime = (time) => /^([01]\d|2[0-3]):[0-5]\d$/.test(time);
 
