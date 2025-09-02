@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 
 import {
   Dialog, DialogTitle, DialogContent, DialogActions,
@@ -44,6 +44,40 @@ function FichaReparacionModal({ open, onClose, reparacion, onSaved }) {
   });
   const [estado, setEstado] = useState(reparacion.estado || 'pending');
   const [tipoServicio, setTipoServicio] = useState(reparacion.servicio || reparacion.tipo_servicio || '');
+
+  // Sincronizar estado interno cuando cambia la reparación abierta
+  useEffect(() => {
+    const r = reparacion || {};
+    // Normalizar repuestos nuevamente
+    const repInit = (() => {
+      const rp = r.repuestos;
+      if (Array.isArray(rp)) return rp;
+      if (typeof rp === 'string') { try { const p = JSON.parse(rp); return Array.isArray(p) ? p : []; } catch { return []; } }
+      return [];
+    })();
+    setFicha({
+      nombre: r.cliente || '',
+      telefono: r.telefono || '',
+      email: r.email || '',
+      marca: r.marca || '',
+      modelo: r.modelo || '',
+      anio: r.anio || '',
+      patente: r.patente || '',
+      kilometraje: r.kilometraje || '',
+      fallaReportada: r.fallaReportada || r.problema || r.motivo || '',
+      diagnostico: r.diagnostico || '',
+      trabajos: r.trabajos || '',
+      repuestos: repInit,
+      observaciones: r.observaciones || '',
+      garantiaPeriodo: r.garantiaPeriodo || '',
+      garantiaCondiciones: r.garantiaCondiciones || '',
+      costoManoObra: r.costoManoObra || r.costo_mano_obra || '',
+      taller: r.taller || '',
+      mecanicoAsignado: r.mecanicoAsignado || r.mecanico_asignado || r.mecanico || ''
+    });
+    setEstado(r.estado || 'pending');
+    setTipoServicio(r.servicio || r.tipo_servicio || '');
+  }, [reparacion?.id, open]);
 
   // Manejo de cambios en los campos
   const handleChange = e => setFicha({ ...ficha, [e.target.name]: e.target.value });
