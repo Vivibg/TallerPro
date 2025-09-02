@@ -12,6 +12,8 @@ import {
   TableBody
 } from '@mui/material';
 
+const CLP = new Intl.NumberFormat('es-CL', { style: 'currency', currency: 'CLP', maximumFractionDigits: 0 });
+
 function VistaCliente() {
   const [patente, setPatente] = useState('');
   const [resultados, setResultados] = useState([]);
@@ -90,9 +92,18 @@ function VistaCliente() {
                 <TableCell>{r.diagnostico || '-'}</TableCell>
                 <TableCell>{r.trabajos || '-'}</TableCell>
                 <TableCell>{estadoEnEsp(r.estado)}</TableCell>
-                <TableCell>${Number(r.costo ?? 0).toLocaleString()}</TableCell>
+                <TableCell>{(() => {
+                  const mano = Number(r?.costo_mano_obra ?? r?.costoManoObra ?? 0);
+                  const insumosDirect = Number(r?.costo_insumos ?? r?.costoInsumos ?? NaN);
+                  const insumosCalc = Array.isArray(r?.repuestos)
+                    ? r.repuestos.reduce((acc, rep) => acc + ((Number(rep?.cantidad || 0) * Number(rep?.precio || 0)) || 0), 0)
+                    : 0;
+                  const insumos = isNaN(insumosDirect) ? insumosCalc : insumosDirect;
+                  const total = Number(r?.costo_total ?? r?.costoTotal ?? (mano + insumos) ?? 0);
+                  return CLP.format(Number(total || 0));
+                })()}</TableCell>
                 <TableCell>{r.taller || '-'}</TableCell>
-                <TableCell>{r.mecanico || '-'}</TableCell>
+                <TableCell>{r.mecanicoAsignado || r.mecanico_asignado || r.mecanico || '-'}</TableCell>
               </TableRow>
             ))}
           </TableBody>
@@ -103,4 +114,3 @@ function VistaCliente() {
 }
 
 export default VistaCliente;
- 
