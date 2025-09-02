@@ -17,7 +17,6 @@ function App() {
   const [user, setUser] = useState(null);
   const [checking, setChecking] = useState(true);
 
- 
   useEffect(() => {
     const storedUser = (() => {
       try { return JSON.parse(localStorage.getItem('user')); } catch { return null; }
@@ -29,15 +28,15 @@ function App() {
     }
     (async () => {
       try {
-    
+       
         const controller = new AbortController();
         const t = setTimeout(() => controller.abort(), 3000);
-        // Evita redirección automática en 401 para poder mostrar <Login/>
+       
         const me = await apiFetch('/api/auth/me', { noRedirectOn401: true, signal: controller.signal });
         clearTimeout(t);
         setUser(me?.user || storedUser || null);
       } catch {
-        // En error o timeout: limpiar y mostrar Login
+        
         try {
           localStorage.removeItem('token');
           localStorage.removeItem('user');
