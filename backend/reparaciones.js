@@ -82,36 +82,85 @@ router.put('/:id', async (req, res) => {
         // Descubrir columnas de historial_vehiculos para insertar lo que exista
         const [cols] = await pool.query('SHOW COLUMNS FROM historial_vehiculos');
         const names = cols.map(c => c.Field);
+
+        // Valores base
+        const safeVehiculo = current.vehiculo || 'Vehículo';
+        const safeCliente = current.cliente || 'Cliente';
+        const safeServicio = (problema !== undefined ? problema : current.problema) || 'Servicio';
+        const safeTaller = process.env.TALLER_NOMBRE || 'Taller';
+        const safePatente = current.patente || '';
+
+        // Decidir valores por columna, cubriendo NOT NULL sin default
         const hFields = [];
         const hValues = [];
-        const pushIf = (name, val) => { if (names.includes(name)) { hFields.push(name); hValues.push(val ?? null); } };
-        pushIf('reparacion_id', id);
-        pushIf('vehiculo', current.vehiculo);
-        // Preferir 'patente'; si no existe, usar 'placas'
-        if (names.includes('patente')) {
-          pushIf('patente', current.patente || null);
-        } else {
-          pushIf('placas', current.patente || null);
-        }
-        pushIf('cliente', current.cliente);
-        // Fecha: si existe columna 'fecha', usar NOW() en SQL; si no, ignorar
-        const hasFecha = names.includes('fecha');
-        if (hasFecha) hFields.push('fecha');
-        pushIf('servicio', problema !== undefined ? problema : current.problema);
-        pushIf('taller', process.env.TALLER_NOMBRE || null);
-        if (hFields.length > 0) {
-          // Construir SQL con NOW() si 'fecha' va incluida
-          let sql = `INSERT INTO historial_vehiculos (`;
-          const placeholders = [];
-          for (const f of hFields) {
-            if (f !== 'fecha') placeholders.push('?');
+        const valueFor = (col) => {
+          const name = col.Field;
+          if (name === 'id') return { skip: true };
+          if (name === 'reparacion_id') return { val: Number(id) || 0 };
+          if (name === 'vehiculo') return { val: safeVehiculo };
+          if (name === 'cliente') return { val: safeCliente };
+          if (name === 'servicio') return { val: safeServicio };
+          if (name === 'taller') return { val: safeTaller };
+          if (name === 'patente') return { val: safePatente };
+          if (name === 'placas') return { skip: true };
+          if (name === 'fecha' || name === 'created_at' || name === 'updated_at') return { now: true };
+          // Para otras columnas, si son NOT NULL sin default, proveer por tipo
+          if (col.Null === 'NO' && col.Default === null) {
+            const type = (col.Type || '').toLowerCase();
+            if (type.includes('int') || type.includes('decimal') || type.includes('float') || type.includes('double')) return { val: 0 };
+            if (type.includes('date') || type.includes('time')) return { now: true };
+            return { val: '' }; // varchar/text
           }
-          sql += hFields.join(', ') + ') VALUES (' + hFields.map(f => f === 'fecha' ? 'NOW()' : '?').join(', ') + ')';
-          await pool.query(sql, hValues);
+          // Si permite NULL, podemos omitir
+          return { skip: true };
+        };
+
+        for (const col of cols) {
+          const d = valueFor(col);
+          if (d.skip) continue;
+          hFields.push(col.Field);
+          if (d.now) {
+            hValues.push('__NOW__'); // marcador temporal, reemplazamos en SQL
+          } else {
+            hValues.push(d.val ?? null);
+          }
+        }
+
+        if (hFields.length > 0) {
+          try {
+            // Construir SQL, reemplazando marcadores __NOW__ por NOW()
+            const placeholders = hValues.map(v => v === '__NOW__' ? 'NOW()' : '?');
+            const sql = `INSERT INTO historial_vehiculos (${hFields.join(', ')}) VALUES (${placeholders.join(', ')})`;
+            const realValues = hValues.filter(v => v !== '__NOW__');
+            await pool.query(sql, realValues);
+          } catch (err) {
+            // Fallback duro si alguna columna NOT NULL quedó sin cubrir
+            if (err && err.code === 'ER_BAD_NULL_ERROR') {
+              const common = [];
+              const vals = [];
+              const addIf = (name, val) => { if (names.includes(name)) { common.push(name); vals.push(val); } };
+              addIf('reparacion_id', Number(id) || 0);
+              addIf('vehiculo', safeVehiculo);
+              addIf('patente', safePatente);
+              addIf('cliente', safeCliente);
+              if (names.includes('fecha')) common.push('fecha');
+              addIf('servicio', safeServicio);
+              addIf('taller', safeTaller);
+              if (common.length > 0) {
+                const placeholders2 = common.map(f => f === 'fecha' ? 'NOW()' : '?');
+                const sql2 = `INSERT INTO historial_vehiculos (${common.join(', ')}) VALUES (${placeholders2.join(', ')})`;
+                await pool.query(sql2, vals);
+              } else {
+                throw err;
+              }
+            } else {
+              throw err;
+            }
+          }
         }
       } catch (e) {
         // No bloquear la respuesta si historial falla
-        console.error('No se pudo registrar en historial:', e.code || e.message);
+        console.error('No se pudo registrar en historial:', e.code || e.message, e.sqlMessage || '', {fields: 'computed dynamically'});
       }
     }
 
@@ -135,4 +184,3 @@ router.delete('/:id', async (req, res) => {
 });
 
 export default router;
- 
