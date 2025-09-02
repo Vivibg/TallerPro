@@ -9,10 +9,14 @@ function HistorialVehiculos() {
   const [historiales, setHistoriales] = useState([]);
   const [busqueda, setBusqueda] = useState('');
 
-  useEffect(() => {
+  const cargarHistorial = () => {
     apiFetch('/api/historial')
       .then(data => Array.isArray(data) ? setHistoriales(data) : setHistoriales([]))
       .catch(() => setHistoriales([]));
+  };
+
+  useEffect(() => {
+    cargarHistorial();
   }, []);
 
   const [open, setOpen] = useState(false);
@@ -57,10 +61,12 @@ function HistorialVehiculos() {
     }
   }
 
-  const resultados = (Array.isArray(historiales) ? historiales : []).filter(h =>
-    h.vehiculo?.toLowerCase().includes(busqueda.toLowerCase()) ||
-    h.placas?.toLowerCase().includes(busqueda.toLowerCase())
-  );
+  const resultados = (Array.isArray(historiales) ? historiales : []).filter(h => {
+    const patente = (h.patente || h.placas || '').toLowerCase();
+    const veh = (h.vehiculo || '').toLowerCase();
+    const q = busqueda.toLowerCase();
+    return veh.includes(q) || patente.includes(q);
+  });
 
   return (
     <Box>
@@ -74,6 +80,7 @@ function HistorialVehiculos() {
           sx={{ minWidth: 240 }}
         />
         <Button variant="contained" color="primary">Buscar</Button>
+        <Button variant="outlined" onClick={cargarHistorial}>Refrescar</Button>
         <Button variant="contained" color="primary" sx={{ ml: 2 }} onClick={handleOpen}>
           + Nuevo Servicio
         </Button>
@@ -100,7 +107,7 @@ function HistorialVehiculos() {
           <Grid item xs={12} md={6} key={h.id || i}>
             <Paper elevation={2} sx={{ p: 2 }}>
               <Typography variant="h6" fontWeight={600}>{h.vehiculo}</Typography>
-              <Typography variant="body2" color="text.secondary">Patente: {h.placas}</Typography>
+              <Typography variant="body2" color="text.secondary">Patente: {h.patente || h.placas}</Typography>
               <Typography variant="body2">Cliente: {h.cliente}</Typography>
               <Typography variant="body2">Servicio: {h.servicio}</Typography>
               <Typography variant="body2">Taller: {h.taller}</Typography>
