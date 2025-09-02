@@ -32,7 +32,7 @@ const Inventario = () => {
       .catch(() => setInsumos([]));
   };
 
-  // Edit form state and handlers
+
   const [editForm, setEditForm] = useState({
     producto: '', categoria: '', unidad: '', stock: '', minimo: '', maximo: '', precio: '', costo_unitario: '', total: '', estado: 'ok'
   });
@@ -86,7 +86,7 @@ const Inventario = () => {
     return true;
   });
 
-  // Cálculo de KPIs (sobre la lista filtrada)
+  // Cálculo de KPIs
   const totalProductos = listaFiltrada.length;
   const valorInventario = listaFiltrada.reduce((acc, i) => {
     const stock = Number(i?.stock || 0);
