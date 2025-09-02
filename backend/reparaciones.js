@@ -31,12 +31,38 @@ router.get('/:id', async (req, res) => {
 // Crear reparación
 router.post('/', async (req, res) => {
   try {
-    const { cliente, vehiculo, problema, estado, costo, fecha } = req.body;
+    const { cliente, vehiculo, problema, estado, costo, fecha, patente } = req.body || {};
+    // Reutilizar registro 'en progreso' por patente o por (cliente+vehiculo)
+    try {
+      const estadosProg = ['progress','process','en proceso','en progreso'];
+      let row = null;
+      if (patente) {
+        const [rows] = await pool.query(
+          `SELECT * FROM reparaciones WHERE LOWER(patente) = LOWER(?) AND LOWER(COALESCE(estado,'pending')) IN (${estadosProg.map(()=>'?').join(',')}) ORDER BY id DESC LIMIT 1`,
+          [patente, ...estadosProg]
+        );
+        row = rows[0] || null;
+      }
+      if (!row && cliente && vehiculo) {
+        const [rows] = await pool.query(
+          `SELECT * FROM reparaciones WHERE LOWER(cliente) = LOWER(?) AND LOWER(vehiculo) = LOWER(?) AND LOWER(COALESCE(estado,'pending')) IN (${estadosProg.map(()=>'?').join(',')}) ORDER BY id DESC LIMIT 1`,
+          [cliente, vehiculo, ...estadosProg]
+        );
+        row = rows[0] || null;
+      }
+      if (row) {
+        return res.status(200).json(row);
+      }
+    } catch (dedupeErr) {
+      console.warn('No se pudo deduplicar en POST /reparaciones:', dedupeErr?.code || dedupeErr?.message);
+    }
+
+    const est = estado || 'pending';
     const [result] = await pool.query(
-      'INSERT INTO reparaciones (cliente, vehiculo, problema, estado, costo, fecha) VALUES (?, ?, ?, ?, ?, ?)',
-      [cliente, vehiculo, problema, estado || 'pending', costo, fecha]
+      'INSERT INTO reparaciones (cliente, vehiculo, problema, estado, costo, fecha, patente) VALUES (?, ?, ?, ?, ?, ?, ?)',
+      [cliente || null, vehiculo || null, problema || null, est, costo || null, fecha || null, patente || null]
     );
-    res.status(201).json({ id: result.insertId, cliente, vehiculo, problema, estado, costo, fecha });
+    res.status(201).json({ id: result.insertId, cliente, vehiculo, problema, estado: est, costo, fecha, patente });
   } catch (e) {
     console.error(e);
     res.status(500).json({ error: 'Error creando reparación' });
@@ -346,4 +372,3 @@ router.delete('/:id', async (req, res) => {
 });
 
 export default router;
- 
