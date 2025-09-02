@@ -62,7 +62,7 @@ function HistorialVehiculos() {
   }
 
   const resultados = (Array.isArray(historiales) ? historiales : []).filter(h => {
-    const patente = (h.patente || h.placas || '').toLowerCase();
+    const patente = (h.patente || '').toLowerCase();
     const veh = (h.vehiculo || '').toLowerCase();
     const q = busqueda.toLowerCase();
     return veh.includes(q) || patente.includes(q);
@@ -107,7 +107,7 @@ function HistorialVehiculos() {
           <Grid item xs={12} md={6} key={h.id || i}>
             <Paper elevation={2} sx={{ p: 2 }}>
               <Typography variant="h6" fontWeight={600}>{h.vehiculo}</Typography>
-              <Typography variant="body2" color="text.secondary">Patente: {h.patente || h.placas}</Typography>
+              <Typography variant="body2" color="text.secondary">Patente: {h.patente}</Typography>
               <Typography variant="body2">Cliente: {h.cliente}</Typography>
               <Typography variant="body2">Servicio: {h.servicio}</Typography>
               <Typography variant="body2">Taller: {h.taller}</Typography>
@@ -123,4 +123,3 @@ function HistorialVehiculos() {
 }
 
 export default HistorialVehiculos;
- 
