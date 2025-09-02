@@ -76,7 +76,8 @@ router.put('/:id', async (req, res) => {
     const {
       problema, estado, costo, fecha,
       cliente, telefono, email, vehiculo, marca, modelo, anio, patente, kilometraje,
-      observaciones, garantiaPeriodo, garantiaCondiciones, taller, mecanico, servicio
+      observaciones, garantiaPeriodo, garantiaCondiciones, taller, mecanico, servicio,
+      diagnostico, trabajos
     } = req.body || {};
 
     // Obtener estado actual antes de actualizar
@@ -115,6 +116,9 @@ router.put('/:id', async (req, res) => {
     addIfCol('problema', problema);
     addIfCol('estado', estado);
     addIfCol('costo', costo);
+    // punto 4 y 5 de la ficha
+    addIfCol('diagnostico', diagnostico);
+    addIfCol('trabajos', trabajos);
     // desglose de costos si existen las columnas
     addIfCol('costo_mano_obra', req.body?.costo_mano_obra);
     addIfCol('costo_insumos', req.body?.costo_insumos);
@@ -179,6 +183,8 @@ router.put('/:id', async (req, res) => {
         const safeTaller = (req.body?.taller ?? current.taller ?? process.env.TALLER_NOMBRE ?? 'Taller');
         const safePatente = (req.body?.patente ?? current.patente ?? '');
         const safeMecanico = (req.body?.mecanico ?? current.mecanico ?? '').toString();
+        const safeDiagnostico = (req.body?.diagnostico ?? current.diagnostico ?? '')?.toString?.() || '';
+        const safeTrabajos = (req.body?.trabajos ?? current.trabajos ?? '')?.toString?.() || '';
 
         // Decidir valores por columna, cubriendo NOT NULL sin default
         const hFields = [];
@@ -196,6 +202,8 @@ router.put('/:id', async (req, res) => {
           if (name === 'costo_total') return { val: (req.body?.costo ?? current.costo ?? 0) };
           if (name === 'costo_mano_obra') return { val: (req.body?.costo_mano_obra ?? 0) };
           if (name === 'costo_insumos') return { val: (req.body?.costo_insumos ?? 0) };
+          if (name === 'diagnostico') return { val: safeDiagnostico };
+          if (name === 'trabajos') return { val: safeTrabajos };
           if (name === 'placas') return { skip: true };
           if (name === 'fecha' || name === 'created_at' || name === 'updated_at') return { now: true };
           // Para otras columnas, si son NOT NULL sin default, proveer por tipo
@@ -237,6 +245,8 @@ router.put('/:id', async (req, res) => {
               addIf('vehiculo', safeVehiculo);
               addIf('patente', safePatente);
               addIf('cliente', safeCliente);
+              addIf('diagnostico', safeDiagnostico);
+              addIf('trabajos', safeTrabajos);
               if (names.includes('fecha')) common.push('fecha');
               addIf('servicio', safeServicio);
               addIf('taller', safeTaller);
@@ -372,4 +382,3 @@ router.delete('/:id', async (req, res) => {
 });
 
 export default router;
- 
