@@ -9,6 +9,10 @@ const Inventario = () => {
   const [open, setOpen] = useState(false);
   const [editOpen, setEditOpen] = useState(false);
   const [selectedId, setSelectedId] = useState(null);
+  // filtros
+  const [filtroTexto, setFiltroTexto] = useState('');
+  const [filtroCategoria, setFiltroCategoria] = useState('all');
+  const [filtroEstado, setFiltroEstado] = useState('all');
   const [form, setForm] = useState({
     producto: '',
     categoria: '',
@@ -65,16 +69,33 @@ const Inventario = () => {
     fetchInsumos();
   }, []);
 
-  // Cálculo de KPIs: total de productos, valor del inventario y críticos
-  const totalProductos = (Array.isArray(insumos) ? insumos : []).length;
-  const valorInventario = (Array.isArray(insumos) ? insumos : []).reduce((acc, i) => {
+  // Catálogo de categorías
+  const categorias = Array.from(new Set((Array.isArray(insumos) ? insumos : []).map(i => i?.categoria).filter(Boolean)));
+
+  // Aplicar filtros
+  const listaFiltrada = (Array.isArray(insumos) ? insumos : []).filter(i => {
+    const texto = (filtroTexto || '').toLowerCase();
+    if (texto) {
+      const hay = `${i?.producto || ''} ${i?.categoria || ''}`.toLowerCase().includes(texto);
+      if (!hay) return false;
+    }
+    if (filtroCategoria !== 'all' && i?.categoria !== filtroCategoria) return false;
+    // estado calculado segun stock vs minimo
+    const estadoCalc = Number(i?.stock || 0) < Number(i?.minimo || 0) ? 'bajo' : 'ok';
+    if (filtroEstado !== 'all' && estadoCalc !== filtroEstado) return false;
+    return true;
+  });
+
+  // Cálculo de KPIs (sobre la lista filtrada)
+  const totalProductos = listaFiltrada.length;
+  const valorInventario = listaFiltrada.reduce((acc, i) => {
     const stock = Number(i?.stock || 0);
     const costo = Number(i?.costo_unitario || 0);
     const total = Number(i?.total ?? (stock * costo));
     return acc + (isNaN(total) ? 0 : total);
   }, 0);
-  const productosCriticos = (Array.isArray(insumos) ? insumos : []).filter(i => Number(i?.stock || 0) < Number(i?.minimo || 0)).length;
-  const productosOk = (Array.isArray(insumos) ? insumos : []).filter(i => Number(i?.stock || 0) >= Number(i?.minimo || 0)).length;
+  const productosCriticos = listaFiltrada.filter(i => Number(i?.stock || 0) < Number(i?.minimo || 0)).length;
+  const productosOk = listaFiltrada.filter(i => Number(i?.stock || 0) >= Number(i?.minimo || 0)).length;
 
   const handleOpen = () => setOpen(true);
   const handleClose = () => setOpen(false);
@@ -165,6 +186,27 @@ const Inventario = () => {
         </Grid>
       </Grid>
       <Paper elevation={2} sx={{ p: 2, mb: 2 }}>
+        <Grid container spacing={2} alignItems="center" mb={1}>
+          <Grid item xs={12} sm={4}>
+            <TextField size="small" label="Buscar" placeholder="Producto o categoría" fullWidth value={filtroTexto} onChange={e => setFiltroTexto(e.target.value)} />
+          </Grid>
+          <Grid item xs={12} sm={4}>
+            <TextField size="small" label="Categoría" value={filtroCategoria} onChange={e => setFiltroCategoria(e.target.value)} select SelectProps={{ native: true }} fullWidth>
+              <option value="all">Todas</option>
+              {categorias.map(c => (<option value={c} key={c}>{c}</option>))}
+            </TextField>
+          </Grid>
+          <Grid item xs={12} sm={3}>
+            <TextField size="small" label="Estado" value={filtroEstado} onChange={e => setFiltroEstado(e.target.value)} select SelectProps={{ native: true }} fullWidth>
+              <option value="all">Todos</option>
+              <option value="ok">OK</option>
+              <option value="bajo">Bajo</option>
+            </TextField>
+          </Grid>
+          <Grid item xs={12} sm={1}>
+            <Button variant="text" onClick={() => { setFiltroTexto(''); setFiltroCategoria('all'); setFiltroEstado('all'); }}>Limpiar</Button>
+          </Grid>
+        </Grid>
         <Button variant="contained" color="primary" sx={{ ml: 2 }} onClick={handleOpen}>
           + Nuevo Producto
         </Button>
@@ -251,7 +293,7 @@ const Inventario = () => {
               </TableRow>
             </TableHead>
             <TableBody>
-              {(Array.isArray(insumos) ? insumos : []).map((insumo, i) => (
+              {listaFiltrada.map((insumo, i) => (
                 <TableRow key={i}>
                   <TableCell>{insumo.producto}</TableCell>
                   <TableCell>{insumo.categoria}</TableCell>
