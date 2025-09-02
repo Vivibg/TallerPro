@@ -12,7 +12,39 @@ function HistorialVehiculos() {
 
   const cargarHistorial = () => {
     apiFetch('/api/historial')
-      .then(data => Array.isArray(data) ? setHistoriales(data) : setHistoriales([]))
+      .then(data => {
+        if (!Array.isArray(data)) { setHistoriales([]); return; }
+        // 1) Solo "en proceso"
+        const inProgress = data.filter(h => {
+          const e = String(h?.estado || '').toLowerCase();
+          return e === 'progress' || e === 'process' || e === 'en proceso' || e === 'en progreso';
+        });
+        // 2) Ordenar por fecha desc
+        const sorted = [...inProgress].sort((a, b) => {
+          const da = a?.fecha ? new Date(a.fecha).getTime() : 0;
+          const db = b?.fecha ? new Date(b.fecha).getTime() : 0;
+          return db - da;
+        });
+        // 3) Deduplicar por reparacion_id (fallback id)
+        const withRid = sorted.filter(h => h?.reparacion_id != null);
+        let deduped = [];
+        if (withRid.length > 0) {
+          const latestByRid = new Map();
+          for (const h of withRid) {
+            const key = String(h.reparacion_id);
+            if (!latestByRid.has(key)) latestByRid.set(key, h);
+          }
+          deduped = Array.from(latestByRid.values());
+        } else {
+          const latestById = new Map();
+          for (const h of sorted) {
+            const key = h?.id != null ? String(h.id) : `${h?.patente || ''}|progress`;
+            if (!latestById.has(key)) latestById.set(key, h);
+          }
+          deduped = Array.from(latestById.values());
+        }
+        setHistoriales(deduped);
+      })
       .catch(() => setHistoriales([]));
   };
 
@@ -123,7 +155,7 @@ function HistorialVehiculos() {
       </Box>
       <Grid container spacing={2}>
         {resultados.map((h, i) => (
-          <Grid item xs={12} md={6} key={h.id || i}>
+          <Grid item xs={12} md={6} key={h?.reparacion_id ?? h?.id ?? `${h?.patente || ''}-${i}`}>
             <Paper elevation={2} sx={{ p: 2 }}>
               <Typography variant="h6" fontWeight={600}>{h.vehiculo}</Typography>
               <Typography variant="body2" color="text.secondary">Patente: {h.patente}</Typography>
@@ -150,4 +182,3 @@ function HistorialVehiculos() {
 }
 
 export default HistorialVehiculos;
- 
