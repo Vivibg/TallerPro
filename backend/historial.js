@@ -9,62 +9,41 @@ router.get('/', async (req, res) => {
     const [rows] = await pool.query('SELECT * FROM historial_vehiculos');
     res.json(rows);
   } catch (e) {
-    console.error(e);
     res.status(500).json({ error: 'Error consultando historial' });
-  }
-});
-
-// Listar historial con resumen de ficha de reparación (JOIN robusto solo por fecha)
-router.get('/con-ficha', async (req, res) => {
-  try {
-    const [rows] = await pool.query(`
-      SELECT h.*, r.diagnostico, r.trabajos, r.repuestos, r.observaciones, r.garantiaPeriodo, r.garantiaCondiciones
-      FROM historial_vehiculos h
-      LEFT JOIN reparaciones r
-        ON h.vehiculo = r.vehiculo
-        AND h.cliente = r.cliente
-        AND h.patente = r.patente
-        AND DATE(h.fecha) = DATE(r.fecha)
-      ORDER BY h.fecha DESC
-    `);
-    console.log('Historial con ficha:', rows.length, 'resultados');
-    res.json(rows);
-  } catch (e) {
-    console.error(e);
-    res.status(500).json({ error: 'Error consultando historial con ficha' });
   }
 });
 
 // Crear registro de historial
 router.post('/', async (req, res) => {
   try {
-    // Log de depuración para ver los datos recibidos
-    console.log('POST /api/historial body:', req.body);
-    // Función de seguridad para evitar undefined/null
-    const safe = (v) => (v === undefined || v === null ? '' : v);
-    const { vehiculo, patente, cliente, fecha, servicio, taller } = req.body;
-    const [result] = await pool.query(
-      'INSERT INTO historial_vehiculos (vehiculo, patente, cliente, fecha, servicio, taller) VALUES (?, ?, ?, ?, ?, ?)',
-      [
-        safe(vehiculo),
-        safe(patente),
-        safe(cliente),
-        safe(fecha),
-        safe(servicio),
-        safe(taller)
-      ]
-    );
-    res.status(201).json({
-      id: result.insertId,
-      vehiculo: safe(vehiculo),
-      patente: safe(patente),
-      cliente: safe(cliente),
-      fecha: safe(fecha),
-      servicio: safe(servicio),
-      taller: safe(taller)
-    });
+    const { reparacion_id, vehiculo, patente, placas, cliente, fecha, servicio, taller } = req.body || {};
+    // Detectar columnas existentes según el modelo y el estado real de la BD
+    const [cols] = await pool.query('SHOW COLUMNS FROM historial_vehiculos');
+    const names = cols.map(c => c.Field);
+    const fields = [];
+    const values = [];
+    const pushIf = (name, val) => { if (names.includes(name)) { fields.push(name); values.push(val ?? null); } };
+    pushIf('reparacion_id', reparacion_id);
+    pushIf('vehiculo', vehiculo);
+    // Preferir 'patente'; si no existe, usar 'placas'
+    if (names.includes('patente')) {
+      pushIf('patente', patente ?? placas ?? null);
+    } else {
+      pushIf('placas', placas ?? patente ?? null);
+    }
+    pushIf('cliente', cliente);
+    pushIf('fecha', fecha);
+    pushIf('servicio', servicio);
+    pushIf('taller', taller);
+
+    if (fields.length === 0) return res.status(400).json({ error: 'Sin columnas válidas para insertar' });
+    const placeholders = fields.map(() => '?').join(', ');
+    const sql = `INSERT INTO historial_vehiculos (${fields.join(', ')}) VALUES (${placeholders})`;
+    const [result] = await pool.query(sql, values);
+    // Responder con eco de valores normalizados
+    res.status(201).json({ id: result.insertId, reparacion_id, vehiculo, patente: patente ?? placas ?? null, cliente, fecha, servicio, taller });
   } catch (e) {
-    console.error('Error creando historial:', e);
+    console.error('Error creando historial:', e.code || e.message);
     res.status(500).json({ error: 'Error creando historial' });
   }
 });
@@ -76,7 +55,6 @@ router.delete('/:id', async (req, res) => {
     await pool.query('DELETE FROM historial_vehiculos WHERE id = ?', [id]);
     res.json({ ok: true });
   } catch (e) {
-    console.error(e);
     res.status(500).json({ error: 'Error eliminando historial' });
   }
 });
