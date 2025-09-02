@@ -274,7 +274,17 @@ function FichaReparacionModal({ open, onClose, reparacion, onSaved }) {
         </Table>
         <Grid container spacing={2} sx={{ mt: 1 }}>
           <Grid item xs={12} sm={4}>
-            <TextField label="Costo mano de obra" name="costoManoObra" type="number" value={ficha.costoManoObra} onChange={e => setFicha({ ...ficha, costoManoObra: e.target.value })} fullWidth />
+            <TextField
+              label="Costo mano de obra"
+              name="costoManoObra"
+              value={CLP.format(Number(ficha.costoManoObra || 0))}
+              onChange={e => {
+                const num = Number(String(e.target.value).replace(/[^0-9]/g, ''));
+                setFicha({ ...ficha, costoManoObra: isNaN(num) ? 0 : num });
+              }}
+              inputMode="numeric"
+              fullWidth
+            />
           </Grid>
           <Grid item xs={12} sm={4}>
             <TextField label="Costo insumos (auto)" value={CLP.format(costoInsumosCalc || 0)} InputProps={{ readOnly: true }} fullWidth />
