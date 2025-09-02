@@ -53,7 +53,29 @@ function VistaCliente() {
         setError('No se encontraron reparaciones para esa patente');
         return;
       }
-      setResultados(data);
+      // 1) quedarnos solo con las que están "en proceso"
+      const onlyInProgress = data.filter(r => {
+        const e = String(r?.estado || '').toLowerCase();
+        return e === 'progress' || e === 'process' || e === 'en progreso' || e === 'en proceso';
+      });
+      // 2) ordenar por fecha desc (si existe)
+      const sorted = [...onlyInProgress].sort((a, b) => {
+        const da = a?.fecha ? new Date(a.fecha).getTime() : 0;
+        const db = b?.fecha ? new Date(b.fecha).getTime() : 0;
+        return db - da;
+      });
+      // 3) deduplicar por id; si no hay id, usar clave compuesta estable
+      const seen = new Set();
+      const deduped = [];
+      for (const r of sorted) {
+        const key = (r?.id != null) ? `id:${r.id}` : `p:${r?.patente || ''}|f:${(r?.fecha ? new Date(r.fecha).toISOString().slice(0,10) : '')}|s:${r?.problema || ''}`;
+        if (!seen.has(key)) { seen.add(key); deduped.push(r); }
+      }
+      if (deduped.length === 0) {
+        setError('No hay registros en proceso para esa patente');
+        return;
+      }
+      setResultados(deduped);
     } catch {
       setError('Error consultando el vehículo');
     }
@@ -87,7 +109,7 @@ function VistaCliente() {
           </TableHead>
           <TableBody>
             {resultados.map((r, i) => (
-              <TableRow key={i}>
+              <TableRow key={r?.id ?? `${r?.patente || ''}-${r?.fecha || ''}-${i}` }>
                 <TableCell>{r.fecha ? new Date(r.fecha).toLocaleDateString() : ''}</TableCell>
                 <TableCell>{r.diagnostico || '-'}</TableCell>
                 <TableCell>{r.trabajos || '-'}</TableCell>
@@ -117,4 +139,3 @@ function VistaCliente() {
 }
 
 export default VistaCliente;
- 
