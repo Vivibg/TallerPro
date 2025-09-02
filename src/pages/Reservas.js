@@ -19,7 +19,8 @@ function Reservas() {
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
 
-  const isValidDate = (date) => /^\d{4}-\d{2}-\d{2}$/.test(date);
+  // Ahora aceptamos fecha en formato DD-MM-YYYY en el formulario
+  const isValidDate = (date) => /^\d{2}-\d{2}-\d{4}$/.test(date);
   const isValidTime = (time) => /^([01]\d|2[0-3]):[0-5]\d$/.test(time);
 
   const fetchReservas = () => {
@@ -54,7 +55,7 @@ function Reservas() {
       return;
     }
     if (!isValidDate(form.fecha)) {
-      setError('La fecha debe tener el formato YYYY-MM-DD');
+      setError('La fecha debe tener el formato DD-MM-YYYY');
       return;
     }
     if (!isValidTime(form.hora)) {
@@ -62,9 +63,12 @@ function Reservas() {
       return;
     }
     try {
+      // Convertir DD-MM-YYYY -> YYYY-MM-DD para el backend
+      const [dd, mm, yyyy] = form.fecha.split('-');
+      const fechaISO = `${yyyy}-${mm}-${dd}`;
       await apiFetch('/api/reservas', {
         method: 'POST',
-        body: JSON.stringify(form)
+        body: JSON.stringify({ ...form, fecha: fechaISO })
       });
       setForm({ cliente: '', servicio: '', vehiculo: '', patente: '', fecha: '', hora: '', motivo: '' });
       setSuccess('¡Reserva creada exitosamente!');
@@ -164,7 +168,7 @@ function Reservas() {
                   <TextField label="Servicio" name="servicio" value={form.servicio} onChange={handleChange} required />
                   <TextField label="Vehículo" name="vehiculo" value={form.vehiculo} onChange={handleChange} required />
                   <TextField label="Patente" name="patente" value={form.patente} onChange={handleChange} required />
-                  <TextField label="Fecha" name="fecha" value={form.fecha} onChange={handleChange} required placeholder="YYYY-MM-DD" />
+                  <TextField label="Fecha" name="fecha" value={form.fecha} onChange={handleChange} required placeholder="DD-MM-YYYY" />
                   <TextField label="Hora" name="hora" value={form.hora} onChange={handleChange} required placeholder="09:00" />
                   <TextField label="Motivo" name="motivo" value={form.motivo} onChange={handleChange} required />
                   {error && <Typography color="error" variant="body2">{error}</Typography>}
