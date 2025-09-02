@@ -116,6 +116,8 @@ function FichaReparacionModal({ open, onClose, reparacion, onSaved }) {
         problema: ficha.fallaReportada || reparacion.problema || '',
         estado,
         costo: Number(costoTotalCalc) || 0,
+        diagnostico: ficha.diagnostico || '',
+        trabajos: ficha.trabajos || '',
         // desglose de costos (si existen columnas en backend se guardan)
         costo_mano_obra: isNaN(costoManoObraNum) ? 0 : Number(costoManoObraNum),
         costo_insumos: isNaN(costoInsumosCalc) ? 0 : Number(costoInsumosCalc),
