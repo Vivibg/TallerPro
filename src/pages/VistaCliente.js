@@ -93,6 +93,9 @@ function VistaCliente() {
                 <TableCell>{r.trabajos || '-'}</TableCell>
                 <TableCell>{estadoEnEsp(r.estado)}</TableCell>
                 <TableCell>{(() => {
+                  if (!isNaN(Number(r?.costo))) {
+                    return CLP.format(Number(r.costo));
+                  }
                   const mano = Number(r?.costo_mano_obra ?? r?.costoManoObra ?? 0);
                   const insumosDirect = Number(r?.costo_insumos ?? r?.costoInsumos ?? NaN);
                   const insumosCalc = Array.isArray(r?.repuestos)
