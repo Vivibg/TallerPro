@@ -7,6 +7,8 @@ const Inventario = () => {
 
   const [insumos, setInsumos] = useState([]);
   const [open, setOpen] = useState(false);
+  const [editOpen, setEditOpen] = useState(false);
+  const [selectedId, setSelectedId] = useState(null);
   const [form, setForm] = useState({
     producto: '',
     categoria: '',
@@ -26,6 +28,39 @@ const Inventario = () => {
       .catch(() => setInsumos([]));
   };
 
+  // Edit form state and handlers
+  const [editForm, setEditForm] = useState({
+    producto: '', categoria: '', unidad: '', stock: '', minimo: '', maximo: '', precio: '', costo_unitario: '', total: '', estado: 'ok'
+  });
+  const handleEditChange = e => {
+    const next = { ...editForm, [e.target.name]: e.target.value };
+    const stockNum = Number(next.stock || 0);
+    const costoNum = Number(next.costo_unitario || 0);
+    next.total = String(stockNum * costoNum);
+    const minimoNum = Number(next.minimo || 0);
+    next.estado = stockNum < minimoNum ? 'bajo' : 'ok';
+    setEditForm(next);
+  };
+  const handleEditSubmit = async e => {
+    e.preventDefault();
+    if (!selectedId) return;
+    const payload = {
+      ...editForm,
+      stock: Number(editForm.stock || 0),
+      minimo: Number(editForm.minimo || 0),
+      maximo: Number(editForm.maximo || 0),
+      precio: Number(editForm.precio || 0),
+      costo_unitario: Number(editForm.costo_unitario || 0),
+      total: Number(editForm.total || 0)
+    };
+    await apiFetch(`/api/inventario/${selectedId}`, {
+      method: 'PUT',
+      body: JSON.stringify(payload)
+    });
+    handleEditClose();
+    fetchInsumos();
+  };
+
   useEffect(() => {
     fetchInsumos();
   }, []);
@@ -42,6 +77,23 @@ const Inventario = () => {
 
   const handleOpen = () => setOpen(true);
   const handleClose = () => setOpen(false);
+  const handleEditOpen = (item) => {
+    setSelectedId(item.id);
+    setEditForm({
+      producto: item.producto || '',
+      categoria: item.categoria || '',
+      unidad: item.unidad || '',
+      stock: String(item.stock ?? ''),
+      minimo: String(item.minimo ?? ''),
+      maximo: String(item.maximo ?? ''),
+      precio: String(item.precio ?? ''),
+      costo_unitario: String(item.costo_unitario ?? ''),
+      total: String(item.total ?? ''),
+      estado: item.estado || 'ok'
+    });
+    setEditOpen(true);
+  };
+  const handleEditClose = () => { setEditOpen(false); setSelectedId(null); };
   const handleChange = e => {
     const next = { ...form, [e.target.name]: e.target.value };
     // recalcular total y estado
@@ -138,6 +190,39 @@ const Inventario = () => {
             </DialogActions>
           </form>
         </Dialog>
+        {/* Editar producto */}
+        <Dialog open={editOpen} onClose={handleEditClose}>
+          <DialogTitle>Editar Producto #{selectedId}</DialogTitle>
+          <form onSubmit={handleEditSubmit}>
+            <DialogContent sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
+              <TextField label="Producto" name="producto" value={editForm.producto} onChange={handleEditChange} required />
+              <TextField label="Categoría" name="categoria" value={editForm.categoria} onChange={handleEditChange} />
+              <TextField label="Unidad de medida" name="unidad" value={editForm.unidad} onChange={handleEditChange} select SelectProps={{ native: true }}>
+                <option value=""></option>
+                <option value="unidad">Unidad</option>
+                <option value="litro">Litro</option>
+                <option value="kilo">Kilo</option>
+                <option value="caja">Caja</option>
+                <option value="paquete">Paquete</option>
+                <option value="par">Par</option>
+                <option value="juego">Juego</option>
+              </TextField>
+              <Grid container spacing={2}>
+                <Grid item xs={6}><TextField label="Stock" name="stock" value={editForm.stock} onChange={handleEditChange} type="number" /></Grid>
+                <Grid item xs={6}><TextField label="Mínimo" name="minimo" value={editForm.minimo} onChange={handleEditChange} type="number" /></Grid>
+                <Grid item xs={6}><TextField label="Máximo" name="maximo" value={editForm.maximo} onChange={handleEditChange} type="number" /></Grid>
+                <Grid item xs={6}><TextField label="Costo unitario" name="costo_unitario" value={editForm.costo_unitario} onChange={handleEditChange} type="number" /></Grid>
+                <Grid item xs={6}><TextField label="Precio (venta)" name="precio" value={editForm.precio} onChange={handleEditChange} type="number" /></Grid>
+                <Grid item xs={6}><TextField label="Total (auto)" name="total" value={editForm.total} InputProps={{ readOnly: true }} /></Grid>
+              </Grid>
+              <TextField label="Estado" name="estado" value={editForm.estado} disabled helperText="Se calcula según stock vs mínimo" />
+            </DialogContent>
+            <DialogActions>
+              <Button onClick={handleEditClose}>Cancelar</Button>
+              <Button type="submit" variant="contained">Guardar cambios</Button>
+            </DialogActions>
+          </form>
+        </Dialog>
         <TableContainer>
           <Table>
             <TableHead>
@@ -172,7 +257,7 @@ const Inventario = () => {
                     {insumo.estado === 'ok' && <Chip label="Disponible" color="success" size="small" />}
                   </TableCell>
                   <TableCell>
-                    <Button variant="contained" size="small" sx={{ mr: 1 }}>Editar</Button>
+                    <Button variant="contained" size="small" sx={{ mr: 1 }} onClick={() => handleEditOpen(insumo)}>Editar</Button>
                     <Button variant="outlined" size="small" color="error" onClick={() => handleDelete(insumo.id)}>Eliminar</Button>
                   </TableCell>
                 </TableRow>
