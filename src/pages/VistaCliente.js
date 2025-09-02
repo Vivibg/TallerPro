@@ -61,7 +61,7 @@ function VistaCliente() {
       return;
     }
     try {
-      // Intento 1: endpoint dedicado de reparaciones por patente
+
       const res = await fetch(`${process.env.REACT_APP_API_URL}/api/reparaciones/por-patente/${encodeURIComponent(p)}`);
       let data = [];
       try { data = await res.json(); } catch { data = []; }
@@ -77,7 +77,7 @@ function VistaCliente() {
         setError('No se encontraron registros para esa patente');
         return;
       }
-      // Ordenar por fecha desc (si existe)
+
       const sorted = [...data].sort((a, b) => {
         const da = a?.fecha ? new Date(a.fecha).getTime() : 0;
         const db = b?.fecha ? new Date(b.fecha).getTime() : 0;
