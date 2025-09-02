@@ -186,7 +186,21 @@ function Reparaciones() {
                     <MenuItem value="done">Completado</MenuItem>
                   </Select>
                 </TableCell>
-                <TableCell>${Number(row?.costo ?? 0).toLocaleString()}</TableCell>
+                <TableCell>{(() => {
+                  const mano = Number(row?.costo_mano_obra ?? row?.costoManoObra ?? 0);
+                  const insumosDirect = Number(row?.costo_insumos ?? row?.costoInsumos ?? NaN);
+                  const insumosCalc = Array.isArray(row?.repuestos)
+                    ? row.repuestos.reduce((acc, r) => {
+                        const cant = Number(r?.cantidad || 0);
+                        const precio = Number(r?.precio || 0);
+                        const tot = r?.total !== undefined && r?.total !== '' ? Number(r.total) : (cant * precio);
+                        return acc + (isNaN(tot) ? 0 : tot);
+                      }, 0)
+                    : 0;
+                  const insumos = isNaN(insumosDirect) ? insumosCalc : insumosDirect;
+                  const total = Number(row?.costo_total ?? row?.costoTotal ?? (mano + insumos) ?? 0);
+                  return `$${Number(total || 0).toLocaleString()}`;
+                })()}</TableCell>
                 <TableCell>
                   <Button variant="contained" size="small" onClick={() => abrirFicha(row)}>VER</Button>
                   &nbsp;
@@ -204,6 +218,7 @@ function Reparaciones() {
           open={fichaOpen}
           onClose={() => setFichaOpen(false)}
           reparacion={fichaItem}
+          onSaved={() => { setFichaOpen(false); fetchReparaciones(); }}
         />
       )}
     </Box>
