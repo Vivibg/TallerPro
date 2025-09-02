@@ -159,7 +159,7 @@ router.put('/:id', async (req, res) => {
     }
 
    
-    // Si pasa a 'progress' desde otro estado, registrar en historial
+
     const norm = (s) => {
       const v = (s || '').toString().toLowerCase().trim().replace(/_/g, ' ');
       if (v === 'progress' || v === 'en progreso' || v === 'enprogreso') return 'progress';
