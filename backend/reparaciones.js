@@ -92,6 +92,9 @@ router.put('/:id', async (req, res) => {
     // desglose de costos si existen las columnas
     addIfCol('costo_mano_obra', req.body?.costo_mano_obra);
     addIfCol('costo_insumos', req.body?.costo_insumos);
+    // compatibilidad con nombres alternativos de columnas
+    if (!fields.some(f => f.startsWith('costo_mano_obra')) && repNames.has('costoManoObra')) { fields.push('costoManoObra = ?'); values.push(req.body?.costo_mano_obra); }
+    if (!fields.some(f => f.startsWith('costo_insumos')) && repNames.has('costoInsumos')) { fields.push('costoInsumos = ?'); values.push(req.body?.costo_insumos); }
     // repuestos como JSON si existe columna
     if (repNames.has('repuestos')) {
       try {
@@ -115,7 +118,10 @@ router.put('/:id', async (req, res) => {
     addIfCol('garantiaCondiciones', garantiaCondiciones);
     addIfCol('taller', taller);
     addIfCol('mecanico', mecanico);
-    // 'servicio' puede no existir en algunas bases, no intentar actualizarlo
+    // actualizar 'servicio' solo si la columna existe
+    addIfCol('servicio', servicio);
+    if (!fields.some(f => f.startsWith('servicio')) && repNames.has('tipo_servicio')) { fields.push('tipo_servicio = ?'); values.push(servicio); }
+    if (!fields.some(f => f.includes('servicio')) && repNames.has('tipoServicio')) { fields.push('tipoServicio = ?'); values.push(servicio); }
 
     if (fields.length > 0) {
       values.push(id);
@@ -378,4 +384,3 @@ router.delete('/:id', async (req, res) => {
 });
 
 export default router;
- 
