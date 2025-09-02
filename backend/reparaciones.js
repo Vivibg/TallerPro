@@ -58,29 +58,37 @@ router.put('/:id', async (req, res) => {
     const current = currentRows[0];
     if (!current) return res.status(404).json({ error: 'Reparación no encontrada' });
 
-    // Construir SET dinámico
+    // Descubrir columnas existentes para evitar errores por columnas faltantes
+    const [repCols] = await pool.query('SHOW COLUMNS FROM reparaciones');
+    const repNames = new Set(repCols.map(c => c.Field));
+
+    // Helper para añadir solo si existe la columna
     const fields = [];
     const values = [];
-    if (problema !== undefined) { fields.push('problema = ?'); values.push(problema); }
-    if (estado !== undefined) { fields.push('estado = ?'); values.push(estado); }
-    if (costo !== undefined) { fields.push('costo = ?'); values.push(costo); }
-    if (fecha !== undefined) { fields.push('fecha = ?'); values.push(fecha); }
+    const addIfCol = (col, val) => {
+      if (val !== undefined && repNames.has(col)) { fields.push(`${col} = ?`); values.push(val); }
+    };
+
+    addIfCol('problema', problema);
+    addIfCol('estado', estado);
+    addIfCol('costo', costo);
+    addIfCol('fecha', fecha);
     // extendidos
-    if (cliente !== undefined) { fields.push('cliente = ?'); values.push(cliente); }
-    if (telefono !== undefined) { fields.push('telefono = ?'); values.push(telefono); }
-    if (email !== undefined) { fields.push('email = ?'); values.push(email); }
-    if (vehiculo !== undefined) { fields.push('vehiculo = ?'); values.push(vehiculo); }
-    if (marca !== undefined) { fields.push('marca = ?'); values.push(marca); }
-    if (modelo !== undefined) { fields.push('modelo = ?'); values.push(modelo); }
-    if (anio !== undefined) { fields.push('anio = ?'); values.push(anio); }
-    if (patente !== undefined) { fields.push('patente = ?'); values.push(patente); }
-    if (kilometraje !== undefined) { fields.push('kilometraje = ?'); values.push(kilometraje); }
-    if (observaciones !== undefined) { fields.push('observaciones = ?'); values.push(observaciones); }
-    if (garantiaPeriodo !== undefined) { fields.push('garantiaPeriodo = ?'); values.push(garantiaPeriodo); }
-    if (garantiaCondiciones !== undefined) { fields.push('garantiaCondiciones = ?'); values.push(garantiaCondiciones); }
-    if (taller !== undefined) { fields.push('taller = ?'); values.push(taller); }
-    if (mecanico !== undefined) { fields.push('mecanico = ?'); values.push(mecanico); }
-    if (servicio !== undefined) { fields.push('servicio = ?'); values.push(servicio); }
+    addIfCol('cliente', cliente);
+    addIfCol('telefono', telefono);
+    addIfCol('email', email);
+    addIfCol('vehiculo', vehiculo);
+    addIfCol('marca', marca);
+    addIfCol('modelo', modelo);
+    addIfCol('anio', anio);
+    addIfCol('patente', patente);
+    addIfCol('kilometraje', kilometraje);
+    addIfCol('observaciones', observaciones);
+    addIfCol('garantiaPeriodo', garantiaPeriodo);
+    addIfCol('garantiaCondiciones', garantiaCondiciones);
+    addIfCol('taller', taller);
+    addIfCol('mecanico', mecanico);
+    // 'servicio' puede no existir en algunas bases, no intentar actualizarlo
 
     if (fields.length > 0) {
       values.push(id);
