@@ -72,10 +72,18 @@ function FichaReparacionModal({ open, onClose, reparacion, onSaved }) {
         // claves actuales
         problema: ficha.trabajos || ficha.diagnostico || ficha.fallaReportada || reparacion.problema || '',
         estado,
-        costo: costoTotalCalc,
+        costo: Number(costoTotalCalc) || 0,
         // desglose de costos (si existen columnas en backend se guardan)
-        costo_mano_obra: isNaN(costoManoObraNum) ? 0 : costoManoObraNum,
-        costo_insumos: isNaN(costoInsumosCalc) ? 0 : costoInsumosCalc,
+        costo_mano_obra: isNaN(costoManoObraNum) ? 0 : Number(costoManoObraNum),
+        costo_insumos: isNaN(costoInsumosCalc) ? 0 : Number(costoInsumosCalc),
+        // guardar detalle de repuestos (para costos unitarios)
+        repuestos: Array.isArray(ficha.repuestos) ? ficha.repuestos.map(r => ({
+          cantidad: Number(r?.cantidad || 0),
+          descripcion: r?.descripcion || '',
+          marca: r?.marca || '',
+          precio: Number(r?.precio || 0),
+          total: Number(r?.cantidad || 0) * Number(r?.precio || 0)
+        })) : [],
         // extendidas (existentes en tabla reparaciones)
         cliente: ficha.nombre || reparacion.cliente || '',
         telefono: ficha.telefono || reparacion.telefono || '',
