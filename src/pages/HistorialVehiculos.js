@@ -29,13 +29,13 @@ function HistorialVehiculos() {
           const e = String(h.estado).toLowerCase();
           return e === 'progress' || e === 'process' || e === 'en proceso' || e === 'en progreso';
         });
-        // 2) Ordenar por fecha desc
+       
         const sorted = [...inProgress].sort((a, b) => {
           const da = a?.fecha ? new Date(a.fecha).getTime() : 0;
           const db = b?.fecha ? new Date(b.fecha).getTime() : 0;
           return db - da;
         });
-        // 3) Deduplicar por reparacion_id (fallback id)
+
         const withRid = sorted.filter(h => h?.reparacion_id != null);
         let deduped = [];
         if (withRid.length > 0) {
@@ -58,7 +58,7 @@ function HistorialVehiculos() {
       .catch(() => { setHistoriales([]); setRepEstados(new Map()); });
   };
 
-  // Formateador CLP y cálculo de total con tolerancia a strings/camelCase
+
   const CLP = new Intl.NumberFormat('es-CL', { style: 'currency', currency: 'CLP', maximumFractionDigits: 0 });
   const totalHist = (h) => {
     if (!h) return null;
@@ -69,7 +69,7 @@ function HistorialVehiculos() {
     return isNaN(n) ? null : n;
   };
 
-  // Normalizar estado a etiqueta legible
+
   const labelEstado = (val) => {
     const v = (val || '').toString().toLowerCase().trim();
     if (!v) return '-';
@@ -80,7 +80,7 @@ function HistorialVehiculos() {
     return val;
   };
 
-  // Extraer año del campo vehiculo si viene como "Marca Modelo 2002"
+  
   const splitVehiculo = (veh) => {
     const s = (veh || '').toString().trim();
     const m = s.match(/^(.*?)(?:\s+(\d{4}))?$/);
@@ -94,7 +94,7 @@ function HistorialVehiculos() {
     cargarHistorial();
   }, []);
 
-  // Formato de fecha DD-MM-YYYY
+ 
   const formatoFecha = (val) => {
     if (!val) return '';
     try {
@@ -111,7 +111,7 @@ function HistorialVehiculos() {
   const handleOpen = () => setOpen(true);
   const handleClose = () => setOpen(false);
 
-  // Ficha unificada de reparación
+ 
   const [fichaOpen, setFichaOpen] = useState(false);
   const [fichaData, setFichaData] = useState(null);
   const openFicha = async (h) => {
