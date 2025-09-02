@@ -7,7 +7,7 @@ import AttachMoneyIcon from '@mui/icons-material/AttachMoney';
 import GroupIcon from '@mui/icons-material/Group';
 import { apiFetch } from '../utils/api';
 
-// Función para formatear fecha y hora
+
 function formatearFechaHora(fecha, hora) {
   let soloFecha = fecha;
   if (fecha && fecha.includes('T')) {
