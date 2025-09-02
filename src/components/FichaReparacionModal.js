@@ -31,7 +31,7 @@ function FichaReparacionModal({ open, onClose, reparacion, onSaved }) {
     anio: reparacion.anio || '',
     patente: reparacion.patente || '',
     kilometraje: reparacion.kilometraje || '',
-    fallaReportada: reparacion.fallaReportada || '',
+    fallaReportada: reparacion.fallaReportada || reparacion.problema || reparacion.motivo || '',
     diagnostico: reparacion.diagnostico || '',
     trabajos: reparacion.trabajos || '',
     repuestos: repuestosInit,
@@ -79,7 +79,7 @@ function FichaReparacionModal({ open, onClose, reparacion, onSaved }) {
       // Preparar payload extendido (para backend actualizado - Opción A)
       const payload = {
         // claves actuales
-        problema: ficha.trabajos || ficha.diagnostico || ficha.fallaReportada || reparacion.problema || '',
+        problema: ficha.fallaReportada || reparacion.problema || '',
         estado,
         costo: Number(costoTotalCalc) || 0,
         // desglose de costos (si existen columnas en backend se guardan)
@@ -111,8 +111,12 @@ function FichaReparacionModal({ open, onClose, reparacion, onSaved }) {
         mecanico: ficha.mecanicoAsignado || reparacion.mecanico || '',
       };
       if (tipoServicio) payload.servicio = tipoServicio;
-      if (reparacion?.fecha || ficha?.fecha) payload.fecha = reparacion.fecha || ficha.fecha;
-      // Si existiera 'estado' en la ficha en el futuro, también podríamos enviarlo
+      // Compatibilidad con columnas alternativas
+      if (payload.costo_mano_obra != null) payload.costoManoObra = payload.costo_mano_obra;
+      if (payload.costo_insumos != null) payload.costoInsumos = payload.costo_insumos;
+      // Sincronizar con reservas: motivo = falla reportada
+      if (ficha.fallaReportada) payload.motivo = ficha.fallaReportada;
+
       await apiFetch(`/api/reparaciones/${reparacion.id}`, {
         method: 'PUT',
         body: JSON.stringify(payload)
