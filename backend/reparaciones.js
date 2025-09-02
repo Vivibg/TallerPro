@@ -185,6 +185,9 @@ router.put('/:id', async (req, res) => {
         const safeMecanico = (req.body?.mecanico ?? current.mecanico ?? '').toString();
         const safeDiagnostico = (req.body?.diagnostico ?? current.diagnostico ?? '')?.toString?.() || '';
         const safeTrabajos = (req.body?.trabajos ?? current.trabajos ?? '')?.toString?.() || '';
+        const safeObs = (req.body?.observaciones ?? current.observaciones ?? '')?.toString?.() || '';
+        const safeGarantiaPeriodo = (req.body?.garantiaPeriodo ?? current.garantiaPeriodo ?? '')?.toString?.() || '';
+        const safeGarantiaCond = (req.body?.garantiaCondiciones ?? current.garantiaCondiciones ?? '')?.toString?.() || '';
 
         // Decidir valores por columna, cubriendo NOT NULL sin default
         const hFields = [];
@@ -204,6 +207,9 @@ router.put('/:id', async (req, res) => {
           if (name === 'costo_insumos') return { val: (req.body?.costo_insumos ?? 0) };
           if (name === 'diagnostico') return { val: safeDiagnostico };
           if (name === 'trabajos') return { val: safeTrabajos };
+          if (name === 'observaciones') return { val: safeObs };
+          if (name === 'garantiaPeriodo') return { val: safeGarantiaPeriodo };
+          if (name === 'garantiaCondiciones') return { val: safeGarantiaCond };
           if (name === 'placas') return { skip: true };
           if (name === 'fecha' || name === 'created_at' || name === 'updated_at') return { now: true };
           // Para otras columnas, si son NOT NULL sin default, proveer por tipo
@@ -247,6 +253,9 @@ router.put('/:id', async (req, res) => {
               addIf('cliente', safeCliente);
               addIf('diagnostico', safeDiagnostico);
               addIf('trabajos', safeTrabajos);
+              addIf('observaciones', safeObs);
+              addIf('garantiaPeriodo', safeGarantiaPeriodo);
+              addIf('garantiaCondiciones', safeGarantiaCond);
               if (names.includes('fecha')) common.push('fecha');
               addIf('servicio', safeServicio);
               addIf('taller', safeTaller);
