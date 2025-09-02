@@ -13,7 +13,7 @@ import {
 } from '@mui/material';
 import { apiFetch } from '../utils/api';
 
-// CRA env variables
+
 const API_URL = process.env.REACT_APP_API_URL || '';
 const GOOGLE_CLIENT_ID = process.env.REACT_APP_GOOGLE_CLIENT_ID || '';
 
@@ -28,7 +28,7 @@ function Login({ onLogin }) {
   const [loading, setLoading] = useState(false);
   const googleDivRef = useRef(null);
 
-  // Helper: parse JSON safe
+ 
   const parseJsonSafe = async (res) => {
     const txt = await res.text();
     try { return JSON.parse(txt); } catch { return {}; }
