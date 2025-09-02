@@ -3,11 +3,7 @@ import { Box, Typography, Paper, Grid, Table, TableBody, TableCell, TableContain
 import { apiFetch } from '../utils/api';
 
 const Inventario = () => {
-  const resumen = [
-    { label: 'Total de Productos', value: 156, color: '#2258e6' },
-    { label: 'Valor del Inventario', value: '$89,450', color: '#3bb54a' },
-    { label: 'Productos Críticos', value: 8, color: '#ff4d4f' },
-  ];
+  // KPIs calculados dinámicamente desde los datos
 
   const [insumos, setInsumos] = useState([]);
   const [open, setOpen] = useState(false);
@@ -33,6 +29,16 @@ const Inventario = () => {
   useEffect(() => {
     fetchInsumos();
   }, []);
+
+  // Cálculo de KPIs: total de productos, valor del inventario y críticos
+  const totalProductos = (Array.isArray(insumos) ? insumos : []).length;
+  const valorInventario = (Array.isArray(insumos) ? insumos : []).reduce((acc, i) => {
+    const stock = Number(i?.stock || 0);
+    const costo = Number(i?.costo_unitario || 0);
+    const total = Number(i?.total ?? (stock * costo));
+    return acc + (isNaN(total) ? 0 : total);
+  }, 0);
+  const productosCriticos = (Array.isArray(insumos) ? insumos : []).filter(i => Number(i?.stock || 0) < Number(i?.minimo || 0)).length;
 
   const handleOpen = () => setOpen(true);
   const handleClose = () => setOpen(false);
@@ -77,14 +83,24 @@ const Inventario = () => {
     <Box>
       <Typography variant="h4" fontWeight={700} mb={3}>Inventario de Insumos</Typography>
       <Grid container spacing={2} mb={3}>
-        {resumen.map((item) => (
-          <Grid item xs={12} sm={4} key={item.label}>
-            <Paper elevation={2} sx={{ p: 2, display: 'flex', alignItems: 'center', gap: 2 }}>
-              <Typography variant="subtitle2" color="text.secondary">{item.label}</Typography>
-              <Typography variant="h5" fontWeight={600} color={item.color}>{item.value}</Typography>
-            </Paper>
-          </Grid>
-        ))}
+        <Grid item xs={12} sm={4}>
+          <Paper elevation={2} sx={{ p: 2, display: 'flex', alignItems: 'center', gap: 2 }}>
+            <Typography variant="subtitle2" color="text.secondary">Total de Productos</Typography>
+            <Typography variant="h5" fontWeight={600} color="#2258e6">{totalProductos}</Typography>
+          </Paper>
+        </Grid>
+        <Grid item xs={12} sm={4}>
+          <Paper elevation={2} sx={{ p: 2, display: 'flex', alignItems: 'center', gap: 2 }}>
+            <Typography variant="subtitle2" color="text.secondary">Valor del Inventario</Typography>
+            <Typography variant="h5" fontWeight={600} color="#3bb54a">${valorInventario.toLocaleString()}</Typography>
+          </Paper>
+        </Grid>
+        <Grid item xs={12} sm={4}>
+          <Paper elevation={2} sx={{ p: 2, display: 'flex', alignItems: 'center', gap: 2 }}>
+            <Typography variant="subtitle2" color="text.secondary">Productos Críticos</Typography>
+            <Typography variant="h5" fontWeight={600} color="#ff4d4f">{productosCriticos}</Typography>
+          </Paper>
+        </Grid>
       </Grid>
       <Paper elevation={2} sx={{ p: 2, mb: 2 }}>
         <Button variant="contained" color="primary" sx={{ ml: 2 }} onClick={handleOpen}>
@@ -170,4 +186,3 @@ const Inventario = () => {
 }
 
 export default Inventario;
- 
