@@ -47,7 +47,11 @@ router.post('/', async (req, res) => {
 router.put('/:id', async (req, res) => {
   try {
     const { id } = req.params;
-    const { problema, estado, costo, fecha } = req.body || {};
+    const {
+      problema, estado, costo, fecha,
+      cliente, telefono, email, vehiculo, marca, modelo, anio, patente, kilometraje,
+      observaciones, garantiaPeriodo, garantiaCondiciones, taller, mecanico, servicio
+    } = req.body || {};
 
     // Obtener estado actual antes de actualizar
     const [currentRows] = await pool.query('SELECT * FROM reparaciones WHERE id = ?', [id]);
@@ -61,6 +65,22 @@ router.put('/:id', async (req, res) => {
     if (estado !== undefined) { fields.push('estado = ?'); values.push(estado); }
     if (costo !== undefined) { fields.push('costo = ?'); values.push(costo); }
     if (fecha !== undefined) { fields.push('fecha = ?'); values.push(fecha); }
+    // extendidos
+    if (cliente !== undefined) { fields.push('cliente = ?'); values.push(cliente); }
+    if (telefono !== undefined) { fields.push('telefono = ?'); values.push(telefono); }
+    if (email !== undefined) { fields.push('email = ?'); values.push(email); }
+    if (vehiculo !== undefined) { fields.push('vehiculo = ?'); values.push(vehiculo); }
+    if (marca !== undefined) { fields.push('marca = ?'); values.push(marca); }
+    if (modelo !== undefined) { fields.push('modelo = ?'); values.push(modelo); }
+    if (anio !== undefined) { fields.push('anio = ?'); values.push(anio); }
+    if (patente !== undefined) { fields.push('patente = ?'); values.push(patente); }
+    if (kilometraje !== undefined) { fields.push('kilometraje = ?'); values.push(kilometraje); }
+    if (observaciones !== undefined) { fields.push('observaciones = ?'); values.push(observaciones); }
+    if (garantiaPeriodo !== undefined) { fields.push('garantiaPeriodo = ?'); values.push(garantiaPeriodo); }
+    if (garantiaCondiciones !== undefined) { fields.push('garantiaCondiciones = ?'); values.push(garantiaCondiciones); }
+    if (taller !== undefined) { fields.push('taller = ?'); values.push(taller); }
+    if (mecanico !== undefined) { fields.push('mecanico = ?'); values.push(mecanico); }
+    if (servicio !== undefined) { fields.push('servicio = ?'); values.push(servicio); }
 
     if (fields.length > 0) {
       values.push(id);
@@ -89,6 +109,7 @@ router.put('/:id', async (req, res) => {
         const safeServicio = (problema !== undefined ? problema : current.problema) || 'Servicio';
         const safeTaller = process.env.TALLER_NOMBRE || 'Taller';
         const safePatente = current.patente || '';
+        const safeMecanico = (req.body?.mecanico ?? current.mecanico ?? '').toString();
 
         // Decidir valores por columna, cubriendo NOT NULL sin default
         const hFields = [];
@@ -101,6 +122,7 @@ router.put('/:id', async (req, res) => {
           if (name === 'cliente') return { val: safeCliente };
           if (name === 'servicio') return { val: safeServicio };
           if (name === 'taller') return { val: safeTaller };
+          if (name === 'mecanico') return { val: safeMecanico };
           if (name === 'patente') return { val: safePatente };
           if (name === 'placas') return { skip: true };
           if (name === 'fecha' || name === 'created_at' || name === 'updated_at') return { now: true };
@@ -146,6 +168,7 @@ router.put('/:id', async (req, res) => {
               if (names.includes('fecha')) common.push('fecha');
               addIf('servicio', safeServicio);
               addIf('taller', safeTaller);
+              addIf('mecanico', safeMecanico);
               if (common.length > 0) {
                 const placeholders2 = common.map(f => f === 'fecha' ? 'NOW()' : '?');
                 const sql2 = `INSERT INTO historial_vehiculos (${common.join(', ')}) VALUES (${placeholders2.join(', ')})`;
