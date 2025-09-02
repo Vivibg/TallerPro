@@ -11,6 +11,7 @@ import {
   TableCell,
   TableBody
 } from '@mui/material';
+import { useNavigate } from 'react-router-dom';
 
 const CLP = new Intl.NumberFormat('es-CL', { style: 'currency', currency: 'CLP', maximumFractionDigits: 0 });
 const formatoFecha = (val) => {
@@ -30,8 +31,9 @@ function VistaCliente() {
   const [patente, setPatente] = useState('');
   const [resultados, setResultados] = useState([]);
   const [error, setError] = useState('');
+  const navigate = useNavigate();
 
-  // Función para traducir estado a español
+ 
   const estadoEnEsp = estado => {
     switch ((estado || '').toLowerCase()) {
       case 'process':
@@ -61,12 +63,12 @@ function VistaCliente() {
       return;
     }
     try {
-
+      
       const res = await fetch(`${process.env.REACT_APP_API_URL}/api/reparaciones/por-patente/${encodeURIComponent(p)}`);
       let data = [];
       try { data = await res.json(); } catch { data = []; }
       if (!Array.isArray(data) || data.length === 0) {
-        // Intento 2: historial completo filtrado por patente
+
         const res2 = await fetch(`${process.env.REACT_APP_API_URL}/api/historial`);
         const allHist = await res2.json();
         if (Array.isArray(allHist)) {
@@ -77,7 +79,7 @@ function VistaCliente() {
         setError('No se encontraron registros para esa patente');
         return;
       }
-
+     
       const sorted = [...data].sort((a, b) => {
         const da = a?.fecha ? new Date(a.fecha).getTime() : 0;
         const db = b?.fecha ? new Date(b.fecha).getTime() : 0;
@@ -90,20 +92,25 @@ function VistaCliente() {
   };
 
   return (
-    <Box>
-      <Typography variant="h4" fontWeight={700} mb={3}>Consulta de Estado de Vehículo</Typography>
-      <Paper sx={{ p: 2, mb: 3 }}>
-        <TextField
-          label="Patente"
-          value={patente}
-          onChange={e => setPatente(e.target.value)}
-          sx={{ mr: 2 }}
-        />
-        <Button variant="contained" onClick={handleBuscar}>Buscar</Button>
-      </Paper>
-      {error && <Typography color="error" mb={2}>{error}</Typography>}
-      {resultados.length > 0 && (
-        <Table>
+    <Box sx={{ minHeight: '100vh', background: '#f5f6fa', display: 'flex', alignItems: 'flex-start', justifyContent: 'center', p: { xs: 2, sm: 4 } }}>
+      <Box sx={{ width: '100%', maxWidth: 1000 }}>
+        <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', mb: 2 }}>
+          <Typography variant="h4" fontWeight={700}>Consulta de Estado de Vehículo</Typography>
+          <Button variant="text" onClick={() => navigate('/login')}>Volver al Login</Button>
+        </Box>
+        <Paper sx={{ p: 2, mb: 3 }}>
+          <TextField
+            label="Patente"
+            value={patente}
+            onChange={e => setPatente(e.target.value)}
+            sx={{ mr: 2, minWidth: 180 }}
+          />
+          <Button variant="contained" onClick={handleBuscar}>Buscar</Button>
+        </Paper>
+        {error && <Typography color="error" mb={2}>{error}</Typography>}
+        {resultados.length > 0 && (
+          <Paper sx={{ p: 2 }}>
+            <Table>
           <TableHead>
             <TableRow>
               <TableCell>Fecha</TableCell>
@@ -140,8 +147,10 @@ function VistaCliente() {
               </TableRow>
             ))}
           </TableBody>
-        </Table>
-      )}
+            </Table>
+          </Paper>
+        )}
+      </Box>
     </Box>
   );
 }
