@@ -77,42 +77,13 @@ function VistaCliente() {
         setError('No se encontraron registros para esa patente');
         return;
       }
-      // 1) quedarnos solo con las que están "en proceso"
-      const onlyInProgress = data.filter(r => {
-        const e = String(r?.estado || '').toLowerCase();
-        return e === 'progress' || e === 'process' || e === 'en progreso' || e === 'en proceso';
-      });
-      // 2) ordenar por fecha desc (si existe)
-      const sorted = [...onlyInProgress].sort((a, b) => {
+      // Ordenar por fecha desc (si existe)
+      const sorted = [...data].sort((a, b) => {
         const da = a?.fecha ? new Date(a.fecha).getTime() : 0;
         const db = b?.fecha ? new Date(b.fecha).getTime() : 0;
         return db - da;
       });
-      // 3) deduplicar manteniendo SOLO el registro más reciente por reparación
-      // Usar ESTRICTAMENTE reparacion_id cuando exista
-      const withRid = sorted.filter(r => r?.reparacion_id != null);
-      let deduped = [];
-      if (withRid.length > 0) {
-        const latestByRid = new Map();
-        for (const r of withRid) {
-          const key = String(r.reparacion_id);
-          if (!latestByRid.has(key)) latestByRid.set(key, r); // más reciente primero por sort desc
-        }
-        deduped = Array.from(latestByRid.values());
-      } else {
-        // Fallback: agrupar por id si no hay reparacion_id
-        const latestById = new Map();
-        for (const r of sorted) {
-          const key = r?.id != null ? String(r.id) : `p:${r?.patente || ''}|progress`;
-          if (!latestById.has(key)) latestById.set(key, r);
-        }
-        deduped = Array.from(latestById.values());
-      }
-      if (deduped.length === 0) {
-        setError('No hay registros en proceso para esa patente');
-        return;
-      }
-      setResultados(deduped);
+      setResultados(sorted);
     } catch {
       setError('Error consultando el vehículo');
     }
