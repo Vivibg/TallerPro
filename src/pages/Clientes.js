@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Box, Typography, Paper, Grid, TextField, Button, Dialog, DialogTitle, DialogContent, DialogActions } from '@mui/material';
+import { Box, Typography, Paper, Grid, TextField, Button, Dialog, DialogTitle, DialogContent, DialogActions, Table, TableHead, TableRow, TableCell, TableBody, Chip, Stack } from '@mui/material';
 
 import { useEffect } from 'react';
 import { apiFetch } from '../utils/api';
@@ -8,6 +8,10 @@ import { apiFetch } from '../utils/api';
 function Clientes() {
   const [clientes, setClientes] = useState([]);
   const [busqueda, setBusqueda] = useState('');
+  const [histOpen, setHistOpen] = useState(false);
+  const [histCliente, setHistCliente] = useState(null);
+  const [histData, setHistData] = useState({ reps: [], hist: [] });
+  const [loadingHist, setLoadingHist] = useState(false);
 
   useEffect(() => {
     (async () => {
@@ -64,6 +68,48 @@ function Clientes() {
     }
   }
 
+  const abrirHistorial = async (cli) => {
+    try {
+      setHistCliente(cli);
+      setLoadingHist(true);
+      setHistOpen(true);
+      const [reps, hist] = await Promise.all([
+        apiFetch('/api/reparaciones').catch(() => []),
+        apiFetch('/api/historial').catch(() => [])
+      ]);
+      const nombre = (cli?.nombre || '').toString().toLowerCase();
+      const patente = (cli?.patente || '').toString().toLowerCase();
+      const vehiculo = (cli?.vehiculo || '').toString().toLowerCase();
+      const repsFilt = (Array.isArray(reps) ? reps : []).filter(r => {
+        const byNombre = (r?.cliente || '').toString().toLowerCase() === nombre && !!nombre;
+        const byPatente = (r?.patente || '').toString().toLowerCase() === patente && !!patente;
+        const byVeh = (r?.vehiculo || '').toString().toLowerCase() === vehiculo && !!vehiculo;
+        return byNombre || byPatente || byVeh;
+      });
+      const histFilt = (Array.isArray(hist) ? hist : []).filter(h => {
+        const byNombre = (h?.cliente || '').toString().toLowerCase() === nombre && !!nombre;
+        const byPatente = (h?.patente || '').toString().toLowerCase() === patente && !!patente;
+        const byVeh = (h?.vehiculo || '').toString().toLowerCase() === vehiculo && !!vehiculo;
+        return byNombre || byPatente || byVeh;
+      });
+      setHistData({ reps: repsFilt, hist: histFilt });
+    } catch (e) {
+      setHistData({ reps: [], hist: [] });
+    } finally {
+      setLoadingHist(false);
+    }
+  };
+
+  const CLP = new Intl.NumberFormat('es-CL', { style: 'currency', currency: 'CLP', maximumFractionDigits: 0 });
+  const labelEstado = (val) => {
+    const v = (val || '').toString().toLowerCase().trim();
+    if (v === 'pending' || v === 'pendiente' || v === 'open') return 'Pendiente';
+    if (v === 'progress' || v === 'en proceso' || v === 'en progreso' || v === 'process') return 'En progreso';
+    if (v === 'done' || v === 'completado' || v === 'completed') return 'Completado';
+    if (v === 'cancelled' || v === 'cancelado') return 'Cancelado';
+    return val || '-';
+  };
+
   return (
     <>
       <Box>
@@ -91,13 +137,91 @@ function Clientes() {
                 <Typography variant="body2">Email: {c.email}</Typography>
                 <Typography variant="body2">Vehículo: {c.vehiculo}</Typography>
                 <Typography variant="body2" mb={1}>Última visita: {c.ultimaVisita ? new Date(c.ultimaVisita).toLocaleDateString() : ''}</Typography>
-                <Button variant="contained" size="small" sx={{ mr: 1 }}>Ver Historial</Button>
+                <Button variant="contained" size="small" sx={{ mr: 1 }} onClick={() => abrirHistorial(c)}>Ver Historial</Button>
                 <Button variant="outlined" size="small" color="error" onClick={() => handleDelete(c.id)}>Eliminar</Button>
               </Paper>
             </Grid>
           ))}
         </Grid>
       </Box>
+      {/* Modal de Historial del Cliente */}
+      <Dialog open={histOpen} onClose={() => setHistOpen(false)} maxWidth="md" fullWidth>
+        <DialogTitle>Historial de {histCliente?.nombre || ''}</DialogTitle>
+        <DialogContent dividers>
+          {histCliente && (
+            <Box sx={{ mb: 2 }}>
+              <Typography variant="subtitle2">Datos del cliente</Typography>
+              <Grid container spacing={2} sx={{ mt: 0.5 }}>
+                <Grid item xs={6}><Typography variant="body2"><b>Teléfono:</b> {histCliente.telefono || '-'}</Typography></Grid>
+                <Grid item xs={6}><Typography variant="body2"><b>Email:</b> {histCliente.email || '-'}</Typography></Grid>
+                <Grid item xs={6}><Typography variant="body2"><b>Vehículo:</b> {histCliente.vehiculo || '-'}</Typography></Grid>
+                <Grid item xs={6}><Typography variant="body2"><b>Patente:</b> {histCliente.patente || '-'}</Typography></Grid>
+                <Grid item xs={6}><Typography variant="body2"><b>Última visita:</b> {histCliente.ultimaVisita ? new Date(histCliente.ultimaVisita).toLocaleDateString() : '-'}</Typography></Grid>
+              </Grid>
+            </Box>
+          )}
+
+          <Typography variant="subtitle2" sx={{ mb: 1 }}>Reparaciones</Typography>
+          {loadingHist ? (
+            <Typography variant="body2">Cargando...</Typography>
+          ) : (
+            <Table size="small">
+              <TableHead>
+                <TableRow>
+                  <TableCell>Fecha</TableCell>
+                  <TableCell>Servicio / Problema</TableCell>
+                  <TableCell>Estado</TableCell>
+                  <TableCell align="right">Costo</TableCell>
+                </TableRow>
+              </TableHead>
+              <TableBody>
+                {(histData.reps || []).map((r) => (
+                  <TableRow key={r.id}>
+                    <TableCell>{r.fecha ? new Date(r.fecha).toLocaleDateString() : '-'}</TableCell>
+                    <TableCell>
+                      <Stack spacing={0.3}>
+                        <span><b>Servicio:</b> {r.servicio || '-'}</span>
+                        <span><b>Problema:</b> {r.problema || '-'}</span>
+                      </Stack>
+                    </TableCell>
+                    <TableCell><Chip size="small" label={labelEstado(r.estado)} /></TableCell>
+                    <TableCell align="right">{CLP.format(Number(r.costo || 0))}</TableCell>
+                  </TableRow>
+                ))}
+                {(histData.reps || []).length === 0 && (
+                  <TableRow><TableCell colSpan={4} align="center">Sin reparaciones</TableCell></TableRow>
+                )}
+              </TableBody>
+            </Table>
+          )}
+
+          <Typography variant="subtitle2" sx={{ mt: 2, mb: 1 }}>Historial de servicios</Typography>
+          <Table size="small">
+            <TableHead>
+              <TableRow>
+                <TableCell>Fecha</TableCell>
+                <TableCell>Servicio</TableCell>
+                <TableCell>Taller</TableCell>
+              </TableRow>
+            </TableHead>
+            <TableBody>
+              {(histData.hist || []).map((h) => (
+                <TableRow key={h.id}>
+                  <TableCell>{h.fecha ? new Date(h.fecha).toLocaleDateString() : '-'}</TableCell>
+                  <TableCell>{h.servicio || '-'}</TableCell>
+                  <TableCell>{h.taller || '-'}</TableCell>
+                </TableRow>
+              ))}
+              {(histData.hist || []).length === 0 && (
+                <TableRow><TableCell colSpan={3} align="center">Sin historial</TableCell></TableRow>
+              )}
+            </TableBody>
+          </Table>
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={() => setHistOpen(false)}>Cerrar</Button>
+        </DialogActions>
+      </Dialog>
       <Dialog open={open} onClose={handleClose}>
         <DialogTitle>Nuevo Cliente</DialogTitle>
         <form onSubmit={handleSubmit}>
@@ -120,4 +244,3 @@ function Clientes() {
 }
 
 export default Clientes;
-
