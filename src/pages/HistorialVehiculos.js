@@ -14,9 +14,10 @@ function HistorialVehiculos() {
     apiFetch('/api/historial')
       .then(data => {
         if (!Array.isArray(data)) { setHistoriales([]); return; }
-        // 1) Solo "en proceso"
+        // 1) Solo "en proceso" SI existe campo estado; si no existe, incluir (historial puede no tenerlo)
         const inProgress = data.filter(h => {
-          const e = String(h?.estado || '').toLowerCase();
+          if (h?.estado == null) return true; // incluir si no hay estado en la fila del historial
+          const e = String(h.estado).toLowerCase();
           return e === 'progress' || e === 'process' || e === 'en proceso' || e === 'en progreso';
         });
         // 2) Ordenar por fecha desc
@@ -163,6 +164,14 @@ function HistorialVehiculos() {
               <Typography variant="body2">Servicio: {h.servicio}</Typography>
               <Typography variant="body2">Taller: {h.taller}</Typography>
               <Typography variant="body2" mb={1}>Fecha: {h.fecha}</Typography>
+              {/* Costos si están presentes */}
+              { (h.costo_total != null || h.costo_mano_obra != null || h.costo_insumos != null) && (
+                <Box sx={{ mb: 1 }}>
+                  <Typography variant="body2"><strong>Total:</strong> {typeof h.costo_total === 'number' ? new Intl.NumberFormat('es-CL', { style: 'currency', currency: 'CLP', maximumFractionDigits: 0 }).format(h.costo_total) : '-'}</Typography>
+                  <Typography variant="body2"><strong>Mano de obra:</strong> {typeof h.costo_mano_obra === 'number' ? new Intl.NumberFormat('es-CL', { style: 'currency', currency: 'CLP', maximumFractionDigits: 0 }).format(h.costo_mano_obra) : '-'}</Typography>
+                  <Typography variant="body2"><strong>Insumos:</strong> {typeof h.costo_insumos === 'number' ? new Intl.NumberFormat('es-CL', { style: 'currency', currency: 'CLP', maximumFractionDigits: 0 }).format(h.costo_insumos) : '-'}</Typography>
+                </Box>
+              )}
               {h.reparacion_id ? (
                 <Button variant="contained" size="small" sx={{ mr: 1 }} onClick={() => openFicha(h)}>
                   Editar reparación
