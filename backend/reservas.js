@@ -4,7 +4,7 @@ import { pool } from './db.js';
 
 const router = express.Router();
 
-// Obtener todas las reservas
+
 router.get('/', async (req, res) => {
   try {
     const [rows] = await pool.query('SELECT * FROM reservas ORDER BY fecha, hora');
@@ -42,12 +42,12 @@ router.post('/', async (req, res) => {
   }
 });
 
-// Confirmar asistencia: crea una reparación a partir de la reserva
+
 router.put('/:id/asistencia', async (req, res) => {
   try {
     const { id } = req.params;
     let { asiste } = req.body || {};
-    // Normalizar a booleano
+   
     asiste = asiste === true || asiste === 'true' || asiste === 1 || asiste === '1';
 
     const [rows] = await pool.query('SELECT * FROM reservas WHERE id = ?', [id]);
@@ -97,3 +97,4 @@ router.delete('/:id', async (req, res) => {
 });
 
 export default router;
+
