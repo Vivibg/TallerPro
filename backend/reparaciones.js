@@ -68,25 +68,46 @@ router.put('/:id', async (req, res) => {
     }
 
     // Si pasa a 'progress' desde otro estado, registrar en historial
-    const prevEstado = (current.estado || '').toLowerCase();
-    const newEstado = (estado !== undefined ? estado : current.estado || '').toLowerCase();
+    const norm = (s) => {
+      const v = (s || '').toString().toLowerCase().trim().replace(/_/g, ' ');
+      if (v === 'progress' || v === 'en progreso' || v === 'enprogreso') return 'progress';
+      if (v === 'pending' || v === 'pendiente') return 'pending';
+      if (v === 'completed' || v === 'completado') return 'completed';
+      return v;
+    };
+    const prevEstado = norm(current.estado);
+    const newEstado = norm(estado !== undefined ? estado : current.estado);
     if (prevEstado !== 'progress' && newEstado === 'progress') {
       try {
-        // Descubrir columnas de historial para insertar lo que exista
-        const [cols] = await pool.query('SHOW COLUMNS FROM historial');
+        // Descubrir columnas de historial_vehiculos para insertar lo que exista
+        const [cols] = await pool.query('SHOW COLUMNS FROM historial_vehiculos');
         const names = cols.map(c => c.Field);
         const hFields = [];
         const hValues = [];
         const pushIf = (name, val) => { if (names.includes(name)) { hFields.push(name); hValues.push(val ?? null); } };
+        pushIf('reparacion_id', id);
         pushIf('vehiculo', current.vehiculo);
-        pushIf('placas', current.patente || null);
+        // Preferir 'patente'; si no existe, usar 'placas'
+        if (names.includes('patente')) {
+          pushIf('patente', current.patente || null);
+        } else {
+          pushIf('placas', current.patente || null);
+        }
         pushIf('cliente', current.cliente);
-        pushIf('fecha', new Date());
+        // Fecha: si existe columna 'fecha', usar NOW() en SQL; si no, ignorar
+        const hasFecha = names.includes('fecha');
+        if (hasFecha) hFields.push('fecha');
         pushIf('servicio', problema !== undefined ? problema : current.problema);
         pushIf('taller', process.env.TALLER_NOMBRE || null);
         if (hFields.length > 0) {
-          const placeholders = hFields.map(() => '?').join(', ');
-          await pool.query(`INSERT INTO historial (${hFields.join(', ')}) VALUES (${placeholders})`, hValues);
+          // Construir SQL con NOW() si 'fecha' va incluida
+          let sql = `INSERT INTO historial_vehiculos (`;
+          const placeholders = [];
+          for (const f of hFields) {
+            if (f !== 'fecha') placeholders.push('?');
+          }
+          sql += hFields.join(', ') + ') VALUES (' + hFields.map(f => f === 'fecha' ? 'NOW()' : '?').join(', ') + ')';
+          await pool.query(sql, hValues);
         }
       } catch (e) {
         // No bloquear la respuesta si historial falla
@@ -114,4 +135,3 @@ router.delete('/:id', async (req, res) => {
 });
 
 export default router;
- 
