@@ -189,7 +189,7 @@ function Reparaciones() {
                     ? row.repuestos.reduce((acc, r) => {
                         const cant = Number(r?.cantidad || 0);
                         const precio = Number(r?.precio || 0);
-                        const tot = r?.total !== undefined && r?.total !== '' ? Number(r.total) : (cant * precio);
+                        const tot = cant * precio;
                         return acc + (isNaN(tot) ? 0 : tot);
                       }, 0)
                     : 0;
