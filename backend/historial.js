@@ -22,7 +22,7 @@ router.get('/', async (req, res) => {
 // Crear registro de historial
 router.post('/', async (req, res) => {
   try {
-    const { reparacion_id, vehiculo, patente, placas, cliente, fecha, servicio, taller } = req.body || {};
+    const { reparacion_id, vehiculo, patente, cliente, fecha, servicio, taller } = req.body || {};
     // Detectar columnas existentes según el modelo y el estado real de la BD
     let names = [];
     let table = 'historial_vehiculos';
@@ -40,12 +40,7 @@ router.post('/', async (req, res) => {
     const pushIf = (name, val) => { if (names.includes(name)) { fields.push(name); values.push(val ?? null); } };
     pushIf('reparacion_id', reparacion_id);
     pushIf('vehiculo', vehiculo);
-    // Preferir 'patente'; si no existe, usar 'placas'
-    if (names.includes('patente')) {
-      pushIf('patente', patente ?? placas ?? null);
-    } else {
-      pushIf('placas', placas ?? patente ?? null);
-    }
+    pushIf('patente', patente ?? null);
     pushIf('cliente', cliente);
     pushIf('fecha', fecha);
     pushIf('servicio', servicio);
@@ -56,7 +51,7 @@ router.post('/', async (req, res) => {
     const sql = `INSERT INTO ${table} (${fields.join(', ')}) VALUES (${placeholders})`;
     const [result] = await pool.query(sql, values);
     // Responder con eco de valores normalizados
-    res.status(201).json({ id: result.insertId, reparacion_id, vehiculo, patente: patente ?? placas ?? null, cliente, fecha, servicio, taller });
+    res.status(201).json({ id: result.insertId, reparacion_id, vehiculo, patente: patente ?? null, cliente, fecha, servicio, taller });
   } catch (e) {
     console.error('Error creando historial:', e.code || e.message);
     res.status(500).json({ error: 'Error creando historial' });
