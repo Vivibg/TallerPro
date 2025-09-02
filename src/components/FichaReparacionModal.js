@@ -26,7 +26,8 @@ function FichaReparacionModal({ open, onClose, reparacion, onSaved }) {
     repuestos: reparacion.repuestos || [],
     observaciones: reparacion.observaciones || '',
     garantiaPeriodo: reparacion.garantiaPeriodo || '',
-    garantiaCondiciones: reparacion.garantiaCondiciones || ''
+    garantiaCondiciones: reparacion.garantiaCondiciones || '',
+    costoManoObra: reparacion.costoManoObra || reparacion.costo_mano_obra || ''
   });
   const [estado, setEstado] = useState(reparacion.estado || 'pending');
   const [tipoServicio, setTipoServicio] = useState(reparacion.servicio || reparacion.tipo_servicio || '');
@@ -47,6 +48,16 @@ function FichaReparacionModal({ open, onClose, reparacion, onSaved }) {
     setFicha({ ...ficha, repuestos: nuevos });
   };
 
+  // Cálculos de costos
+  const costoInsumosCalc = (Array.isArray(ficha.repuestos) ? ficha.repuestos : []).reduce((acc, r) => {
+    const cantidad = Number(r?.cantidad || 0);
+    const precio = Number(r?.precio || 0);
+    const total = r?.total !== undefined && r?.total !== '' ? Number(r.total) : (cantidad * precio);
+    return acc + (isNaN(total) ? 0 : total);
+  }, 0);
+  const costoManoObraNum = Number(ficha.costoManoObra || 0);
+  const costoTotalCalc = costoInsumosCalc + (isNaN(costoManoObraNum) ? 0 : costoManoObraNum);
+
   const handleGuardar = async () => {
     try {
       if (!reparacion?.id) return onClose?.();
@@ -61,6 +72,13 @@ function FichaReparacionModal({ open, onClose, reparacion, onSaved }) {
       if (ficha.patente) payload.patente = ficha.patente;
       if (ficha.nombre) payload.cliente = ficha.nombre;
       if (composedVehiculo) payload.vehiculo = composedVehiculo;
+      // costos
+      payload.costoInsumos = costoInsumosCalc;
+      payload.costo_insumos = costoInsumosCalc;
+      payload.costoManoObra = isNaN(costoManoObraNum) ? 0 : costoManoObraNum;
+      payload.costo_mano_obra = payload.costoManoObra;
+      payload.costoTotal = costoTotalCalc;
+      payload.costo_total = costoTotalCalc;
       // Si existiera 'estado' en la ficha en el futuro, también podríamos enviarlo
       await apiFetch(`/api/reparaciones/${reparacion.id}`, {
         method: 'PUT',
@@ -173,6 +191,17 @@ function FichaReparacionModal({ open, onClose, reparacion, onSaved }) {
             </TableRow>
           </TableBody>
         </Table>
+        <Grid container spacing={2} sx={{ mt: 1 }}>
+          <Grid item xs={12} sm={4}>
+            <TextField label="Costo mano de obra" name="costoManoObra" type="number" value={ficha.costoManoObra} onChange={e => setFicha({ ...ficha, costoManoObra: e.target.value })} fullWidth />
+          </Grid>
+          <Grid item xs={12} sm={4}>
+            <TextField label="Costo insumos (auto)" value={costoInsumosCalc} InputProps={{ readOnly: true }} fullWidth />
+          </Grid>
+          <Grid item xs={12} sm={4}>
+            <TextField label="Costo total (auto)" value={costoTotalCalc} InputProps={{ readOnly: true }} fullWidth />
+          </Grid>
+        </Grid>
         <TextField
           label="7. Observaciones adicionales"
           name="observaciones"
