@@ -128,45 +128,7 @@ router.put('/:id', async (req, res) => {
       await pool.query(`UPDATE reparaciones SET ${fields.join(', ')} WHERE id = ?`, values);
     }
 
-    // Upsert de historial: si el estado objetivo es "progress"    // Insertar en historial si pasa a "progress"
-    if ((current.estado || '').toLowerCase() !== 'progress' && (String(estado || '')).toLowerCase() === 'progress') {
-        const [existsRows] = await pool.query('SELECT id FROM historial_vehiculos WHERE reparacion_id = ? LIMIT 1', [id]);
-        const exists = !!existsRows[0];
-        if (!exists) {
-          // Reutilizar misma lógica de inserción con valores seguros
-          const [cols] = await pool.query('SHOW COLUMNS FROM historial_vehiculos');
-          const names = cols.map(c => c.Field);
-          const safeVehiculo = (req.body?.vehiculo ?? current.vehiculo ?? 'Vehículo');
-          const safeCliente = (req.body?.cliente ?? current.cliente ?? 'Cliente');
-          const safeServicio = (req.body?.problema ?? current.problema ?? req.body?.servicio ?? 'Servicio');
-          const safeTaller = (req.body?.taller ?? current.taller ?? process.env.TALLER_NOMBRE ?? 'Taller');
-          const safePatente = (req.body?.patente ?? current.patente ?? '');
-          const safeMecanico = (req.body?.mecanico ?? current.mecanico ?? '').toString();
-
-          const common = [];
-          const vals = [];
-          const addIf = (n, v) => { if (names.includes(n)) { common.push(n); vals.push(v); } };
-          addIf('reparacion_id', Number(id) || 0);
-          addIf('vehiculo', safeVehiculo);
-          addIf('cliente', safeCliente);
-          addIf('servicio', safeServicio);
-          addIf('taller', safeTaller);
-          addIf('mecanico', safeMecanico);
-          addIf('patente', safePatente);
-          addIf('costo_total', (req.body?.costo ?? current.costo ?? 0));
-          addIf('costo_mano_obra', (req.body?.costo_mano_obra ?? 0));
-          addIf('costo_insumos', (req.body?.costo_insumos ?? 0));
-          if (names.includes('fecha')) common.push('fecha');
-          const placeholders2 = common.map(f => f === 'fecha' ? 'NOW()' : '?');
-          if (common.length > 0) {
-            const sql2 = `INSERT INTO historial_vehiculos (${common.join(', ')}) VALUES (${placeholders2.join(', ')})`;
-            await pool.query(sql2, vals);
-          }
-        }
-      }
-    } catch (e) {
-      console.error('No se pudo upsert historial:', e.code || e.message);
-    }
+    // Upsert de historial se maneja en el bloque normalizado inferior
 
     // Si pasa a 'progress' desde otro estado, registrar en historial
     const norm = (s) => {
@@ -384,4 +346,3 @@ router.delete('/:id', async (req, res) => {
 });
 
 export default router;
- 
