@@ -183,6 +183,10 @@ function Reparaciones() {
                   <Button variant="outlined" color="error" size="small" onClick={() => handleDelete(row.id)}>ELIMINAR</Button>
                 </TableCell>
                 <TableCell>{(() => {
+                  // Preferir 'costo' proveniente de la tabla reparaciones
+                  if (!isNaN(Number(row?.costo))) {
+                    return CLP.format(Number(row.costo));
+                  }
                   const mano = Number(row?.costo_mano_obra ?? row?.costoManoObra ?? 0);
                   const insumosDirect = Number(row?.costo_insumos ?? row?.costoInsumos ?? NaN);
                   const insumosCalc = Array.isArray(row?.repuestos)
@@ -228,4 +232,3 @@ function Reparaciones() {
 }
 
 export default Reparaciones;
- 
