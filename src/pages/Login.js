@@ -14,7 +14,7 @@ import {
 import { apiFetch } from '../utils/api';
 import { useNavigate } from 'react-router-dom';
 
-// CRA env variables
+
 const API_URL = process.env.REACT_APP_API_URL || '';
 const GOOGLE_CLIENT_ID = process.env.REACT_APP_GOOGLE_CLIENT_ID || '';
 
@@ -30,14 +30,14 @@ function Login({ onLogin }) {
   const googleDivRef = useRef(null);
   const navigate = useNavigate();
 
-  // Helper: parse JSON safe
+ 
   const parseJsonSafe = async (res) => {
     const txt = await res.text();
     try { return JSON.parse(txt); } catch { return {}; }
   };
 
   useEffect(() => {
-    // Google Identity Services button
+    
     if (!window.google || !GOOGLE_CLIENT_ID || !googleDivRef.current) return;
     window.google.accounts.id.initialize({
       client_id: GOOGLE_CLIENT_ID,
