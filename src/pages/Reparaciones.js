@@ -3,6 +3,8 @@ import { Box, Typography, Paper, Button, Table, TableBody, TableCell, TableConta
 import { apiFetch } from '../utils/api';
 import FichaReparacionModal from '../components/FichaReparacionModal';
 
+const CLP = new Intl.NumberFormat('es-CL', { style: 'currency', currency: 'CLP', maximumFractionDigits: 0 });
+
 const ESTADOS = [
   { value: 'all', label: 'Todos los estados' },
   { value: 'pending', label: 'Pendiente' },
@@ -199,7 +201,7 @@ function Reparaciones() {
                     : 0;
                   const insumos = isNaN(insumosDirect) ? insumosCalc : insumosDirect;
                   const total = Number(row?.costo_total ?? row?.costoTotal ?? (mano + insumos) ?? 0);
-                  return `$${Number(total || 0).toLocaleString()}`;
+                  return CLP.format(Number(total || 0));
                 })()}</TableCell>
                 <TableCell>
                   <Button variant="contained" size="small" onClick={() => abrirFicha(row)}>VER</Button>
