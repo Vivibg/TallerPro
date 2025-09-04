@@ -17,7 +17,7 @@ const app = express();
 const allowedOrigins = [
   process.env.FRONTEND_ORIGIN,
   'https://tallerpro-vivian-branas-projects.vercel.app',
-  'https://www.tallerpro.net,
+  'https://www.tallerpro.net',
   'http://localhost:5173',
   'http://localhost:3000'
 ].filter(Boolean);
