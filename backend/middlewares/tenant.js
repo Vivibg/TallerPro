@@ -23,4 +23,3 @@ async function assertWritable(pool, table, id, tenantId) {
 }
 
 export { withTenant, enforceTenantOnInsert, assertWritable };
- 
