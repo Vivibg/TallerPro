@@ -118,7 +118,7 @@ router.put('/:id', authRequired, withTenant, async (req, res) => {
         if (t.includes('datetime') || t.includes('timestamp')) return toMySQLDateTime(d);
         // por defecto DATE
         return toMySQLDate(d);
-      } catch { return undefined; }
+      } catch (err) { return undefined; }
     };
 
     // Helper para añadir solo si existe la columna
@@ -294,8 +294,19 @@ router.put('/:id', authRequired, withTenant, async (req, res) => {
         // No bloquear la respuesta si historial falla
         console.error('No se pudo registrar en historial:', e.code || e.message, e.sqlMessage || '', {fields: 'computed dynamically'});
       }
-        }
-        if (!existing && cNombre) {
+      // --- Sincronización con clientes ---
+      try {
+        // Descubrir columnas de clientes y preparar valores seguros
+        const [cliCols] = await pool.query('SHOW COLUMNS FROM clientes');
+        const cliNames = new Set(cliCols.map(c => c.Field));
+        const useCols = (...names) => names.filter(n => cliNames.has(n));
+        let existing = null;
+        const cNombre = req.body?.cliente ?? current.cliente ?? null;
+        const cTelefono = req.body?.telefono ?? current.telefono ?? null;
+        const cEmail = req.body?.email ?? current.email ?? null;
+        const cVehiculo = req.body?.vehiculo ?? current.vehiculo ?? null;
+        const cPatente = req.body?.patente ?? current.patente ?? null;
+        if (cNombre) {
           const [rows] = await pool.query('SELECT * FROM clientes WHERE nombre = ? LIMIT 1', [cNombre]);
           existing = rows[0] || null;
         }
@@ -325,7 +336,7 @@ router.put('/:id', authRequired, withTenant, async (req, res) => {
           await pool.query(sql + placeholdersSql, valsToSet);
         }
       }
-    } catch (e) {
+    catch (e) {
       console.error('No se pudo sincronizar clientes:', e.code || e.message);
     }
 
@@ -338,7 +349,7 @@ router.put('/:id', authRequired, withTenant, async (req, res) => {
       const rPatente = req.body?.patente ?? current.patente ?? null;
       const rServicio = req.body?.problema ?? current.problema ?? null;
       const rFechaNorm = normalizeFecha(req.body?.fecha ?? current.fecha ?? new Date());
-      const rHora = (() => { try { const d = new Date(req.body?.fecha ?? current.fecha ?? Date.now()); return `${String(d.getHours()).padStart(2,'0')}:${String(d.getMinutes()).padStart(2,'0')}:00`; } catch { return null; } })();
+      const rHora = (() => { try { const d = new Date(req.body?.fecha ?? current.fecha ?? Date.now()); return `${String(d.getHours()).padStart(2,'0')}:${String(d.getMinutes()).padStart(2,'0')}:00`; } catch (err) { return null; } })();
       if (resNames.size && (rCliente || rPatente || rVehiculo)) {
         let exists = false;
         if (rPatente && rFechaNorm && resNames.has('patente') && resNames.has('fecha')) {
