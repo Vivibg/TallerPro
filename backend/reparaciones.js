@@ -336,7 +336,7 @@ router.put('/:id', authRequired, withTenant, async (req, res) => {
           await pool.query(sql + placeholdersSql, valsToSet);
         }
       }
-    catch (e) {
+    } catch (e) {
       console.error('No se pudo sincronizar clientes:', e.code || e.message);
     }
 
@@ -380,7 +380,8 @@ router.put('/:id', authRequired, withTenant, async (req, res) => {
     }
 
     res.json({ ok: true });
-  } catch (e) {
+  }
+  catch (e) {
     console.error(e);
     res.status(500).json({ error: 'Error actualizando reparación' });
   }
