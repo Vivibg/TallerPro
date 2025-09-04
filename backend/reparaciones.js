@@ -335,10 +335,10 @@ router.put('/:id', authRequired, withTenant, async (req, res) => {
           sql += ') '; placeholdersSql += ')';
           await pool.query(sql + placeholdersSql, valsToSet);
         }
+      } catch (e) {
+        console.error('No se pudo sincronizar clientes:', e.code || e.message);
       }
-    } catch (e) {
-      console.error('No se pudo sincronizar clientes:', e.code || e.message);
-    }
+    } // Cerrar el bloque if (prevEstado !== 'progress' && newEstado === 'progress')
 
     // Sincronizar tabla 'reservas': insertar si no existe una para misma patente+fecha
     try {
