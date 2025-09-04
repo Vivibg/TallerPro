@@ -1,10 +1,12 @@
 import { Router } from 'express';
 import { pool } from './db.js';
+import { authRequired } from './middleware/auth.js';
+import { withTenant, assertWritable } from './middlewares/tenant.js';
 
 const router = Router();
 
 // Listar reparaciones
-router.get('/', async (req, res) => {
+router.get('/', authRequired, async (req, res) => {
   try {
     const [rows] = await pool.query('SELECT * FROM reparaciones');
     res.json(rows);
@@ -15,7 +17,7 @@ router.get('/', async (req, res) => {
 });
 
 // Obtener una reparación por ID
-router.get('/:id', async (req, res) => {
+router.get('/:id', authRequired, async (req, res) => {
   try {
     const { id } = req.params;
     const [rows] = await pool.query('SELECT * FROM reparaciones WHERE id = ?', [id]);
@@ -29,7 +31,7 @@ router.get('/:id', async (req, res) => {
 });
 
 // Crear reparación
-router.post('/', async (req, res) => {
+router.post('/', authRequired, withTenant, async (req, res) => {
   try {
     const { cliente, vehiculo, problema, estado, costo, fecha, patente } = req.body || {};
     // Reutilizar registro 'en progreso' por patente o por (cliente+vehiculo)
@@ -58,10 +60,22 @@ router.post('/', async (req, res) => {
     }
 
     const est = estado || 'pending';
-    const [result] = await pool.query(
-      'INSERT INTO reparaciones (cliente, vehiculo, problema, estado, costo, fecha, patente) VALUES (?, ?, ?, ?, ?, ?, ?)',
-      [cliente || null, vehiculo || null, problema || null, est, costo || null, fecha || null, patente || null]
-    );
+    // Inserción dinámica para incluir taller_id si existe
+    const [cols] = await pool.query('SHOW COLUMNS FROM reparaciones');
+    const names = new Set(cols.map(c => c.Field));
+    const fields = [];
+    const values = [];
+    const pushIf = (n, v) => { if (names.has(n)) { fields.push(n); values.push(v ?? null); } };
+    pushIf('cliente', cliente);
+    pushIf('vehiculo', vehiculo);
+    pushIf('problema', problema);
+    pushIf('estado', est);
+    pushIf('costo', costo);
+    pushIf('fecha', fecha);
+    pushIf('patente', patente);
+    pushIf('taller_id', req.tenantId);
+    const sql = `INSERT INTO reparaciones (${fields.join(', ')}) VALUES (${fields.map(() => '?').join(', ')})`;
+    const [result] = await pool.query(sql, values);
     res.status(201).json({ id: result.insertId, cliente, vehiculo, problema, estado: est, costo, fecha, patente });
   } catch (e) {
     console.error(e);
@@ -70,9 +84,10 @@ router.post('/', async (req, res) => {
 });
 
 // Actualizar reparación
-router.put('/:id', async (req, res) => {
+router.put('/:id', authRequired, withTenant, async (req, res) => {
   try {
     const { id } = req.params;
+    await assertWritable(pool, 'reparaciones', id, req.tenantId);
     const {
       problema, estado, costo, fecha,
       cliente, telefono, email, vehiculo, marca, modelo, anio, patente, kilometraje,
@@ -80,12 +95,12 @@ router.put('/:id', async (req, res) => {
       diagnostico, trabajos
     } = req.body || {};
 
-    
+    // Obtener estado actual antes de actualizar
     const [currentRows] = await pool.query('SELECT * FROM reparaciones WHERE id = ?', [id]);
     const current = currentRows[0];
     if (!current) return res.status(404).json({ error: 'Reparación no encontrada' });
 
-    
+    // Descubrir columnas existentes para evitar errores por columnas faltantes
     const [repCols] = await pool.query('SHOW COLUMNS FROM reparaciones');
     const repNames = new Set(repCols.map(c => c.Field));
     const fechaCol = repCols.find(c => c.Field === 'fecha');
@@ -96,7 +111,7 @@ router.put('/:id', async (req, res) => {
     const normalizeFecha = (val) => {
       if (val === undefined || val === null || !repNames.has('fecha')) return undefined;
       try {
-       
+        // Parse admite string ISO o número timestamp
         const d = new Date(val);
         if (isNaN(d.getTime())) return undefined;
         const t = (fechaCol?.Type || '').toLowerCase();
@@ -106,7 +121,7 @@ router.put('/:id', async (req, res) => {
       } catch { return undefined; }
     };
 
-   
+    // Helper para añadir solo si existe la columna
     const fields = [];
     const values = [];
     const addIfCol = (col, val) => {
@@ -154,12 +169,13 @@ router.put('/:id', async (req, res) => {
     if (!fields.some(f => f.includes('servicio')) && repNames.has('tipoServicio')) { fields.push('tipoServicio = ?'); values.push(servicio); }
 
     if (fields.length > 0) {
-      values.push(id);
-      await pool.query(`UPDATE reparaciones SET ${fields.join(', ')} WHERE id = ?`, values);
+      values.push(id, req.tenantId);
+      await pool.query(`UPDATE reparaciones SET ${fields.join(', ')} WHERE id = ? AND taller_id = ?`, values);
     }
 
-   
+    // Upsert de historial se maneja en el bloque normalizado inferior
 
+    // Si pasa a 'progress' desde otro estado, registrar en historial
     const norm = (s) => {
       const v = (s || '').toString().toLowerCase().trim().replace(/_/g, ' ');
       if (v === 'progress' || v === 'en progreso' || v === 'enprogreso') return 'progress';
@@ -188,7 +204,7 @@ router.put('/:id', async (req, res) => {
         const safeGarantiaPeriodo = (req.body?.garantiaPeriodo ?? current.garantiaPeriodo ?? '')?.toString?.() || '';
         const safeGarantiaCond = (req.body?.garantiaCondiciones ?? current.garantiaCondiciones ?? '')?.toString?.() || '';
 
-      
+        // Decidir valores por columna, cubriendo NOT NULL sin default
         const hFields = [];
         const hValues = [];
         const valueFor = (col) => {
@@ -218,7 +234,7 @@ router.put('/:id', async (req, res) => {
             if (type.includes('date') || type.includes('time')) return { now: true };
             return { val: '' }; // varchar/text
           }
-       
+          // Si permite NULL, podemos omitir
           return { skip: true };
         };
 
@@ -235,13 +251,13 @@ router.put('/:id', async (req, res) => {
 
         if (hFields.length > 0) {
           try {
-          
+            // Construir SQL, reemplazando marcadores __NOW__ por NOW()
             const placeholders = hValues.map(v => v === '__NOW__' ? 'NOW()' : '?');
             const sql = `INSERT INTO historial_vehiculos (${hFields.join(', ')}) VALUES (${placeholders.join(', ')})`;
             const realValues = hValues.filter(v => v !== '__NOW__');
             await pool.query(sql, realValues);
           } catch (err) {
-           
+            // Fallback duro si alguna columna NOT NULL quedó sin cubrir
             if (err && err.code === 'ER_BAD_NULL_ERROR') {
               const common = [];
               const vals = [];
@@ -276,28 +292,9 @@ router.put('/:id', async (req, res) => {
           }
         }
       } catch (e) {
-       
+        // No bloquear la respuesta si historial falla
         console.error('No se pudo registrar en historial:', e.code || e.message, e.sqlMessage || '', {fields: 'computed dynamically'});
       }
-    }
-
-    
-    try {
-      const [cliCols] = await pool.query('SHOW COLUMNS FROM clientes');
-      const cliNames = new Set(cliCols.map(c => c.Field));
-      const useCols = (...names) => names.filter(n => cliNames.has(n));
-
-      const cNombre = req.body?.cliente ?? current.cliente ?? null;
-      const cTelefono = req.body?.telefono ?? current.telefono ?? null;
-      const cEmail = req.body?.email ?? current.email ?? null;
-      const cVehiculo = req.body?.vehiculo ?? current.vehiculo ?? null;
-      const cPatente = req.body?.patente ?? current.patente ?? null;
-
-      if (cNombre || cPatente) {
-        let existing = null;
-        if (cPatente && cliNames.has('patente')) {
-          const [rows] = await pool.query('SELECT * FROM clientes WHERE patente = ? LIMIT 1', [cPatente]);
-          existing = rows[0] || null;
         }
         if (!existing && cNombre) {
           const [rows] = await pool.query('SELECT * FROM clientes WHERE nombre = ? LIMIT 1', [cNombre]);
@@ -324,6 +321,7 @@ router.put('/:id', async (req, res) => {
           let sql = `INSERT INTO clientes (${cols.join(', ')}`;
           let placeholdersSql = `VALUES (${placeholders.join(', ')}`;
           if (cliNames.has('ultimaVisita')) { sql += ', ultimaVisita'; placeholdersSql += ', NOW()'; }
+          if (cliNames.has('taller_id')) { sql += ', taller_id'; placeholdersSql += ', ?'; valsToSet.push(req.tenantId); }
           sql += ') '; placeholdersSql += ')';
           await pool.query(sql + placeholdersSql, valsToSet);
         }
@@ -332,7 +330,7 @@ router.put('/:id', async (req, res) => {
       console.error('No se pudo sincronizar clientes:', e.code || e.message);
     }
 
-   
+    // Sincronizar tabla 'reservas': insertar si no existe una para misma patente+fecha
     try {
       const [resCols] = await pool.query('SHOW COLUMNS FROM reservas');
       const resNames = new Set(resCols.map(c => c.Field));
@@ -359,6 +357,7 @@ router.put('/:id', async (req, res) => {
           pushIf('servicio', rServicio);
           pushIf('fecha', rFechaNorm);
           pushIf('hora', rHora);
+          if (resNames.has('taller_id')) { cols.push('taller_id'); vals.push(req.tenantId); }
           if (cols.length > 0) {
             const placeholders = cols.map(() => '?').join(', ');
             const sql = `INSERT INTO reservas (${cols.join(', ')}) VALUES (${placeholders})`;
@@ -378,10 +377,11 @@ router.put('/:id', async (req, res) => {
 });
 
 // Eliminar reparación
-router.delete('/:id', async (req, res) => {
+router.delete('/:id', authRequired, withTenant, async (req, res) => {
   try {
     const { id } = req.params;
-    await pool.query('DELETE FROM reparaciones WHERE id = ?', [id]);
+    await assertWritable(pool, 'reparaciones', id, req.tenantId);
+    await pool.query('DELETE FROM reparaciones WHERE id = ? AND taller_id = ?', [id, req.tenantId]);
     res.json({ ok: true });
   } catch (e) {
     console.error(e);
@@ -390,4 +390,3 @@ router.delete('/:id', async (req, res) => {
 });
 
 export default router;
- 
