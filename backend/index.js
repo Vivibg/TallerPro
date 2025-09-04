@@ -15,16 +15,15 @@ import { authRequired, roleRequired } from './middleware/auth.js';
 const app = express();
 
 const allowedOrigins = [
-  process.env.FRONTEND_ORIGIN,
+  process.env.FRONTEND_ORIGIN, // p.ej. https://<tu-app>.vercel.app
   'https://tallerpro-vivian-branas-projects.vercel.app',
-  'https://www.tallerpro.net',
   'http://localhost:5173',
   'http://localhost:3000'
 ].filter(Boolean);
 
 const corsOptions = {
   origin(origin, callback) {
-    
+    // Permitir requests sin origin (como Postman) o si está en la lista
     if (!origin || allowedOrigins.includes(origin)) {
       return callback(null, true);
     }
@@ -40,10 +39,10 @@ app.options('*', cors(corsOptions));
 
 app.use(express.json());
 
-
+// Salud pública para verificación de despliegue
 app.get('/health', (req, res) => res.json({ ok: true }));
 
-
+// Consulta pública por patente para Vista Cliente
 app.get('/api/reparaciones/por-patente/:patente', async (req, res) => {
   try {
     const { patente } = req.params;
@@ -66,7 +65,7 @@ app.get('/api/reparaciones/por-patente/:patente', async (req, res) => {
   }
 });
 
-
+// Salud de base de datos (diagnóstico)
 app.get('/health/db', async (req, res) => {
   try {
     const [rows] = await pool.query('SELECT 1 AS ok');
@@ -77,7 +76,7 @@ app.get('/health/db', async (req, res) => {
   }
 });
 
-
+// Rutas de autenticación (Google, register, login, me)
 app.use('/api/auth', authRouter);
 
 // Inspector temporal de rutas (diagnóstico)
