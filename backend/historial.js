@@ -8,15 +8,20 @@ const router = Router();
 // Listar historial
 router.get('/', authRequired, async (req, res) => {
   try {
-    const [rows] = await pool.query('SELECT * FROM historial_vehiculos');
-    res.json(rows);
+    try {
+      const [rows] = await pool.query('SELECT * FROM historial_vehiculos ORDER BY fecha DESC, id DESC');
+      return res.json(rows);
+    } catch (e) {
+      // Fallback a tabla legacy 'historial'
+      const [rows] = await pool.query('SELECT * FROM historial ORDER BY fecha DESC, id DESC');
+      return res.json(rows);
+    }
   } catch (e) {
-    console.error(e); // <--- Esto imprime el error en los logs de Render
     res.status(500).json({ error: 'Error consultando historial' });
   }
 });
 
-// Listar historial con resumen de ficha de reparación (JOIN robusto solo por fecha)
+// Historial con ficha (mantener bajo nombre original)
 router.get('/con-ficha', authRequired, async (req, res) => {
   try {
     const [rows] = await pool.query(`
@@ -29,36 +34,49 @@ router.get('/con-ficha', authRequired, async (req, res) => {
         AND DATE(h.fecha) = DATE(r.fecha)
       ORDER BY h.fecha DESC
     `);
-    // Log para depuración
-    console.log('Historial con ficha:', rows.length, 'resultados');
-    res.json(rows);
+    return res.json(rows);
   } catch (e) {
     console.error(e);
-    res.status(500).json({ error: 'Error consultando historial con ficha' });
+    return res.status(500).json({ error: 'Error consultando historial con ficha' });
   }
 });
 
 // Crear registro de historial
 router.post('/', authRequired, withTenant, async (req, res) => {
   try {
-    const { vehiculo, patente, cliente, fecha, servicio, taller } = req.body || {};
-    // Insert dinámico para incluir taller_id si existe
-    const [cols] = await pool.query('SHOW COLUMNS FROM historial_vehiculos');
-    const names = cols.map(c => c.Field);
+    const { reparacion_id, vehiculo, patente, cliente, fecha, servicio, taller } = req.body || {};
+    // Detectar columnas existentes según el modelo y el estado real de la BD
+    let names = [];
+    let table = 'historial_vehiculos';
+    try {
+      const [cols] = await pool.query('SHOW COLUMNS FROM historial_vehiculos');
+      names = cols.map(c => c.Field);
+      table = 'historial_vehiculos';
+    } catch (e) {
+      const [cols] = await pool.query('SHOW COLUMNS FROM historial');
+      names = cols.map(c => c.Field);
+      table = 'historial';
+    }
     const fields = [];
     const values = [];
-    const pushIf = (n, v) => { if (names.includes(n)) { fields.push(n); values.push(v ?? null); } };
+    const pushIf = (name, val) => { if (names.includes(name)) { fields.push(name); values.push(val ?? null); } };
+    pushIf('reparacion_id', reparacion_id);
     pushIf('vehiculo', vehiculo);
-    pushIf('patente', patente);
+    pushIf('patente', patente ?? null);
     pushIf('cliente', cliente);
     pushIf('fecha', fecha);
     pushIf('servicio', servicio);
     pushIf('taller', taller);
     if (names.includes('taller_id')) { fields.push('taller_id'); values.push(req.tenantId); }
-    const sql = `INSERT INTO historial_vehiculos (${fields.join(', ')}) VALUES (${fields.map(() => '?').join(', ')})`;
+
+    if (fields.length === 0) return res.status(400).json({ error: 'Sin columnas válidas para insertar' });
+    const placeholders = fields.map(() => '?').join(', ');
+    const sql = `INSERT INTO ${table} (${fields.join(', ')}) VALUES (${placeholders})`;
     const [result] = await pool.query(sql, values);
-    res.status(201).json({ id: result.insertId, vehiculo, patente, cliente, fecha, servicio, taller });
+    // Responder con eco de valores normalizados
+    res.status(201).json({ id: result.insertId, reparacion_id, vehiculo, patente: patente ?? null, cliente, fecha, servicio, taller });
   } catch (e) {
+    console.error('Error creando historial:', e.code || e.message);
     res.status(500).json({ error: 'Error creando historial' });
   }
 });
@@ -67,8 +85,14 @@ router.post('/', authRequired, withTenant, async (req, res) => {
 router.delete('/:id', authRequired, withTenant, async (req, res) => {
   try {
     const { id } = req.params;
-    await assertWritable(pool, 'historial_vehiculos', id, req.tenantId);
-    await pool.query('DELETE FROM historial_vehiculos WHERE id = ? AND taller_id = ?', [id, req.tenantId]);
+    // Intentar borrar sobre tabla nueva; si no existe, sobre legacy
+    try {
+      await assertWritable(pool, 'historial_vehiculos', id, req.tenantId);
+      await pool.query('DELETE FROM historial_vehiculos WHERE id = ? AND taller_id = ?', [id, req.tenantId]);
+    } catch (e) {
+      await assertWritable(pool, 'historial', id, req.tenantId);
+      await pool.query('DELETE FROM historial WHERE id = ? AND taller_id = ?', [id, req.tenantId]);
+    }
     res.json({ ok: true });
   } catch (e) {
     res.status(500).json({ error: 'Error eliminando historial' });
