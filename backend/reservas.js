@@ -1,13 +1,15 @@
 // backend/reservas.js
 import express from 'express';
 import { pool } from './db.js';
+import { authRequired } from './middleware/auth.js';
+import { withTenant, enforceTenantOnInsert, assertWritable } from './middlewares/tenant.js';
 
 const router = express.Router();
 
-
-router.get('/', async (req, res) => {
+// Obtener todas las reservas
+router.get('/', authRequired, withTenant, async (req, res) => {
   try {
-    const [rows] = await pool.query('SELECT * FROM reservas ORDER BY fecha, hora');
+    const [rows] = await pool.query('SELECT * FROM reservas WHERE taller_id = ? ORDER BY fecha, hora', [req.tenantId]);
     res.json(rows);
   } catch (e) {
     res.status(500).json({ error: 'Error consultando reservas' });
@@ -15,7 +17,7 @@ router.get('/', async (req, res) => {
 });
 
 // Crear nueva reserva
-router.post('/', async (req, res) => {
+router.post('/', authRequired, withTenant, async (req, res) => {
   try {
     const { cliente, servicio, vehiculo, patente, fecha, hora, motivo } = req.body || {};
     // Descubrir columnas existentes para evitar errores por columnas faltantes
@@ -31,6 +33,7 @@ router.post('/', async (req, res) => {
     pushIf('fecha', fecha);
     pushIf('hora', hora);
     pushIf('motivo', motivo);
+    pushIf('taller_id', req.tenantId);
     if (fields.length === 0) return res.status(400).json({ error: 'Sin columnas válidas para insertar' });
     const placeholders = fields.map(() => '?').join(', ');
     const sql = `INSERT INTO reservas (${fields.join(', ')}) VALUES (${placeholders})`;
@@ -42,15 +45,15 @@ router.post('/', async (req, res) => {
   }
 });
 
-
-router.put('/:id/asistencia', async (req, res) => {
+// Confirmar asistencia: crea una reparación a partir de la reserva
+router.put('/:id/asistencia', authRequired, withTenant, async (req, res) => {
   try {
     const { id } = req.params;
     let { asiste } = req.body || {};
-   
+    // Normalizar a booleano
     asiste = asiste === true || asiste === 'true' || asiste === 1 || asiste === '1';
 
-    const [rows] = await pool.query('SELECT * FROM reservas WHERE id = ?', [id]);
+    const [rows] = await pool.query('SELECT * FROM reservas WHERE id = ? AND taller_id = ?', [id, req.tenantId]);
     const r = rows[0];
     if (!r) return res.status(404).json({ error: 'Reserva no encontrada' });
 
@@ -68,11 +71,25 @@ router.put('/:id/asistencia', async (req, res) => {
       let insertVals = [r.cliente, r.vehiculo, r.servicio || r.motivo || 'Servicio', 'pending', 0];
       const [repCols] = await pool.query('SHOW COLUMNS FROM reparaciones');
       const repNames = repCols.map(c => c.Field);
-      if (repNames.includes('patente')) {
+      const includePatente = repNames.includes('patente');
+      const includeTaller = repNames.includes('taller_id');
+      if (includePatente && includeTaller) {
+        insertSql = 'INSERT INTO reparaciones (cliente, vehiculo, problema, estado, costo, fecha, patente, taller_id';
+        insertVals = [r.cliente, r.vehiculo, r.servicio || r.motivo || 'Servicio', 'pending', 0, r.patente || null, req.tenantId];
+      } else if (includePatente) {
         insertSql = 'INSERT INTO reparaciones (cliente, vehiculo, problema, estado, costo, fecha, patente';
         insertVals = [r.cliente, r.vehiculo, r.servicio || r.motivo || 'Servicio', 'pending', 0, r.patente || null];
+      } else if (includeTaller) {
+        insertSql = 'INSERT INTO reparaciones (cliente, vehiculo, problema, estado, costo, fecha, taller_id';
+        insertVals = [r.cliente, r.vehiculo, r.servicio || r.motivo || 'Servicio', 'pending', 0, req.tenantId];
       }
-      insertSql += repNames.includes('patente') ? ') VALUES (?, ?, ?, ?, ?, NOW(), ?)' : ') VALUES (?, ?, ?, ?, ?, NOW())';
+      insertSql += (includePatente && includeTaller)
+        ? ') VALUES (?, ?, ?, ?, ?, NOW(), ?, ?)'
+        : includePatente
+          ? ') VALUES (?, ?, ?, ?, ?, NOW(), ?)'
+          : includeTaller
+            ? ') VALUES (?, ?, ?, ?, ?, NOW(), ?)'
+            : ') VALUES (?, ?, ?, ?, ?, NOW())';
       const [result] = await pool.query(insertSql, insertVals);
       reparacionId = result.insertId;
     }
@@ -85,10 +102,11 @@ router.put('/:id/asistencia', async (req, res) => {
 });
 
 // Eliminar reserva
-router.delete('/:id', async (req, res) => {
+router.delete('/:id', authRequired, withTenant, async (req, res) => {
   try {
     const { id } = req.params;
-    await pool.query('DELETE FROM reservas WHERE id = ?', [id]);
+    await assertWritable(pool, 'reservas', id, req.tenantId);
+    await pool.query('DELETE FROM reservas WHERE id = ? AND taller_id = ?', [id, req.tenantId]);
 
     res.json({ ok: true });
   } catch (e) {
@@ -97,4 +115,3 @@ router.delete('/:id', async (req, res) => {
 });
 
 export default router;
-
