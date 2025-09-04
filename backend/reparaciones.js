@@ -225,7 +225,6 @@ router.put('/:id', authRequired, withTenant, async (req, res) => {
           if (name === 'observaciones') return { val: safeObs };
           if (name === 'garantiaPeriodo') return { val: safeGarantiaPeriodo };
           if (name === 'garantiaCondiciones') return { val: safeGarantiaCond };
-          if (name === 'placas') return { skip: true };
           if (name === 'fecha' || name === 'created_at' || name === 'updated_at') return { now: true };
           // Para otras columnas, si son NOT NULL sin default, proveer por tipo
           if (col.Null === 'NO' && col.Default === null) {
@@ -390,4 +389,3 @@ router.delete('/:id', authRequired, withTenant, async (req, res) => {
 });
 
 export default router;
- 
