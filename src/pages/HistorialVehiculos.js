@@ -274,7 +274,7 @@ function HistorialVehiculos() {
                   <Stack direction={{ xs: 'column', sm: 'row' }} spacing={1} useFlexGap flexWrap="wrap">
                     {h.reparacion_id ? (
                       <Button variant="contained" size="small" onClick={() => openFicha(h)} sx={{ minWidth: 140 }}>
-                        Editar reparación
+                        Ver Ficha
                       </Button>
                     ) : (
                       <Button variant="contained" size="small" disabled sx={{ minWidth: 140 }}>
