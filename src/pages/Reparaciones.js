@@ -27,7 +27,7 @@ function Reparaciones() {
   const myTallerId = myUser?.taller_id ?? null;
   const isReadOnly = (row) => {
     // Solo deshabilitar cuando el registro tiene taller distinto al del usuario
-    if (!myTallerId) return false; // si no sabemos el taller del usuario, no bloquear UI
+    if (!myTallerId) return false; //  no bloquear UI
     return row?.taller_id && row.taller_id !== myTallerId;
   };
 
