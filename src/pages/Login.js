@@ -29,6 +29,7 @@ function Login({ onLogin }) {
   const [loading, setLoading] = useState(false);
   const googleDivRef = useRef(null);
   const navigate = useNavigate();
+  const [tallerNombre, setTallerNombre] = useState('');
 
  
   const parseJsonSafe = async (res) => {
@@ -102,7 +103,7 @@ function Login({ onLogin }) {
 
       const data = await apiFetch('/api/auth/register', {
         method: 'POST',
-        body: JSON.stringify({ email, password, name })
+        body: JSON.stringify({ email, password, name, tallerNombre })
       });
 
       localStorage.setItem('token', data.token);
@@ -176,6 +177,14 @@ function Login({ onLogin }) {
                 onChange={e => setName(e.target.value)}
               />
               <TextField
+                label="Nombre del Taller (opcional)"
+                type="text"
+                fullWidth
+                placeholder="Ej. Taller López"
+                value={tallerNombre}
+                onChange={e => setTallerNombre(e.target.value)}
+              />
+              <TextField
                 label="Email"
                 type="email"
                 fullWidth
@@ -203,4 +212,3 @@ function Login({ onLogin }) {
 }
 
 export default Login;
- 
