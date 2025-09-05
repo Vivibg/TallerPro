@@ -22,7 +22,7 @@ function Reparaciones() {
   const [fichaOpen, setFichaOpen] = useState(false);
   const [fichaItem, setFichaItem] = useState(null);
 
-  
+  // Tenant actual desde localStorage
   const myUser = (() => { try { return JSON.parse(localStorage.getItem('user')); } catch { return null; } })();
   const myTallerId = myUser?.taller_id ?? null;
   const isReadOnly = (row) => {
@@ -172,15 +172,15 @@ function Reparaciones() {
         </Dialog>
       </Paper>
       <TableContainer component={Paper} elevation={1}>
-        <Table>
+        <Table size="small">
           <TableHead>
             <TableRow>
               <TableCell>Patente</TableCell>
               <TableCell>Cliente</TableCell>
               <TableCell>Vehículo</TableCell>
-              <TableCell>Problema</TableCell>
+              <TableCell sx={{ display: { xs: 'none', sm: 'table-cell' } }}>Problema</TableCell>
               <TableCell>Acciones</TableCell>
-              <TableCell>Costo total</TableCell>
+              <TableCell align="right">Costo total</TableCell>
               <TableCell>Estado</TableCell>
             </TableRow>
           </TableHead>
@@ -190,25 +190,26 @@ function Reparaciones() {
                 <TableCell>{row.patente || ''}</TableCell>
                 <TableCell sx={{ fontWeight: 600 }}>{row.cliente}</TableCell>
                 <TableCell>{row.vehiculo}</TableCell>
-                <TableCell>{row.problema}</TableCell>
+                <TableCell sx={{ display: { xs: 'none', sm: 'table-cell' } }}>{row.problema}</TableCell>
                 <TableCell>
-                  <Tooltip title="">
-                    <span>
-                      <Button variant="contained" size="small" onClick={() => abrirFicha(row)}>
-                        VER
-                      </Button>
-                    </span>
-                  </Tooltip>
-                  &nbsp;
-                  <Tooltip title={isReadOnly(row) ? 'Solo lectura (otro taller)' : ''}>
-                    <span>
-                      <Button variant="outlined" color="error" size="small" onClick={() => handleDelete(row.id)} disabled={isReadOnly(row)}>
-                        ELIMINAR
-                      </Button>
-                    </span>
-                  </Tooltip>
+                  <Stack direction={{ xs: 'column', sm: 'row' }} spacing={1} useFlexGap flexWrap="wrap">
+                    <Tooltip title="">
+                      <span>
+                        <Button variant="contained" size="small" onClick={() => abrirFicha(row)} sx={{ minWidth: 100 }}>
+                          VER
+                        </Button>
+                      </span>
+                    </Tooltip>
+                    <Tooltip title={isReadOnly(row) ? 'Solo lectura (otro taller)' : ''}>
+                      <span>
+                        <Button variant="outlined" color="error" size="small" onClick={() => handleDelete(row.id)} disabled={isReadOnly(row)} sx={{ minWidth: 120 }}>
+                          ELIMINAR
+                        </Button>
+                      </span>
+                    </Tooltip>
+                  </Stack>
                 </TableCell>
-                <TableCell>{(() => {
+                <TableCell align="right">{(() => {
                   // Preferir 'costo' proveniente de la tabla reparaciones
                   if (!isNaN(Number(row?.costo))) {
                     return CLP.format(Number(row.costo));
@@ -217,11 +218,11 @@ function Reparaciones() {
                   const insumosDirect = Number(row?.costo_insumos ?? row?.costoInsumos ?? NaN);
                   const insumosCalc = Array.isArray(row?.repuestos)
                     ? row.repuestos.reduce((acc, r) => {
-                        const cant = Number(r?.cantidad || 0);
-                        const precio = Number(r?.precio || 0);
-                        const tot = cant * precio;
-                        return acc + (isNaN(tot) ? 0 : tot);
-                      }, 0)
+                      const cant = Number(r?.cantidad || 0);
+                      const precio = Number(r?.precio || 0);
+                      const tot = cant * precio;
+                      return acc + (isNaN(tot) ? 0 : tot);
+                    }, 0)
                     : 0;
                   const insumos = isNaN(insumosDirect) ? insumosCalc : insumosDirect;
                   const total = Number(row?.costo_total ?? row?.costoTotal ?? (mano + insumos) ?? 0);
