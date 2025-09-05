@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Box, Typography, TextField, Paper, Grid, Button, List, ListItem, ListItemText, Dialog, DialogTitle, DialogContent, DialogActions } from '@mui/material';
+import { Box, Typography, TextField, Paper, Grid, Button, List, ListItem, ListItemText, Dialog, DialogTitle, DialogContent, DialogActions, Tooltip, Chip } from '@mui/material';
 import FichaReparacionModal from '../components/FichaReparacionModal';
 
 import { useEffect } from 'react';
@@ -29,13 +29,13 @@ function HistorialVehiculos() {
           const e = String(h.estado).toLowerCase();
           return e === 'progress' || e === 'process' || e === 'en proceso' || e === 'en progreso';
         });
-       
+        // 2) Ordenar por fecha desc
         const sorted = [...inProgress].sort((a, b) => {
           const da = a?.fecha ? new Date(a.fecha).getTime() : 0;
           const db = b?.fecha ? new Date(b.fecha).getTime() : 0;
           return db - da;
         });
-
+        // 3) Deduplicar por reparacion_id (fallback id)
         const withRid = sorted.filter(h => h?.reparacion_id != null);
         let deduped = [];
         if (withRid.length > 0) {
@@ -58,7 +58,15 @@ function HistorialVehiculos() {
       .catch(() => { setHistoriales([]); setRepEstados(new Map()); });
   };
 
+  // Tenant actual y helper de solo lectura
+  const myUser = (() => { try { return JSON.parse(localStorage.getItem('user')); } catch { return null; } })();
+  const myTallerId = myUser?.taller_id ?? null;
+  const isReadOnly = (row) => {
+    if (!myTallerId) return false;
+    return row?.taller_id && row.taller_id !== myTallerId;
+  };
 
+  // Formateador CLP y cálculo de total con tolerancia a strings/camelCase
   const CLP = new Intl.NumberFormat('es-CL', { style: 'currency', currency: 'CLP', maximumFractionDigits: 0 });
   const totalHist = (h) => {
     if (!h) return null;
@@ -69,7 +77,7 @@ function HistorialVehiculos() {
     return isNaN(n) ? null : n;
   };
 
-
+  // Normalizar estado a etiqueta legible
   const labelEstado = (val) => {
     const v = (val || '').toString().toLowerCase().trim();
     if (!v) return '-';
@@ -80,7 +88,7 @@ function HistorialVehiculos() {
     return val;
   };
 
-  
+  // Extraer año del campo vehiculo si viene como "Marca Modelo 2002"
   const splitVehiculo = (veh) => {
     const s = (veh || '').toString().trim();
     const m = s.match(/^(.*?)(?:\s+(\d{4}))?$/);
@@ -94,7 +102,7 @@ function HistorialVehiculos() {
     cargarHistorial();
   }, []);
 
- 
+  // Formato de fecha DD-MM-YYYY
   const formatoFecha = (val) => {
     if (!val) return '';
     try {
@@ -111,7 +119,7 @@ function HistorialVehiculos() {
   const handleOpen = () => setOpen(true);
   const handleClose = () => setOpen(false);
 
- 
+  // Ficha unificada de reparación
   const [fichaOpen, setFichaOpen] = useState(false);
   const [fichaData, setFichaData] = useState(null);
   const openFicha = async (h) => {
@@ -220,7 +228,7 @@ function HistorialVehiculos() {
             <Paper elevation={2} sx={{ p: 2 }}>
               {(() => { const { nombre, anio } = splitVehiculo(h.vehiculo); return (
                 <>
-                  <Typography variant="h6" fontWeight={600}>{`${nombre}${h.patente ? ` - ${h.patente}` : ''}`}</Typography>
+                  <Typography variant="h6" fontWeight={600}>{`${nombre}${h.patente ? ` - ${h.patente}` : ''}`} {isReadOnly(h) && (<Chip size="small" label="Otro taller" sx={{ ml: 1 }} />)}</Typography>
                   {anio && (<Typography variant="body2" color="text.secondary">Año: {anio}</Typography>)}
                 </>
               ); })()}
@@ -244,7 +252,11 @@ function HistorialVehiculos() {
                   Sin reparación vinculada
                 </Button>
               )}
-              <Button variant="outlined" size="small" color="error" onClick={() => handleDelete(h.id)}>Eliminar</Button>
+              <Tooltip title={isReadOnly(h) ? 'Solo lectura (otro taller)' : ''}>
+                <span>
+                  <Button variant="outlined" size="small" color="error" onClick={() => handleDelete(h.id)} disabled={isReadOnly(h)}>Eliminar</Button>
+                </span>
+              </Tooltip>
             </Paper>
           </Grid>
         ))}
@@ -254,4 +266,3 @@ function HistorialVehiculos() {
 }
 
 export default HistorialVehiculos;
- 
