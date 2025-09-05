@@ -10,7 +10,7 @@ import { apiFetch } from '../utils/api';
 
 const CLP = new Intl.NumberFormat('es-CL', { style: 'currency', currency: 'CLP', maximumFractionDigits: 0 });
 
-function FichaReparacionModal({ open, onClose, reparacion, onSaved }) {
+function FichaReparacionModal({ open, onClose, reparacion, onSaved, hideCosts = false }) {
   // Normalizar repuestos que vengan como string JSON desde backend
   const repuestosInit = (() => {
     const r = reparacion?.repuestos;
@@ -21,7 +21,7 @@ function FichaReparacionModal({ open, onClose, reparacion, onSaved }) {
     return [];
   })();
 
-
+  // Estado local para cada campo de la ficha
   const [ficha, setFicha] = useState({
     nombre: reparacion.cliente || '',
     telefono: reparacion.telefono || '',
@@ -45,7 +45,7 @@ function FichaReparacionModal({ open, onClose, reparacion, onSaved }) {
   const [estado, setEstado] = useState(reparacion.estado || 'pending');
   const [tipoServicio, setTipoServicio] = useState(reparacion.servicio || reparacion.tipo_servicio || '');
 
- 
+  // Sincronizar estado interno cuando cambia la reparación abierta
   useEffect(() => {
     const r = reparacion || {};
     // Normalizar repuestos nuevamente
@@ -108,26 +108,26 @@ function FichaReparacionModal({ open, onClose, reparacion, onSaved }) {
   const handleGuardar = async () => {
     try {
       if (!reparacion?.id) return onClose?.();
-  
+      // Componer payload alineado a columnas de 'reparaciones'
       const composedVehiculo = [ficha.marca, ficha.modelo, ficha.anio].filter(Boolean).join(' ').trim();
-      
+      // Preparar payload extendido (para backend actualizado - Opción A)
       const payload = {
         // claves actuales
         problema: ficha.fallaReportada || reparacion.problema || '',
         estado,
-        costo: Number(costoTotalCalc) || 0,
+        ...(hideCosts ? {} : { costo: Number(costoTotalCalc) || 0 }),
         diagnostico: ficha.diagnostico || '',
         trabajos: ficha.trabajos || '',
-        
-        costo_mano_obra: isNaN(costoManoObraNum) ? 0 : Number(costoManoObraNum),
-        costo_insumos: isNaN(costoInsumosCalc) ? 0 : Number(costoInsumosCalc),
-        
+        // desglose de costos (si existen columnas en backend se guardan)
+        ...(hideCosts ? {} : { costo_mano_obra: isNaN(costoManoObraNum) ? 0 : Number(costoManoObraNum) }),
+        ...(hideCosts ? {} : { costo_insumos: isNaN(costoInsumosCalc) ? 0 : Number(costoInsumosCalc) }),
+        // guardar detalle de repuestos (para costos unitarios)
         repuestos: Array.isArray(ficha.repuestos) ? ficha.repuestos.map(r => ({
           cantidad: Number(r?.cantidad || 0),
           descripcion: r?.descripcion || '',
           marca: r?.marca || '',
-          precio: Number(r?.precio || 0),
-          total: Number(r?.cantidad || 0) * Number(r?.precio || 0)
+          ...(hideCosts ? {} : { precio: Number(r?.precio || 0) }),
+          ...(hideCosts ? {} : { total: Number(r?.cantidad || 0) * Number(r?.precio || 0) })
         })) : [],
         // extendidas (existentes en tabla reparaciones)
         cliente: ficha.nombre || reparacion.cliente || '',
@@ -148,8 +148,8 @@ function FichaReparacionModal({ open, onClose, reparacion, onSaved }) {
       };
       if (tipoServicio) payload.servicio = tipoServicio;
       // Compatibilidad con columnas alternativas
-      if (payload.costo_mano_obra != null) payload.costoManoObra = payload.costo_mano_obra;
-      if (payload.costo_insumos != null) payload.costoInsumos = payload.costo_insumos;
+      if (!hideCosts && payload.costo_mano_obra != null) payload.costoManoObra = payload.costo_mano_obra;
+      if (!hideCosts && payload.costo_insumos != null) payload.costoInsumos = payload.costo_insumos;
       // Sincronizar con reservas: motivo = falla reportada
       if (ficha.fallaReportada) payload.motivo = ficha.fallaReportada;
 
@@ -241,8 +241,8 @@ function FichaReparacionModal({ open, onClose, reparacion, onSaved }) {
               <TableCell>Cantidad</TableCell>
               <TableCell>Descripción</TableCell>
               <TableCell>Marca</TableCell>
-              <TableCell>Precio unitario</TableCell>
-              <TableCell>Total</TableCell>
+              {!hideCosts && <TableCell>Precio unitario</TableCell>}
+              {!hideCosts && <TableCell>Total</TableCell>}
               <TableCell></TableCell>
             </TableRow>
           </TableHead>
@@ -252,14 +252,16 @@ function FichaReparacionModal({ open, onClose, reparacion, onSaved }) {
                 <TableCell><TextField value={rep.cantidad} onChange={e => handleRepuestoChange(idx, 'cantidad', e.target.value)} size="small" /></TableCell>
                 <TableCell><TextField value={rep.descripcion} onChange={e => handleRepuestoChange(idx, 'descripcion', e.target.value)} size="small" /></TableCell>
                 <TableCell><TextField value={rep.marca} onChange={e => handleRepuestoChange(idx, 'marca', e.target.value)} size="small" /></TableCell>
-                <TableCell><TextField value={rep.precio} onChange={e => handleRepuestoChange(idx, 'precio', e.target.value)} size="small" /></TableCell>
-                <TableCell>
-                  <TextField
-                    value={CLP.format((Number(rep.cantidad || 0) * Number(rep.precio || 0)) || 0)}
-                    size="small"
-                    InputProps={{ readOnly: true }}
-                  />
-                </TableCell>
+                {!hideCosts && <TableCell><TextField value={rep.precio} onChange={e => handleRepuestoChange(idx, 'precio', e.target.value)} size="small" /></TableCell>}
+                {!hideCosts && (
+                  <TableCell>
+                    <TextField
+                      value={CLP.format((Number(rep.cantidad || 0) * Number(rep.precio || 0)) || 0)}
+                      size="small"
+                      InputProps={{ readOnly: true }}
+                    />
+                  </TableCell>
+                )}
                 <TableCell>
                   <IconButton onClick={() => handleRemoveRepuesto(idx)} size="small"><DeleteIcon fontSize="small" /></IconButton>
                 </TableCell>
@@ -272,27 +274,29 @@ function FichaReparacionModal({ open, onClose, reparacion, onSaved }) {
             </TableRow>
           </TableBody>
         </Table>
-        <Grid container spacing={2} sx={{ mt: 1 }}>
-          <Grid item xs={12} sm={4}>
-            <TextField
-              label="Costo mano de obra"
-              name="costoManoObra"
-              value={CLP.format(Number(ficha.costoManoObra || 0))}
-              onChange={e => {
-                const num = Number(String(e.target.value).replace(/[^0-9]/g, ''));
-                setFicha({ ...ficha, costoManoObra: isNaN(num) ? 0 : num });
-              }}
-              inputMode="numeric"
-              fullWidth
-            />
+        {!hideCosts && (
+          <Grid container spacing={2} sx={{ mt: 1 }}>
+            <Grid item xs={12} sm={4}>
+              <TextField
+                label="Costo mano de obra"
+                name="costoManoObra"
+                value={CLP.format(Number(ficha.costoManoObra || 0))}
+                onChange={e => {
+                  const num = Number(String(e.target.value).replace(/[^0-9]/g, ''));
+                  setFicha({ ...ficha, costoManoObra: isNaN(num) ? 0 : num });
+                }}
+                inputMode="numeric"
+                fullWidth
+              />
+            </Grid>
+            <Grid item xs={12} sm={4}>
+              <TextField label="Costo insumos (auto)" value={CLP.format(costoInsumosCalc || 0)} InputProps={{ readOnly: true }} fullWidth />
+            </Grid>
+            <Grid item xs={12} sm={4}>
+              <TextField label="Costo total (auto)" value={CLP.format(costoTotalCalc || 0)} InputProps={{ readOnly: true }} fullWidth />
+            </Grid>
           </Grid>
-          <Grid item xs={12} sm={4}>
-            <TextField label="Costo insumos (auto)" value={CLP.format(costoInsumosCalc || 0)} InputProps={{ readOnly: true }} fullWidth />
-          </Grid>
-          <Grid item xs={12} sm={4}>
-            <TextField label="Costo total (auto)" value={CLP.format(costoTotalCalc || 0)} InputProps={{ readOnly: true }} fullWidth />
-          </Grid>
-        </Grid>
+        )}
         <TextField
           label="7. Observaciones adicionales"
           name="observaciones"
@@ -317,4 +321,3 @@ function FichaReparacionModal({ open, onClose, reparacion, onSaved }) {
 }
 
 export default FichaReparacionModal;
-
