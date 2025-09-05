@@ -4,6 +4,7 @@ import FichaReparacionModal from '../components/FichaReparacionModal';
 
 import { useEffect } from 'react';
 import { apiFetch } from '../utils/api';
+import { formatDisplayDateSafe, parseDDMMYYYYToISO } from '../utils/dates';
 
 
 function HistorialVehiculos() {
@@ -103,18 +104,7 @@ function HistorialVehiculos() {
     cargarHistorial();
   }, []);
 
-  // Formato de fecha DD-MM-YYYY
-  const formatoFecha = (val) => {
-    if (!val) return '';
-    try {
-      const d = new Date(val);
-      if (isNaN(d.getTime())) return String(val);
-      const dd = String(d.getDate()).padStart(2,'0');
-      const mm = String(d.getMonth()+1).padStart(2,'0');
-      const yyyy = d.getFullYear();
-      return `${dd}-${mm}-${yyyy}`;
-    } catch { return String(val); }
-  };
+  // Uso centralizado de utilidades para fechas
 
   const [open, setOpen] = useState(false);
   const handleOpen = () => setOpen(true);
@@ -151,9 +141,13 @@ function HistorialVehiculos() {
   const handleSubmit = async (e) => {
     e.preventDefault();
     try {
+      const payload = {
+        ...form,
+        fecha: form.fecha ? (parseDDMMYYYYToISO(form.fecha) || form.fecha) : ''
+      };
       const nuevo = await apiFetch('/api/historial', {
         method: 'POST',
-        body: JSON.stringify(form)
+        body: JSON.stringify(payload)
       });
       setHistoriales([...(Array.isArray(historiales) ? historiales : []), nuevo]);
       setForm({ vehiculo: '', patente: '', cliente: '', fecha: '', servicio: '', taller: '' });
@@ -222,7 +216,7 @@ function HistorialVehiculos() {
               <TextField label="Vehículo" name="vehiculo" value={form.vehiculo} onChange={handleChange} required />
               <TextField label="Patente" name="patente" value={form.patente || ''} onChange={handleChange} />
               <TextField label="Cliente" name="cliente" value={form.cliente} onChange={handleChange} />
-              <TextField label="Fecha" name="fecha" value={form.fecha} onChange={handleChange} placeholder="2024-07-27" />
+              <TextField label="Fecha" name="fecha" value={form.fecha} onChange={handleChange} placeholder="DD-MM-YYYY" />
               <TextField label="Servicio" name="servicio" value={form.servicio} onChange={handleChange} />
               <TextField label="Taller" name="taller" value={form.taller} onChange={handleChange} />
             </DialogContent>
@@ -273,7 +267,7 @@ function HistorialVehiculos() {
                 <TableCell sx={{ display: { xs: 'none', sm: 'table-cell' } }}>{h.servicio || ''}</TableCell>
                 <TableCell sx={{ display: { xs: 'none', sm: 'table-cell' } }}>{h.taller || ''}</TableCell>
                 <TableCell>{labelEstado(repEstados.get(Number(h.reparacion_id)) ?? h.estado)}</TableCell>
-                <TableCell sx={{ display: { xs: 'none', sm: 'table-cell' } }}>{formatoFecha(h.fecha)}</TableCell>
+                <TableCell sx={{ display: { xs: 'none', sm: 'table-cell' } }}>{formatDisplayDateSafe(h.fecha)}</TableCell>
                 <TableCell align="right">{totalHist(h) != null ? CLP.format(totalHist(h) || 0) : '-'}</TableCell>
                 <TableCell>
                   <Stack direction={{ xs: 'column', sm: 'row' }} spacing={1} useFlexGap flexWrap="wrap">
