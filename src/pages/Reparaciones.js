@@ -110,7 +110,7 @@ function Reparaciones() {
     // Tratar 'open' (legacy) como 'pending' para compatibilidad
     const estadoRow = row.estado === 'open' ? 'pending' : row.estado;
     if (estado !== 'all' && estadoRow !== estado) return false;
-    if (busqueda && !( `${row.cliente} ${row.vehiculo}`.toLowerCase().includes(busqueda.toLowerCase()) )) return false;
+    if (busqueda && !(String(row.patente || '').toLowerCase().includes(busqueda.toLowerCase()))) return false;
     return true;
   };
 
@@ -131,7 +131,7 @@ function Reparaciones() {
           </Select>
           <TextField
             size="small"
-            placeholder="Buscar cliente..."
+            placeholder="Buscar patente..."
             value={busqueda}
             onChange={e => setBusqueda(e.target.value)}
             sx={{ minWidth: 200 }}
