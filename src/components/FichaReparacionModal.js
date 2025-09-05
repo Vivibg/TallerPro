@@ -11,6 +11,9 @@ import { apiFetch } from '../utils/api';
 const CLP = new Intl.NumberFormat('es-CL', { style: 'currency', currency: 'CLP', maximumFractionDigits: 0 });
 
 function FichaReparacionModal({ open, onClose, reparacion, onSaved, hideCosts = false }) {
+  // Leer usuario para saber si tiene taller asignado
+  const myUser = (() => { try { return JSON.parse(localStorage.getItem('user')); } catch { return null; } })();
+  const myTallerId = myUser?.taller_id ?? null;
   // Normalizar repuestos que vengan como string JSON desde backend
   const repuestosInit = (() => {
     const r = reparacion?.repuestos;
@@ -43,6 +46,8 @@ function FichaReparacionModal({ open, onClose, reparacion, onSaved, hideCosts = 
     mecanicoAsignado: reparacion.mecanicoAsignado || reparacion.mecanico_asignado || reparacion.mecanico || ''
   });
   const [estado, setEstado] = useState(reparacion.estado || 'pending');
+  // Permitir asignar taller_id cuando el usuario no tiene uno propio
+  const [tallerIdAssign, setTallerIdAssign] = useState(reparacion?.taller_id ?? '');
   const [tipoServicio, setTipoServicio] = useState(reparacion.servicio || reparacion.tipo_servicio || '');
 
   // Sincronizar estado interno cuando cambia la reparación abierta
@@ -76,6 +81,7 @@ function FichaReparacionModal({ open, onClose, reparacion, onSaved, hideCosts = 
       mecanicoAsignado: r.mecanicoAsignado || r.mecanico_asignado || r.mecanico || ''
     });
     setEstado(r.estado || 'pending');
+    setTallerIdAssign(r?.taller_id ?? '');
     setTipoServicio(r.servicio || r.tipo_servicio || '');
   }, [reparacion?.id, open]);
 
@@ -146,6 +152,13 @@ function FichaReparacionModal({ open, onClose, reparacion, onSaved, hideCosts = 
         taller: ficha.taller || reparacion.taller || '',
         mecanico: ficha.mecanicoAsignado || reparacion.mecanico || '',
       };
+      // Si el usuario no tiene taller_id propio, permitir asignar uno a la reparación
+      if (myTallerId == null && String(tallerIdAssign).trim() !== '') {
+        const tid = Number(tallerIdAssign);
+        if (!Number.isNaN(tid) && tid > 0) {
+          payload.taller_id = tid;
+        }
+      }
       if (tipoServicio) payload.servicio = tipoServicio;
       // Compatibilidad con columnas alternativas
       if (!hideCosts && payload.costo_mano_obra != null) payload.costoManoObra = payload.costo_mano_obra;
@@ -178,6 +191,21 @@ function FichaReparacionModal({ open, onClose, reparacion, onSaved, hideCosts = 
           <Grid item xs={6}><TextField label="Taller" name="taller" value={ficha.taller} onChange={handleChange} fullWidth /></Grid>
           <Grid item xs={6}><TextField label="Mecánico asignado" name="mecanicoAsignado" value={ficha.mecanicoAsignado} onChange={handleChange} fullWidth /></Grid>
         </Grid>
+        {/* Si el usuario no tiene taller asignado, permitir especificar el ID de taller para esta reparación */}
+        {myTallerId == null && (
+          <Grid container spacing={2} sx={{ mt: 1 }}>
+            <Grid item xs={12} sm={6}>
+              <TextField
+                label="Asignar Taller ID"
+                value={tallerIdAssign}
+                onChange={e => setTallerIdAssign(e.target.value)}
+                fullWidth
+                placeholder="Ej: 1"
+                helperText="Ingresa el ID numérico del taller para asociar esta reparación"
+              />
+            </Grid>
+          </Grid>
+        )}
         <Grid container spacing={2} sx={{ mt: 1 }}>
           <Grid item xs={4}>
             <Typography variant="subtitle2" sx={{ mb: 0.5 }}>Estado</Typography>
