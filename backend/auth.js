@@ -20,6 +20,52 @@ function signToken(user) {
   );
 }
 
+// Crea un taller por defecto y asigna taller_id al usuario si aún no tiene
+async function ensureTenantForUser(userId, defaultUserName = '', preferredName) {
+  // Verificar si users ya tiene taller_id
+  const [uRows] = await pool.query('SELECT id, taller_id, name FROM users WHERE id = ? LIMIT 1', [userId]);
+  const u = uRows[0];
+  if (!u) return null;
+  if (u.taller_id) return u.taller_id;
+
+  // Comprobar existencia de tabla 'talleres'
+  const [tables] = await pool.query("SHOW TABLES LIKE 'talleres'");
+  if (!tables.length) {
+    // No hay tabla talleres: no podemos crear registro, devolvemos null
+    return null;
+  }
+  // Detectar columnas disponibles en 'talleres'
+  const [tCols] = await pool.query('SHOW COLUMNS FROM talleres');
+  const tNames = new Set(tCols.map(c => c.Field));
+
+  // Nombre del taller
+  const ownerName = (u.name || defaultUserName || '').trim();
+  const nombreBase = preferredName && String(preferredName).trim()
+    ? String(preferredName).trim()
+    : (ownerName ? `Taller de ${ownerName}` : `Taller ${userId}`);
+
+  // Construir INSERT dinámico
+  const cols = [];
+  const vals = [];
+  const pushIf = (name, val) => { if (tNames.has(name)) { cols.push(name); vals.push(val); } };
+  pushIf('nombre', nombreBase);
+  pushIf('owner_user_id', userId);
+  // created_at/updated_at manejados por default de la DB si existen
+  const placeholders = cols.map(() => '?').join(', ');
+  const sql = `INSERT INTO talleres (${cols.join(', ')}) VALUES (${placeholders})`;
+  const [result] = await pool.query(sql, vals);
+  const tallerId = result.insertId;
+
+  // Actualizar usuario con taller_id si la columna existe
+  const [uCols] = await pool.query('SHOW COLUMNS FROM users');
+  const uNames = new Set(uCols.map(c => c.Field));
+  if (uNames.has('taller_id')) {
+    await pool.query('UPDATE users SET taller_id = ? WHERE id = ?', [tallerId, userId]);
+  }
+
+  return tallerId;
+}
+
 // POST /api/auth/google { idToken: string }
 router.post('/google', async (req, res) => {
   try {
@@ -58,6 +104,13 @@ router.post('/google', async (req, res) => {
       }
     }
 
+    // Asegurar taller_id
+    if (!user.taller_id) {
+      await ensureTenantForUser(user.id, user.name);
+      const [fresh] = await pool.query('SELECT id, email, name, role, picture, taller_id FROM users WHERE id = ? LIMIT 1', [user.id]);
+      if (fresh[0]) user = fresh[0];
+    }
+
     const token = signToken(user);
     return res.json({ token, user: { id: user.id, name: user.name, email: user.email, role: user.role, picture: user.picture, taller_id: user.taller_id || null } });
   } catch (e) {
@@ -66,10 +119,10 @@ router.post('/google', async (req, res) => {
   }
 });
 
-// POST /api/auth/register { email, password, name? }
+// POST /api/auth/register { email, password, name?, tallerNombre? }
 router.post('/register', async (req, res) => {
   try {
-    const { email, password, name = '' } = req.body || {};
+    const { email, password, name = '', tallerNombre } = req.body || {};
     if (!email || !password) return res.status(400).json({ error: 'Email y contraseña son requeridos' });
 
     const normEmail = String(email).trim().toLowerCase();
@@ -100,7 +153,9 @@ router.post('/register', async (req, res) => {
       userId = existing.id;
     }
 
-    // Recuperar para incluir taller_id si existe
+    // Asegurar taller_id (crear taller si hace falta)
+    await ensureTenantForUser(userId, name, tallerNombre);
+    // Recuperar datos frescos con taller_id
     const [freshRows] = await pool.query('SELECT id, email, name, role, taller_id FROM users WHERE id = ?', [userId]);
     const fresh = freshRows[0] || { id: userId, email: normEmail, name, role, taller_id: null };
     const user = { id: fresh.id, email: fresh.email, name: fresh.name, role: fresh.role, taller_id: fresh.taller_id };
@@ -128,6 +183,13 @@ router.post('/login', async (req, res) => {
 
     const ok = await bcrypt.compare(password, user.password_hash);
     if (!ok) return res.status(401).json({ error: 'Credenciales inválidas' });
+
+    // Asegurar taller_id si el usuario es legacy sin taller asignado
+    if (!user.taller_id) {
+      await ensureTenantForUser(user.id, user.name);
+      const [fresh] = await pool.query('SELECT id, email, name, role, taller_id FROM users WHERE id = ? LIMIT 1', [user.id]);
+      if (fresh[0]) user = fresh[0];
+    }
 
     const token = signToken(user);
     return res.json({ token, user: { id: user.id, email: user.email, name: user.name, role: user.role, taller_id: user.taller_id || null } });
