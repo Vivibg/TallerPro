@@ -10,6 +10,7 @@ function HistorialVehiculos() {
   const [historiales, setHistoriales] = useState([]);
   const [busqueda, setBusqueda] = useState('');
   const [repEstados, setRepEstados] = useState(new Map());
+  const [scope, setScope] = useState('mine'); // 'mine' | 'all'
 
   const cargarHistorial = () => {
     Promise.all([
@@ -172,12 +173,20 @@ function HistorialVehiculos() {
     }
   }
 
-  const resultados = (Array.isArray(historiales) ? historiales : []).filter(h => {
-    const patente = (h.patente || '').toLowerCase();
-    const veh = (h.vehiculo || '').toLowerCase();
-    const q = busqueda.toLowerCase();
-    return veh.includes(q) || patente.includes(q);
-  });
+  const resultados = (Array.isArray(historiales) ? historiales : [])
+    .filter(h => {
+      if (scope === 'mine' && myTallerId != null) {
+        const sameTenant = Number(h?.taller_id) === Number(myTallerId);
+        if (!sameTenant) return false;
+      }
+      return true;
+    })
+    .filter(h => {
+      const patente = (h.patente || '').toLowerCase();
+      const veh = (h.vehiculo || '').toLowerCase();
+      const q = busqueda.toLowerCase();
+      return veh.includes(q) || patente.includes(q);
+    });
 
   return (
     <Box>
@@ -192,6 +201,17 @@ function HistorialVehiculos() {
         />
         <Button variant="contained" color="primary">Buscar</Button>
         <Button variant="outlined" onClick={cargarHistorial}>Refrescar</Button>
+        <TextField
+          select
+          size="small"
+          label="Alcance"
+          value={scope}
+          onChange={e => setScope(e.target.value)}
+          SelectProps={{ native: true }}
+        >
+          <option value="mine">Mi taller</option>
+          <option value="all">Todos</option>
+        </TextField>
         <Button variant="contained" color="primary" sx={{ ml: 2 }} onClick={handleOpen}>
           + Nuevo Servicio
         </Button>
