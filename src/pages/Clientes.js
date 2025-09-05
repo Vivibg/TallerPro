@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Box, Typography, Paper, Grid, TextField, Button, Dialog, DialogTitle, DialogContent, DialogActions, Table, TableHead, TableRow, TableCell, TableBody, Chip, Stack } from '@mui/material';
+import { Box, Typography, Paper, Grid, TextField, Button, Dialog, DialogTitle, DialogContent, DialogActions, Table, TableHead, TableRow, TableCell, TableBody, Chip, Stack, Tooltip } from '@mui/material';
 
 import { useEffect } from 'react';
 import { apiFetch } from '../utils/api';
@@ -23,6 +23,14 @@ function Clientes() {
       }
     })();
   }, []);
+
+  // Tenant actual
+  const myUser = (() => { try { return JSON.parse(localStorage.getItem('user')); } catch { return null; } })();
+  const myTallerId = myUser?.taller_id ?? null;
+  const isReadOnly = (row) => {
+    if (!myTallerId) return false;
+    return row?.taller_id && row.taller_id !== myTallerId;
+  };
 
   const [open, setOpen] = useState(false);
   const handleOpen = () => setOpen(true);
@@ -131,14 +139,18 @@ function Clientes() {
           {resultados.map((c, i) => (
             <Grid item xs={12} md={6} key={c.id || i}>
               <Paper elevation={2} sx={{ p: 2 }}>
-                <Typography variant="h6" fontWeight={600}>{c.nombre}</Typography>
+                <Typography variant="h6" fontWeight={600}>{c.nombre} {isReadOnly(c) && (<Chip size="small" label="Otro taller" sx={{ ml: 1 }} />)}</Typography>
                 <Typography variant="body2" color="text.secondary">Cliente desde {c.desde}</Typography>
                 <Typography variant="body2">Teléfono: {c.telefono}</Typography>
                 <Typography variant="body2">Email: {c.email}</Typography>
                 <Typography variant="body2">Vehículo: {c.vehiculo}</Typography>
                 <Typography variant="body2" mb={1}>Última visita: {c.ultimaVisita ? new Date(c.ultimaVisita).toLocaleDateString() : ''}</Typography>
                 <Button variant="contained" size="small" sx={{ mr: 1 }} onClick={() => abrirHistorial(c)}>Ver Historial</Button>
-                <Button variant="outlined" size="small" color="error" onClick={() => handleDelete(c.id)}>Eliminar</Button>
+                <Tooltip title={isReadOnly(c) ? 'Solo lectura (otro taller)' : ''}>
+                  <span>
+                    <Button variant="outlined" size="small" color="error" onClick={() => handleDelete(c.id)} disabled={isReadOnly(c)}>Eliminar</Button>
+                  </span>
+                </Tooltip>
               </Paper>
             </Grid>
           ))}
