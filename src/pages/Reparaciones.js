@@ -22,12 +22,12 @@ function Reparaciones() {
   const [fichaOpen, setFichaOpen] = useState(false);
   const [fichaItem, setFichaItem] = useState(null);
 
-  // Tenant actual desde localStorage
+  
   const myUser = (() => { try { return JSON.parse(localStorage.getItem('user')); } catch { return null; } })();
   const myTallerId = myUser?.taller_id ?? null;
   const isReadOnly = (row) => {
     // Solo deshabilitar cuando el registro tiene taller distinto al del usuario
-    if (!myTallerId) return false; //  no bloquear UI
+    if (!myTallerId) return false; // si no sabemos el taller del usuario, no bloquear UI
     return row?.taller_id && row.taller_id !== myTallerId;
   };
 
@@ -97,6 +97,11 @@ function Reparaciones() {
   };
 
   const filtrar = (row) => {
+    // Mostrar solo reparaciones de mi taller
+    if (myTallerId != null) {
+      const sameTenant = Number(row?.taller_id) === Number(myTallerId);
+      if (!sameTenant) return false;
+    }
     // Tratar 'open' (legacy) como 'pending' para compatibilidad
     const estadoRow = row.estado === 'open' ? 'pending' : row.estado;
     if (estado !== 'all' && estadoRow !== estado) return false;
