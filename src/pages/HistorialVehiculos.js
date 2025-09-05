@@ -232,6 +232,7 @@ function HistorialVehiculos() {
             open={fichaOpen}
             onClose={() => setFichaOpen(false)}
             reparacion={fichaData}
+            hideCosts={isReadOnly(fichaData)}
             onSaved={() => cargarHistorial()}
           />
         )}
@@ -268,7 +269,7 @@ function HistorialVehiculos() {
                 <TableCell sx={{ display: { xs: 'none', sm: 'table-cell' } }}>{h.taller || ''}</TableCell>
                 <TableCell>{labelEstado(repEstados.get(Number(h.reparacion_id)) ?? h.estado)}</TableCell>
                 <TableCell sx={{ display: { xs: 'none', sm: 'table-cell' } }}>{formatDisplayDateSafe(h.fecha)}</TableCell>
-                <TableCell align="right">{totalHist(h) != null ? CLP.format(totalHist(h) || 0) : '-'}</TableCell>
+                <TableCell align="right">{isReadOnly(h) ? '-' : (totalHist(h) != null ? CLP.format(totalHist(h) || 0) : '-')}</TableCell>
                 <TableCell>
                   <Stack direction={{ xs: 'column', sm: 'row' }} spacing={1} useFlexGap flexWrap="wrap">
                     {h.reparacion_id ? (
