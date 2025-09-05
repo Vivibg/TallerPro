@@ -20,6 +20,19 @@ function signToken(user) {
   );
 }
 
+// Obtener nombre del taller si existe la tabla y la fila
+async function getTenantName(tallerId) {
+  try {
+    if (!tallerId) return null;
+    const [tables] = await pool.query("SHOW TABLES LIKE 'talleres'");
+    if (!tables.length) return null;
+    const [rows] = await pool.query('SELECT nombre FROM talleres WHERE id = ? LIMIT 1', [tallerId]);
+    return rows[0]?.nombre || null;
+  } catch {
+    return null;
+  }
+}
+
 // Crea un taller por defecto y asigna taller_id al usuario si aún no tiene
 async function ensureTenantForUser(userId, defaultUserName = '', preferredName) {
   // Verificar si users ya tiene taller_id
@@ -112,7 +125,8 @@ router.post('/google', async (req, res) => {
     }
 
     const token = signToken(user);
-    return res.json({ token, user: { id: user.id, name: user.name, email: user.email, role: user.role, picture: user.picture, taller_id: user.taller_id || null } });
+    const taller_nombre = await getTenantName(user.taller_id);
+    return res.json({ token, user: { id: user.id, name: user.name, email: user.email, role: user.role, picture: user.picture, taller_id: user.taller_id || null, taller_nombre } });
   } catch (e) {
     console.error('Google auth error:', e.code || e.name, e.sqlMessage || e.message);
     return res.status(401).json({ error: 'Token de Google inválido' });
@@ -153,14 +167,15 @@ router.post('/register', async (req, res) => {
       userId = existing.id;
     }
 
-    // Asegurar taller_id (crear taller si hace falta)
+    // Asegurar taller_id
     await ensureTenantForUser(userId, name, tallerNombre);
     // Recuperar datos frescos con taller_id
     const [freshRows] = await pool.query('SELECT id, email, name, role, taller_id FROM users WHERE id = ?', [userId]);
     const fresh = freshRows[0] || { id: userId, email: normEmail, name, role, taller_id: null };
     const user = { id: fresh.id, email: fresh.email, name: fresh.name, role: fresh.role, taller_id: fresh.taller_id };
     const token = signToken(user);
-    return res.status(201).json({ token, user: { id: user.id, email: user.email, name: user.name, role: user.role, taller_id: user.taller_id || null } });
+    const taller_nombre = await getTenantName(user.taller_id);
+    return res.status(201).json({ token, user: { id: user.id, email: user.email, name: user.name, role: user.role, taller_id: user.taller_id || null, taller_nombre } });
   } catch (e) {
     console.error('Register error:', e.code || e.name, e.sqlMessage || e.message);
     return res.status(500).json({ error: 'Error registrando usuario' });
@@ -192,7 +207,8 @@ router.post('/login', async (req, res) => {
     }
 
     const token = signToken(user);
-    return res.json({ token, user: { id: user.id, email: user.email, name: user.name, role: user.role, taller_id: user.taller_id || null } });
+    const taller_nombre = await getTenantName(user.taller_id);
+    return res.json({ token, user: { id: user.id, email: user.email, name: user.name, role: user.role, taller_id: user.taller_id || null, taller_nombre } });
   } catch (e) {
     console.error('Login error:', e.code || e.name, e.sqlMessage || e.message);
     return res.status(500).json({ error: 'Error iniciando sesión' });
@@ -200,9 +216,10 @@ router.post('/login', async (req, res) => {
 });
 
 // GET /api/auth/me
-router.get('/me', authRequired, (req, res) => {
+router.get('/me', authRequired, async (req, res) => {
   const u = req.user;
-  return res.json({ user: { id: u.id, email: u.email, name: u.name, role: u.role, taller_id: u.taller_id || null } });
+  const taller_nombre = await getTenantName(u.taller_id);
+  return res.json({ user: { id: u.id, email: u.email, name: u.name, role: u.role, taller_id: u.taller_id || null, taller_nombre } });
 });
 
 export default router;
