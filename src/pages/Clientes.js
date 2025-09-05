@@ -36,7 +36,16 @@ function Clientes() {
   const handleOpen = () => setOpen(true);
   const handleClose = () => setOpen(false);
 
-  const resultados = (Array.isArray(clientes) ? clientes : []).filter(c => c.nombre?.toLowerCase().includes(busqueda.toLowerCase()));
+  const resultados = (Array.isArray(clientes) ? clientes : [])
+    .filter(c => {
+      // Solo mostrar mis clientes si conocemos el taller del usuario
+      if (myTallerId != null) {
+        const sameTenant = Number(c?.taller_id) === Number(myTallerId);
+        if (!sameTenant) return false;
+      }
+      return true;
+    })
+    .filter(c => c.nombre?.toLowerCase().includes(busqueda.toLowerCase()));
 
   const [form, setForm] = useState({
     nombre: '',
