@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Box, Typography, Paper, Grid, TextField, Button, Dialog, DialogTitle, DialogContent, DialogActions, Table, TableHead, TableRow, TableCell, TableBody, Chip, Stack, Tooltip } from '@mui/material';
+import { Box, Typography, Paper, Grid, TextField, Button, Dialog, DialogTitle, DialogContent, DialogActions, Table, TableHead, TableRow, TableCell, TableBody, Chip, Stack, Tooltip, TableContainer } from '@mui/material';
 
 import { useEffect } from 'react';
 import { apiFetch } from '../utils/api';
@@ -151,26 +151,53 @@ function Clientes() {
             + Nuevo Cliente
           </Button>
         </Box>
-        <Grid container spacing={2}>
-          {resultados.map((c, i) => (
-            <Grid item xs={12} md={6} key={c.id || i}>
-              <Paper elevation={2} sx={{ p: 2 }}>
-                <Typography variant="h6" fontWeight={600}>{c.nombre} {isReadOnly(c) && (<Chip size="small" label="Otro taller" sx={{ ml: 1 }} />)}</Typography>
-                <Typography variant="body2" color="text.secondary">Cliente desde {c.desde}</Typography>
-                <Typography variant="body2">Teléfono: {c.telefono}</Typography>
-                <Typography variant="body2">Email: {c.email}</Typography>
-                <Typography variant="body2">Vehículo: {c.vehiculo}</Typography>
-                <Typography variant="body2" mb={1}>Última visita: {formatDisplayDateSafe(c.ultimaVisita)}</Typography>
-                <Button variant="contained" size="small" sx={{ mr: 1 }} onClick={() => abrirHistorial(c)}>Ver Historial</Button>
-                <Tooltip title={isReadOnly(c) ? 'Solo lectura (otro taller)' : ''}>
-                  <span>
-                    <Button variant="outlined" size="small" color="error" onClick={() => handleDelete(c.id)} disabled={isReadOnly(c)}>Eliminar</Button>
-                  </span>
-                </Tooltip>
-              </Paper>
-            </Grid>
-          ))}
-        </Grid>
+        <TableContainer component={Paper} elevation={2}>
+          <Table size="small">
+            <TableHead>
+              <TableRow>
+                <TableCell>Nombre</TableCell>
+                <TableCell>Teléfono</TableCell>
+                <TableCell>Email</TableCell>
+                <TableCell>Vehículo</TableCell>
+                <TableCell sx={{ display: { xs: 'none', sm: 'table-cell' } }}>Cliente desde</TableCell>
+                <TableCell sx={{ display: { xs: 'none', sm: 'table-cell' } }}>Última visita</TableCell>
+                <TableCell align="right">Acciones</TableCell>
+              </TableRow>
+            </TableHead>
+            <TableBody>
+              {resultados.map((c, i) => (
+                <TableRow key={c.id || i}>
+                  <TableCell>
+                    <Stack direction="row" spacing={1} alignItems="center">
+                      <span>{c.nombre}</span>
+                      {isReadOnly(c) && (<Chip size="small" label="Otro taller" />)}
+                    </Stack>
+                  </TableCell>
+                  <TableCell>{c.telefono || '-'}</TableCell>
+                  <TableCell>{c.email || '-'}</TableCell>
+                  <TableCell>{c.vehiculo || '-'}</TableCell>
+                  <TableCell sx={{ display: { xs: 'none', sm: 'table-cell' } }}>{c.desde || '-'}</TableCell>
+                  <TableCell sx={{ display: { xs: 'none', sm: 'table-cell' } }}>{formatDisplayDateSafe(c.ultimaVisita)}</TableCell>
+                  <TableCell align="right">
+                    <Stack direction={{ xs: 'column', sm: 'row' }} spacing={1} useFlexGap flexWrap="wrap" justifyContent="flex-end">
+                      <Button variant="contained" size="small" onClick={() => abrirHistorial(c)} sx={{ minWidth: 120 }}>Ver Historial</Button>
+                      <Tooltip title={isReadOnly(c) ? 'Solo lectura (otro taller)' : ''}>
+                        <span>
+                          <Button variant="outlined" size="small" color="error" onClick={() => handleDelete(c.id)} disabled={isReadOnly(c)} sx={{ minWidth: 100 }}>Eliminar</Button>
+                        </span>
+                      </Tooltip>
+                    </Stack>
+                  </TableCell>
+                </TableRow>
+              ))}
+              {resultados.length === 0 && (
+                <TableRow>
+                  <TableCell colSpan={7} align="center">Sin clientes</TableCell>
+                </TableRow>
+              )}
+            </TableBody>
+          </Table>
+        </TableContainer>
       </Box>
       {/* Modal de Historial del Cliente */}
       <Dialog open={histOpen} onClose={() => setHistOpen(false)} maxWidth="md" fullWidth>
