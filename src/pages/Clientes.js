@@ -3,6 +3,7 @@ import { Box, Typography, Paper, Grid, TextField, Button, Dialog, DialogTitle, D
 
 import { useEffect } from 'react';
 import { apiFetch } from '../utils/api';
+import { formatDisplayDateSafe, parseDDMMYYYYToISO } from '../utils/dates';
 
 
 function Clientes() {
@@ -63,9 +64,15 @@ function Clientes() {
   const handleSubmit = async (e) => {
     e.preventDefault();
     try {
+      const payload = {
+        ...form,
+        ultimaVisita: form.ultimaVisita ? (parseDDMMYYYYToISO(form.ultimaVisita) || form.ultimaVisita) : '',
+        // 'desde' es año; si viene DD-MM-YYYY, se puede mantener o transformar a año
+        desde: form.desde
+      };
       const nuevo = await apiFetch('/api/clientes', {
         method: 'POST',
-        body: JSON.stringify(form)
+        body: JSON.stringify(payload)
       });
       setClientes([...(Array.isArray(clientes) ? clientes : []), nuevo]);
       setForm({ nombre: '', telefono: '', email: '', vehiculo: '', ultimaVisita: '', desde: '' });
@@ -153,7 +160,7 @@ function Clientes() {
                 <Typography variant="body2">Teléfono: {c.telefono}</Typography>
                 <Typography variant="body2">Email: {c.email}</Typography>
                 <Typography variant="body2">Vehículo: {c.vehiculo}</Typography>
-                <Typography variant="body2" mb={1}>Última visita: {c.ultimaVisita ? new Date(c.ultimaVisita).toLocaleDateString() : ''}</Typography>
+                <Typography variant="body2" mb={1}>Última visita: {formatDisplayDateSafe(c.ultimaVisita)}</Typography>
                 <Button variant="contained" size="small" sx={{ mr: 1 }} onClick={() => abrirHistorial(c)}>Ver Historial</Button>
                 <Tooltip title={isReadOnly(c) ? 'Solo lectura (otro taller)' : ''}>
                   <span>
@@ -177,7 +184,7 @@ function Clientes() {
                 <Grid item xs={6}><Typography variant="body2"><b>Email:</b> {histCliente.email || '-'}</Typography></Grid>
                 <Grid item xs={6}><Typography variant="body2"><b>Vehículo:</b> {histCliente.vehiculo || '-'}</Typography></Grid>
                 <Grid item xs={6}><Typography variant="body2"><b>Patente:</b> {histCliente.patente || '-'}</Typography></Grid>
-                <Grid item xs={6}><Typography variant="body2"><b>Última visita:</b> {histCliente.ultimaVisita ? new Date(histCliente.ultimaVisita).toLocaleDateString() : '-'}</Typography></Grid>
+                <Grid item xs={6}><Typography variant="body2"><b>Última visita:</b> {formatDisplayDateSafe(histCliente.ultimaVisita) || '-'}</Typography></Grid>
               </Grid>
             </Box>
           )}
@@ -198,7 +205,7 @@ function Clientes() {
               <TableBody>
                 {(histData.reps || []).map((r) => (
                   <TableRow key={r.id}>
-                    <TableCell>{r.fecha ? new Date(r.fecha).toLocaleDateString() : '-'}</TableCell>
+                    <TableCell>{formatDisplayDateSafe(r.fecha) || '-'}</TableCell>
                     <TableCell>
                       <Stack spacing={0.3}>
                         <span><b>Servicio:</b> {r.servicio || '-'}</span>
@@ -228,7 +235,7 @@ function Clientes() {
             <TableBody>
               {(histData.hist || []).map((h) => (
                 <TableRow key={h.id}>
-                  <TableCell>{h.fecha ? new Date(h.fecha).toLocaleDateString() : '-'}</TableCell>
+                  <TableCell>{formatDisplayDateSafe(h.fecha) || '-'}</TableCell>
                   <TableCell>{h.servicio || '-'}</TableCell>
                   <TableCell>{h.taller || '-'}</TableCell>
                 </TableRow>
@@ -251,7 +258,7 @@ function Clientes() {
             <TextField label="Teléfono" name="telefono" value={form.telefono} onChange={handleChange} />
             <TextField label="Email" name="email" value={form.email} onChange={handleChange} />
             <TextField label="Vehículo" name="vehiculo" value={form.vehiculo} onChange={handleChange} />
-            <TextField label="Última visita" name="ultimaVisita" value={form.ultimaVisita} onChange={handleChange} placeholder="2024-07-27" />
+            <TextField label="Última visita" name="ultimaVisita" value={form.ultimaVisita} onChange={handleChange} placeholder="DD-MM-YYYY" />
             <TextField label="Cliente desde (año)" name="desde" value={form.desde} onChange={handleChange} />
           </DialogContent>
           <DialogActions>
@@ -265,4 +272,3 @@ function Clientes() {
 }
 
 export default Clientes;
- 
