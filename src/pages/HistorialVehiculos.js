@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Box, Typography, TextField, Paper, Grid, Button, List, ListItem, ListItemText, Dialog, DialogTitle, DialogContent, DialogActions, Tooltip, Chip, Table, TableHead, TableRow, TableCell, TableBody, TableContainer } from '@mui/material';
+import { Box, Typography, TextField, Paper, Grid, Button, List, ListItem, ListItemText, Dialog, DialogTitle, DialogContent, DialogActions, Tooltip, Chip, Stack, Table, TableHead, TableRow, TableCell, TableBody, TableContainer } from '@mui/material';
 import FichaReparacionModal from '../components/FichaReparacionModal';
 
 import { useEffect } from 'react';
