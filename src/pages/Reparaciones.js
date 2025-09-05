@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Box, Typography, Paper, Button, Table, TableBody, TableCell, TableContainer, TableHead, TableRow, Select, MenuItem, TextField, Chip, Stack, Dialog, DialogTitle, DialogContent, DialogActions, Alert } from '@mui/material';
+import { Box, Typography, Paper, Button, Table, TableBody, TableCell, TableContainer, TableHead, TableRow, Select, MenuItem, TextField, Chip, Stack, Dialog, DialogTitle, DialogContent, DialogActions, Alert, Tooltip } from '@mui/material';
 import { apiFetch } from '../utils/api';
 import FichaReparacionModal from '../components/FichaReparacionModal';
 
@@ -21,6 +21,15 @@ function Reparaciones() {
   const [error, setError] = useState('');
   const [fichaOpen, setFichaOpen] = useState(false);
   const [fichaItem, setFichaItem] = useState(null);
+
+  // Tenant actual desde localStorage
+  const myUser = (() => { try { return JSON.parse(localStorage.getItem('user')); } catch { return null; } })();
+  const myTallerId = myUser?.taller_id ?? null;
+  const isReadOnly = (row) => {
+    // Solo deshabilitar cuando el registro tiene taller distinto al del usuario
+    if (!myTallerId) return false; // si no sabemos el taller del usuario, no bloquear UI
+    return row?.taller_id && row.taller_id !== myTallerId;
+  };
 
   const fetchReparaciones = () => {
     setError('');
@@ -178,9 +187,21 @@ function Reparaciones() {
                 <TableCell>{row.vehiculo}</TableCell>
                 <TableCell>{row.problema}</TableCell>
                 <TableCell>
-                  <Button variant="contained" size="small" onClick={() => abrirFicha(row)}>VER</Button>
+                  <Tooltip title="">
+                    <span>
+                      <Button variant="contained" size="small" onClick={() => abrirFicha(row)}>
+                        VER
+                      </Button>
+                    </span>
+                  </Tooltip>
                   &nbsp;
-                  <Button variant="outlined" color="error" size="small" onClick={() => handleDelete(row.id)}>ELIMINAR</Button>
+                  <Tooltip title={isReadOnly(row) ? 'Solo lectura (otro taller)' : ''}>
+                    <span>
+                      <Button variant="outlined" color="error" size="small" onClick={() => handleDelete(row.id)} disabled={isReadOnly(row)}>
+                        ELIMINAR
+                      </Button>
+                    </span>
+                  </Tooltip>
                 </TableCell>
                 <TableCell>{(() => {
                   // Preferir 'costo' proveniente de la tabla reparaciones
@@ -202,15 +223,20 @@ function Reparaciones() {
                   return CLP.format(Number(total || 0));
                 })()}</TableCell>
                 <TableCell>
-                  <Select
-                    size="small"
-                    value={row.estado === 'open' ? 'pending' : (row.estado || 'pending')}
-                    onChange={(e) => handleEstadoChange(row.id, e.target.value || 'pending')}
-                  >
-                    <MenuItem value="pending">Pendiente</MenuItem>
-                    <MenuItem value="progress">En progreso</MenuItem>
-                    <MenuItem value="done">Completado</MenuItem>
-                  </Select>
+                  <Tooltip title={isReadOnly(row) ? 'Solo lectura (otro taller)' : ''}>
+                    <span>
+                      <Select
+                        size="small"
+                        value={row.estado === 'open' ? 'pending' : (row.estado || 'pending')}
+                        onChange={(e) => handleEstadoChange(row.id, e.target.value || 'pending')}
+                        disabled={isReadOnly(row)}
+                      >
+                        <MenuItem value="pending">Pendiente</MenuItem>
+                        <MenuItem value="progress">En progreso</MenuItem>
+                        <MenuItem value="done">Completado</MenuItem>
+                      </Select>
+                    </span>
+                  </Tooltip>
                 </TableCell>
               </TableRow>
             ))}
