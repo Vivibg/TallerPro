@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Box, Typography, Paper, Button, Table, TableBody, TableCell, TableContainer, TableHead, TableRow, Select, MenuItem, TextField, Chip, Stack, Dialog, DialogTitle, DialogContent, DialogActions, Alert, Tooltip } from '@mui/material';
 import { apiFetch } from '../utils/api';
+import { parseDDMMYYYYToISO } from '../utils/dates';
 import FichaReparacionModal from '../components/FichaReparacionModal';
 
 const CLP = new Intl.NumberFormat('es-CL', { style: 'currency', currency: 'CLP', maximumFractionDigits: 0 });
@@ -82,9 +83,13 @@ function Reparaciones() {
 
   const handleSubmit = async e => {
     e.preventDefault();
+    const payload = {
+      ...form,
+      fecha: form.fecha ? (parseDDMMYYYYToISO(form.fecha) || form.fecha) : ''
+    };
     await apiFetch('/api/reparaciones', {
       method: 'POST',
-      body: JSON.stringify(form)
+      body: JSON.stringify(payload)
     });
     setForm({ cliente: '', vehiculo: '', problema: '', estado: 'pending', costo: '', fecha: '' });
     setOpen(false);
@@ -162,7 +167,7 @@ function Reparaciones() {
                 <option value="done">Completado</option>
               </TextField>
               <TextField label="Costo" name="costo" value={form.costo} onChange={handleChange} type="number" />
-              <TextField label="Fecha" name="fecha" value={form.fecha} onChange={handleChange} placeholder="2024-07-27" />
+              <TextField label="Fecha" name="fecha" value={form.fecha} onChange={handleChange} placeholder="DD-MM-YYYY" />
             </DialogContent>
             <DialogActions>
               <Button onClick={handleClose}>Cancelar</Button>
