@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Box, Typography, TextField, Paper, Grid, Button, List, ListItem, ListItemText, Dialog, DialogTitle, DialogContent, DialogActions, Tooltip, Chip } from '@mui/material';
+import { Box, Typography, TextField, Paper, Grid, Button, List, ListItem, ListItemText, Dialog, DialogTitle, DialogContent, DialogActions, Tooltip, Chip, Table, TableHead, TableRow, TableCell, TableBody, TableContainer } from '@mui/material';
 import FichaReparacionModal from '../components/FichaReparacionModal';
 
 import { useEffect } from 'react';
@@ -242,45 +242,67 @@ function HistorialVehiculos() {
           />
         )}
       </Box>
-      <Grid container spacing={2}>
-        {resultados.map((h, i) => (
-          <Grid item xs={12} md={6} key={h?.reparacion_id ?? h?.id ?? `${h?.patente || ''}-${i}`}>
-            <Paper elevation={2} sx={{ p: 2 }}>
-              {(() => { const { nombre, anio } = splitVehiculo(h.vehiculo); return (
-                <>
-                  <Typography variant="h6" fontWeight={600}>{`${nombre}${h.patente ? ` - ${h.patente}` : ''}`} {isReadOnly(h) && (<Chip size="small" label="Otro taller" sx={{ ml: 1 }} />)}</Typography>
-                  {anio && (<Typography variant="body2" color="text.secondary">Año: {anio}</Typography>)}
-                </>
-              ); })()}
-              <Typography variant="body2">Cliente: {h.cliente}</Typography>
-              <Typography variant="body2">Servicio: {h.servicio}</Typography>
-              <Typography variant="body2">Taller: {h.taller}</Typography>
-              <Typography variant="body2">Estado: {labelEstado(repEstados.get(Number(h.reparacion_id)) ?? h.estado)}</Typography>
-              <Typography variant="body2" mb={1}>Fecha: {formatoFecha(h.fecha)}</Typography>
-              {/* Costos si están presentes */}
-              { (totalHist(h) != null) && (
-                <Box sx={{ mb: 1 }}>
-                  <Typography variant="body2"><strong>Total:</strong> {CLP.format(totalHist(h) || 0)}</Typography>
-                </Box>
-              )}
-              {h.reparacion_id ? (
-                <Button variant="contained" size="small" sx={{ mr: 1 }} onClick={() => openFicha(h)}>
-                  Editar reparación
-                </Button>
-              ) : (
-                <Button variant="contained" size="small" sx={{ mr: 1 }} disabled>
-                  Sin reparación vinculada
-                </Button>
-              )}
-              <Tooltip title={isReadOnly(h) ? 'Solo lectura (otro taller)' : ''}>
-                <span>
-                  <Button variant="outlined" size="small" color="error" onClick={() => handleDelete(h.id)} disabled={isReadOnly(h)}>Eliminar</Button>
-                </span>
-              </Tooltip>
-            </Paper>
-          </Grid>
-        ))}
-      </Grid>
+      <TableContainer component={Paper} elevation={1}>
+        <Table size="small">
+          <TableHead>
+            <TableRow>
+              <TableCell>Vehículo</TableCell>
+              <TableCell>Patente</TableCell>
+              <TableCell>Cliente</TableCell>
+              <TableCell sx={{ display: { xs: 'none', sm: 'table-cell' } }}>Servicio</TableCell>
+              <TableCell sx={{ display: { xs: 'none', sm: 'table-cell' } }}>Taller</TableCell>
+              <TableCell>Estado</TableCell>
+              <TableCell sx={{ display: { xs: 'none', sm: 'table-cell' } }}>Fecha</TableCell>
+              <TableCell align="right">Total</TableCell>
+              <TableCell>Acciones</TableCell>
+            </TableRow>
+          </TableHead>
+          <TableBody>
+            {resultados.map((h, i) => (
+              <TableRow key={h?.reparacion_id ?? h?.id ?? `${h?.patente || ''}-${i}`}>
+                <TableCell>
+                  {(() => { const { nombre } = splitVehiculo(h.vehiculo); return (
+                    <>
+                      {nombre}
+                      {isReadOnly(h) && (<Chip size="small" label="Otro taller" sx={{ ml: 1 }} />)}
+                    </>
+                  ); })()}
+                </TableCell>
+                <TableCell>{h.patente || ''}</TableCell>
+                <TableCell>{h.cliente || ''}</TableCell>
+                <TableCell sx={{ display: { xs: 'none', sm: 'table-cell' } }}>{h.servicio || ''}</TableCell>
+                <TableCell sx={{ display: { xs: 'none', sm: 'table-cell' } }}>{h.taller || ''}</TableCell>
+                <TableCell>{labelEstado(repEstados.get(Number(h.reparacion_id)) ?? h.estado)}</TableCell>
+                <TableCell sx={{ display: { xs: 'none', sm: 'table-cell' } }}>{formatoFecha(h.fecha)}</TableCell>
+                <TableCell align="right">{totalHist(h) != null ? CLP.format(totalHist(h) || 0) : '-'}</TableCell>
+                <TableCell>
+                  <Stack direction={{ xs: 'column', sm: 'row' }} spacing={1} useFlexGap flexWrap="wrap">
+                    {h.reparacion_id ? (
+                      <Button variant="contained" size="small" onClick={() => openFicha(h)} sx={{ minWidth: 140 }}>
+                        Editar reparación
+                      </Button>
+                    ) : (
+                      <Button variant="contained" size="small" disabled sx={{ minWidth: 140 }}>
+                        Sin reparación vinculada
+                      </Button>
+                    )}
+                    <Tooltip title={isReadOnly(h) ? 'Solo lectura (otro taller)' : ''}>
+                      <span>
+                        <Button variant="outlined" size="small" color="error" onClick={() => handleDelete(h.id)} disabled={isReadOnly(h)} sx={{ minWidth: 120 }}>Eliminar</Button>
+                      </span>
+                    </Tooltip>
+                  </Stack>
+                </TableCell>
+              </TableRow>
+            ))}
+            {resultados.length === 0 && (
+              <TableRow>
+                <TableCell colSpan={9} align="center">Sin registros</TableCell>
+              </TableRow>
+            )}
+          </TableBody>
+        </Table>
+      </TableContainer>
     </Box>
   );
 }
