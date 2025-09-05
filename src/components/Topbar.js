@@ -11,6 +11,11 @@ function Topbar({ user, onLogout }) {
         <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
           <Typography sx={{ fontWeight: 500, fontSize: 16 }}>
             👋 Hola, {user?.name || 'Usuario'}
+            {user?.taller_nombre || user?.taller_id ? (
+              <>
+                {' '}• Taller: {user?.taller_nombre || `#${user?.taller_id}`}
+              </>
+            ) : null}
           </Typography>
           <Button
             color="inherit"
