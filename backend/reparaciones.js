@@ -60,7 +60,7 @@ router.post('/', authRequired, withTenant, async (req, res) => {
     }
 
     const est = estado || 'pending';
-    // Inserción dinámica para incluir taller_id si existe
+    // Inserción dinámica para incluir taller_id
     const [cols] = await pool.query('SHOW COLUMNS FROM reparaciones');
     const names = new Set(cols.map(c => c.Field));
     const fields = [];
@@ -163,7 +163,7 @@ router.put('/:id', authRequired, withTenant, async (req, res) => {
     addIfCol('garantiaCondiciones', garantiaCondiciones);
     addIfCol('taller', taller);
     addIfCol('mecanico', mecanico);
-    // actualizar 'servicio' solo si la columna existe
+    // actualizar servicio
     addIfCol('servicio', servicio);
     if (!fields.some(f => f.startsWith('servicio')) && repNames.has('tipo_servicio')) { fields.push('tipo_servicio = ?'); values.push(servicio); }
     if (!fields.some(f => f.includes('servicio')) && repNames.has('tipoServicio')) { fields.push('tipoServicio = ?'); values.push(servicio); }
@@ -173,7 +173,7 @@ router.put('/:id', authRequired, withTenant, async (req, res) => {
       await pool.query(`UPDATE reparaciones SET ${fields.join(', ')} WHERE id = ? AND taller_id = ?`, values);
     }
 
-    // Upsert de historial se maneja en el bloque normalizado inferior
+  
 
     // Si pasa a 'progress' desde otro estado, registrar en historial
     const norm = (s) => {
