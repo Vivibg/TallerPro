@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Box, Typography, Paper, Grid, Button, List, ListItem, ListItemText, Dialog, DialogTitle, DialogContent, DialogActions, TextField, Chip, Alert } from '@mui/material';
+import { Box, Typography, Paper, Grid, Button, List, ListItem, ListItemText, Dialog, DialogTitle, DialogContent, DialogActions, TextField, Chip, Alert, Select, MenuItem } from '@mui/material';
 import { apiFetch } from '../utils/api';
 
 function formatearFechaHora(fecha, hora) {
@@ -19,7 +19,7 @@ function Reservas() {
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
 
-  
+  // Ahora aceptamos fecha en formato DD-MM-YYYY en el formulario
   const isValidDate = (date) => /^\d{2}-\d{2}-\d{4}$/.test(date);
   const isValidTime = (time) => /^([01]\d|2[0-3]):[0-5]\d$/.test(time);
 
@@ -165,7 +165,23 @@ function Reservas() {
               <form onSubmit={handleSubmit}>
                 <DialogContent sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
                   <TextField label="Cliente" name="cliente" value={form.cliente} onChange={handleChange} required />
-                  <TextField label="Servicio" name="servicio" value={form.servicio} onChange={handleChange} required />
+                  <Select
+                    labelId="reserva-servicio-label"
+                    id="reserva-servicio"
+                    name="servicio"
+                    value={form.servicio}
+                    onChange={handleChange}
+                    required
+                    displayEmpty
+                    fullWidth
+                    size="small"
+                  >
+                    <MenuItem value=""><em>Seleccionar</em></MenuItem>
+                    <MenuItem value="Servicios básicos">Servicios básicos</MenuItem>
+                    <MenuItem value="Mantenimiento preventivo">Mantenimiento preventivo</MenuItem>
+                    <MenuItem value="Reparaciones">Reparaciones</MenuItem>
+                    <MenuItem value="Servicios especializados">Servicios especializados</MenuItem>
+                  </Select>
                   <TextField label="Vehículo" name="vehiculo" value={form.vehiculo} onChange={handleChange} required />
                   <TextField label="Patente" name="patente" value={form.patente} onChange={handleChange} required />
                   <TextField label="Fecha" name="fecha" value={form.fecha} onChange={handleChange} required placeholder="DD-MM-YYYY" />
